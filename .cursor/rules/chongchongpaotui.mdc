@@ -1,0 +1,70 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 语言和UI设计偏好
+- 用户希望使用中文交流，UI元素更小、间距更好、布局美观，包括更小的字体，主题色为#2492F2
+- 页面不允许下拉刷新，UI元素靠近屏幕边缘时保留10px间距，图片自适应显示避免变形
+- 用户偏好使用onShow而非onLoad生命周期方法，偏好使用绝对定位布局UI元素
+- 底部导航需添加安全区域，顶部导航添加占位行，底部导航做成可复用组件
+- 添加按钮设计为悬浮在屏幕右下角的浮动按钮，特别是在管理端界面中
+
+# 订单显示和状态管理
+- 订单状态时间线从下到上显示，状态选项卡显示未读计数徽章并有动画过渡效果
+- 品牌映射: 'meituan'显示为'美团', 'guaishou'为'怪兽', 'jiedian'为'街电', 'xiaodian'为'小电', 'zhumang'为竹芒
+- 订单完成反馈需要四张图片：到店打卡、维护前、维护后、其他反馈(选填)，水平排列
+- 已完结订单使用盖章图片(https://ccpt.qiniu.0871.cn/rider/yiwanjie.svg)，进行中订单使用橙色盖章图片(https://ccpt.qiniu.0871.cn/rider/assigned.svg)
+- 盖章颜色统一使用#2492F2（主题蓝色），进行中订单的按钮改为灰色，按钮文字显示为'进行中'
+- recent_tasks订单显示详细地址但隐去最后4个字符用省略号代替，其他订单保持详细地址显示
+
+# 登录、注册和用户体验
+- 登录和注册失败提示显示时间应更长，重置密码后的提示框应显示新密码
+- 骑手用户信息存储为本地'riderUserInfo'，包含service_member所有信息和withdraw_info
+- 在用户注册时，输入手机号后立即调用service/check/phonenumber接口检查号码是否已注册
+- 骑手注册页面需要微信输入框(weixin字段)和可服务品牌选择框(service_bands数组)
+- uni.showToast的duration参数在真机上显示时间比预期短，即使设置3000毫秒也会快速消失
+
+# API和数据处理
+- API请求使用this.$request并带有sign:'chongchong'，所有接口都使用POST方式
+- API请求使用'per_page'参数代替'pageSize'进行分页，经度字段正确拼写是'longitude'
+- API请求使用MD5时间戳认证，格式为md5('service_member_id=' + id + '&phone_number=' + phone + '&timestamp=' + timestamp)
+- 阿里云短信API使用URL https://dfsns.market.alicloudapi.com/data/send_sms，需要Authorization头部
+- 用户偏好在发送验证码功能中使用云函数而非HTTP API
+
+# 骑手管理和服务区域
+- 骑手认证状态有四种：未提交、已通过、待审核和已拒绝，使用中文文本而非数字状态码
+- 骑手列表中，real_name显示在前作为主标题，contact_person用括号包裹作为副标题
+- 骑手等级放在姓名昵称后面，账户余额放在ID右侧边缘，佣金比例放在电话号码右侧边缘
+- 在骑手列表界面中，余额、佣金、保证金这三个标题应使用固定宽度以保持上下对齐的视觉一致性
+- 服务区域选择以弹窗方式展示，使用联级选择，默认只展开省份，最多显示3个区域
+- 选择服务区域时，自动查询service/group/zone/info API获取定价和品牌设置
+- 在pages/index/city/index.vue中，区县处展示骑手数量需要乘以3，使用service_member_count字段
+- 区县骑手数量显示在区县名称右侧，用括号包围格式显示
+- 在城市选择界面中，地级市需要统计并展示该市所有区县的总入驻人数，省份需要统计并展示该省所有地级市的总入驻人数，实现层级数据汇总显示
+- 在城市选择界面中，地级市入驻人数使用与区县相同的绿色样式，所有层级的入驻人数文字统一改为'*位骑手'而非'*人入驻'
+- 在城市选择界面中，保留已开城数量显示，入驻人数显示在开城数量后面，格式为省份名（已开X城，Y位骑手）
+- 骑手数量文字使用主题色显示，展开和收起按钮使用上下箭头图标替代文字
+
+# 提现和佣金功能
+- 提现功能API接口从service/withdraw/apply更改为withdraw/create，参数包含service_member_id、owner_id、owner_type(骑手用member/服务商用provider)、amount、payment_method、sign和timestamp字段
+- 提现功能成功后更新本地存储的withdraw_info
+- 佣金详情页面使用service/task/month接口，按日/按月选项卡在顶部
+- 在riderEnd/withdraw.vue中，goToEditAccount按钮应跳转到提现账户管理页面
+- 在提现账户管理页面中，支付宝和银行卡应该分成两个独立卡片供用户选择提现方式，只有在没有添加相应账户时才显示添加提现账户选项
+- 在提现账户管理页面中，点击支付宝添加按钮应跳转到支付宝专用页面，点击银行卡添加按钮应跳转到银行卡专用页面，而不是统一的编辑页面
+- 在提现账户管理页面中，添加按钮应该跳转到编辑提现账户页面而不是添加账户页面
+- 在编辑提现账户页面，提交时需要同时提交支付宝和银行卡的所有信息，避免提交一种方式时另一种方式的信息被清空
+- 在riderEnd/my.vue页面每次进入时需要调用service/member/info接口更新骑手信息
+- riderEnd/account.vue页面进入时调用withdraw/account接口，参数包含service_member_id和sign字段
+- withdraw/account接口返回数据格式为data数组，包含member和provider两种类型对象，每个对象有id、name、balance、type、model_type字段，通过type==='provider'判断是否为服务商
+- withdraw/group/list接口返回分页格式数据，包含提现记录数组，每条记录有id、amount、status、payment_method、applicant等字段，支持分页参数current_page、per_page等
+- 在账户页面中，我的佣金应显示riderUserInfo.balance，提现记录接口从withdraw/group/list改为withdraw/owner/list，参数需包含service_member_id、owner_type(骑手用member/服务商用provider)、owner_id、sign和timestamp
+- 在查询withdraw/account接口后需要保存对应的id，供提现页面使用
+- 用户偏好将'价格有疑问？'文字放置在预估价格数字下方，使用统一弹窗组件components/AuthModal/index.vue
+
+# 评价和其他功能
+- 评价页面使用star2.svg图标，评价标签为中文，使用task/review接口提交评价
+- 小程序订阅消息模板ID为4PDX13alG90QI5T68kKuOR5ihIcBfKnoeg8guFCVkwM，用于新订单来单提醒
+- 管理端价格输入框应支持输入数字、小数点和负数，需要严格的数字格式验证
+- 实现完功能后，不要写文档

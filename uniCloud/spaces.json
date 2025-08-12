@@ -1,0 +1,5 @@
+{
+  "spaceId": "请替换为您的服务空间ID",
+  "clientSecret": "请替换为您的客户端密钥",
+  "endpoint": "https://api.bspapp.com"
+}

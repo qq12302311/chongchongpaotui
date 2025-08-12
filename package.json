@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@dcloudio/uni-ui": "^1.5.7",
+    "crypto-js": "^4.2.0",
+    "md5": "^2.3.0",
+    "uview-plus": "^3.4.12"
+  }
+}

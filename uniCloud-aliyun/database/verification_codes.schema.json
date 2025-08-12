@@ -1,0 +1,46 @@
+{
+  "bsonType": "object",
+  "required": ["phone_number", "code", "created_at", "expires_at", "used"],
+  "properties": {
+    "_id": {
+      "description": "文档ID，自动生成"
+    },
+    "phone_number": {
+      "bsonType": "string",
+      "description": "手机号码",
+      "pattern": "^1[3-9]\\d{9}$",
+      "title": "手机号码"
+    },
+    "code": {
+      "bsonType": "string",
+      "description": "6位验证码",
+      "pattern": "^\\d{6}$",
+      "title": "验证码"
+    },
+    "created_at": {
+      "bsonType": "date",
+      "description": "创建时间",
+      "title": "创建时间"
+    },
+    "expires_at": {
+      "bsonType": "date",
+      "description": "过期时间",
+      "title": "过期时间"
+    },
+    "used": {
+      "bsonType": "bool",
+      "description": "是否已使用",
+      "title": "使用状态"
+    },
+    "used_at": {
+      "bsonType": "date",
+      "description": "使用时间",
+      "title": "使用时间"
+    },
+    "request_id": {
+      "bsonType": "string",
+      "description": "短信接口返回的请求ID",
+      "title": "请求ID"
+    }
+  }
+}

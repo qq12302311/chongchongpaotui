@@ -1,0 +1,537 @@
+{
+	"pages": [
+		{
+			"path": "pages/launcher/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/order/order",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/my/my",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/user-guide/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/publish/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "发布订单"
+			}
+		},
+		{
+			"path": "pages/index/offline/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/price-agreement/index",
+			"style": {
+				"navigationBarTitleText": "价格协议",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/index/city/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/publish/map/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/publish/map/search-results",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/history-records/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "历史门店记录"
+			}
+		},
+		{
+			"path": "pages/pay/success",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "支付成功"
+			}
+		},
+		{
+			"path": "pages/order/status",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/order/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "订单详情"
+			}
+		},
+		{
+			"path": "pages/index/publish/map/area-data",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "区县数据"
+			}
+		},
+		{
+			"path": "pages/index/publish/store-info/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/index/publish/coupon/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/order/review",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/referral-list/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		},
+		{
+			"path": "pages/chat/chat-list",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "riderEnd",
+			"name": "rider",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"enablePullDownRefresh": true,
+						"backgroundTextStyle": "dark"
+					}
+				},
+				{
+					"path": "my",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "order",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "login",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "verify",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "city-select/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "order-detail",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "order-info",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "register",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "user-info",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "account",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "add-account",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "commission-detail",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "withdraw",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "edit-account",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "withdraw-account-manage",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "referral-list",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "manual",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "settings",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "contract",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "user-agreement",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "privacy-policy",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "chat-simple",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				}
+			]
+		},
+		{
+			"root": "adminEnd",
+			"name": "admin",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "userSettings/taskSettings",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "riderList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "serviceProviderList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "服务商列表"
+					}
+				},
+				{
+					"path": "serviceZoneList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "服务区域列表"
+					}
+				},
+				{
+					"path": "orderManage/detail",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "订单详情"
+					}
+				},
+				{
+					"path": "withdrawManage/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "提现管理"
+					}
+				},
+				{
+					"path": "withdrawManage/detail",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "提现详情"
+					}
+				},
+				{
+					"path": "userManage/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "用户管理"
+					}
+				},
+				{
+					"path": "userManage/userOrderList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "用户订单"
+					}
+				},
+				{
+					"path": "orderManage/orderList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "订单列表"
+					}
+				},
+				{
+					"path": "orderManage/orderAnalysis",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "订单数据分析"
+					}
+				},
+				{
+					"path": "userAnalysis/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "用户数据分析"
+					}
+				},
+				{
+					"path": "riderAnalysis/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "骑手数据分析"
+					}
+				}
+			]
+		}
+	],
+	"tabBar": {
+		"custom": true,
+		"color": "#909399",
+		"selectedColor": "#2979ff",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/order/order",
+				"text": "订单"
+			},
+			{
+				"pagePath": "pages/chat/chat-list",
+				"text": "对话"
+			},
+			{
+				"pagePath": "pages/my/my",
+				"text": "我的"
+			}
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^common-(.*)": "@/components/common/$1/index.vue",
+			"^nav-bar$": "@/components/NavBar.vue",
+			"^uview-plus-(.*)": "uview-plus/components/u-$1/u-$1.vue"
+		}
+	}
+}
