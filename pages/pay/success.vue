@@ -67,7 +67,7 @@
 					<view class="address-detail">
 						<view class="area">{{orderInfo.province_name}} {{orderInfo.city_name}} {{orderInfo.district_name}}</view>
 						<view class="detail">{{orderInfo.shop_address}}</view>
-						<view class="contact">{{orderInfo.name}} {{orderInfo.phone_number}}</view>
+						<!-- <view class="contact">{{orderInfo.name}} {{orderInfo.phone_number}}</view> -->
 					</view>
 					<view class="check-status" @click="checkOrderStatus">
 						查看订单状态
@@ -87,11 +87,11 @@
 						<image class="arrow-icon" src="https://ccpt.qiniu.0871.cn/publish/you.png" mode="aspectFit">
 						</image>
 					</view>
-					<view class="divider"></view>
+					<!-- <view class="divider"></view>
 					<view class="order-price">
 						<text>合计：</text>
 						<text class="price">¥{{orderInfo.order_amount || '0.00'}}</text>
-					</view>
+					</view> -->
 				</view>
 			</view>
 		</view>

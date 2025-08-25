@@ -9,10 +9,10 @@
 			<view class="search-section">
 				<view class="search-box">
 					<text class="search-icon">🔍</text>
-					<input
-						type="text"
-						v-model="searchKeyword"
-						placeholder="搜索聊天记录..."
+					<input 
+						type="text" 
+						v-model="searchKeyword" 
+						placeholder="搜索聊天记录..." 
 						class="search-input"
 						@input="onSearch" />
 				</view>
@@ -28,7 +28,7 @@
 					
 					<!-- 头像 -->
 					<view class="avatar">
-						<image :src="chat.avatar || defaultAvatar" class="avatar-icon" mode="aspectFit"></image>
+						<image class="avatar-icon" :src="chat.avatar || defaultAvatar" mode="aspectFit"></image>
 						<view v-if="chat.unread_count > 0" class="unread-badge">
 							<text class="unread-text">{{ chat.unread_count > 99 ? '99+' : chat.unread_count }}</text>
 						</view>
@@ -37,7 +37,7 @@
 					<!-- 聊天信息 -->
 					<view class="chat-info">
 						<view class="chat-header">
-							<text class="chat-title">{{ chat.title || `订单协办 ${chat.room_id}` }}</text>
+							<text class="chat-title">{{ chat.title || `聊天室 ${chat.room_id}` }}</text>
 							<text class="chat-time">{{ formatTime(chat.last_message_time) }}</text>
 						</view>
 						<view class="chat-preview">
@@ -60,13 +60,13 @@
 		</view>
 
 		<!-- 底部导航 -->
-		<tab-bar></tab-bar>
+		<tab-bar active-tab="chat"></tab-bar>
 	</view>
 </template>
 
 <script>
 	import NavBar from '@/components/NavBar.vue'
-	import TabBar from '@/components/tab-bar/tab-bar.vue'
+	import TabBar from '@/components/rider/tab-bar/index.vue'
 	import md5 from 'md5'
 
 	export default {
@@ -79,7 +79,7 @@
 				navBarHeight: 88,
 				searchKeyword: '',
 				chatList: [],
-				defaultAvatar: 'https://ccpt.qiniu.0871.cn/duihua2.svg'
+				defaultAvatar: 'https://ccpt.qiniu.0871.cn/duihua2-active.svg'
 			}
 		},
 		computed: {
@@ -109,22 +109,25 @@
 			async loadChatList() {
 				try {
 					// 获取用户信息
-					const userInfo = uni.getStorageSync('userInfo') || uni.getStorageSync('riderUserInfo')
-					if (!userInfo || !userInfo.openid) {
-						uni.showToast({
-							title: '请先登录',
-							icon: 'none'
-						})
+					const riderUserInfo = uni.getStorageSync('riderUserInfo')
+					if (!riderUserInfo) {
+						console.log('用户未登录')
 						return
 					}
 
+					// 构建签名
+					const signStr = `service_member_id=${riderUserInfo.id}&phone_number=${riderUserInfo.phone}`;
+					const sign = md5(signStr);
+
+					// 构建请求参数
 					const params = {
-						openid: userInfo.openid,
-						userPhone: uni.getStorageSync('userPhone'),
-					}
+					  service_member_id: riderUserInfo.id,
+					  sign: sign,
+					  member_id: riderUserInfo.id
+					};
 
 					const res = await uni.request({
-						url: 'https://ccpt.0871.cn/api/user/create',
+						url: 'https://ccpt.0871.cn/api/service/member/info',
 						method: 'POST',
 						data: params,
 						header: {
@@ -148,47 +151,13 @@
 							user_type: item.user_type
 						}))
 
-						console.log('聊天列表加载成功:', this.chatList.length, '个订单协办')
+						console.log('聊天列表加载成功:', this.chatList.length, '个聊天室')
 					} else {
 						console.log('获取聊天列表失败:', res.data.message)
-						// 使用模拟数据
-						this.loadMockData()
 					}
 				} catch (error) {
 					console.error('加载聊天列表出错:', error)
-					// 使用模拟数据
-					this.loadMockData()
 				}
-			},
-
-			// 加载模拟数据
-			loadMockData() {
-				this.chatList = [
-					{
-						room_id: '1040',
-						title: '订单 #1040 聊天室',
-						last_message: '订单已完成，感谢您的服务！',
-						last_message_time: Date.now() - 1000 * 60 * 30, // 30分钟前
-						unread_count: 2,
-						avatar: 'https://ccpt.qiniu.0871.cn/avatar1.png'
-					},
-					{
-						room_id: '1039',
-						title: '订单 #1039 聊天室',
-						last_message: '骑手正在路上，请稍等',
-						last_message_time: Date.now() - 1000 * 60 * 60 * 2, // 2小时前
-						unread_count: 0,
-						avatar: 'https://ccpt.qiniu.0871.cn/avatar2.png'
-					},
-					{
-						room_id: '1038',
-						title: '订单 #1038 聊天室',
-						last_message: '已到达门店，正在处理',
-						last_message_time: Date.now() - 1000 * 60 * 60 * 24, // 1天前
-						unread_count: 1,
-						avatar: 'https://ccpt.qiniu.0871.cn/avatar3.png'
-					}
-				]
 			},
 
 			// 搜索
@@ -199,7 +168,7 @@
 			// 进入聊天室
 			enterChat(chat) {
 				uni.navigateTo({
-					url: `/pages/chat/chat-simple?roomId=${chat.room_id}&title=${encodeURIComponent(chat.title || '订单协办')}`
+					url: `/riderEnd/chat-simple?roomId=${chat.room_id}&title=${chat.title}`
 				})
 			},
 
@@ -240,7 +209,7 @@
 
 	.search-section {
 		padding: 20rpx 0;
-		
+
 		.search-box {
 			background-color: #fff;
 			border-radius: 24rpx;
@@ -248,12 +217,13 @@
 			display: flex;
 			align-items: center;
 			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-			
+
 			.search-icon {
-				font-size: 32rpx;
+				width: 32rpx;
+				height: 32rpx;
 				margin-right: 16rpx;
 			}
-			
+
 			.search-input {
 				flex: 1;
 				font-size: 28rpx;
@@ -271,7 +241,7 @@
 			display: flex;
 			align-items: center;
 			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-			
+
 			.avatar {
 				position: relative;
 				margin-right: 20rpx;
@@ -280,20 +250,21 @@
 					width: 70rpx;
 					height: 70rpx;
 					border-radius: 50%;
+					background-color: #f0f0f0;
 				}
-				
+
 				.unread-badge {
 					position: absolute;
 					top: -8rpx;
 					right: -8rpx;
-					background-color: #2492F2;
+					background-color: #ff4d4f;
 					border-radius: 20rpx;
 					min-width: 32rpx;
 					height: 32rpx;
 					display: flex;
 					align-items: center;
 					justify-content: center;
-					
+
 					.unread-text {
 						color: #fff;
 						font-size: 20rpx;
@@ -301,28 +272,28 @@
 					}
 				}
 			}
-			
+
 			.chat-info {
 				flex: 1;
-				
+
 				.chat-header {
 					display: flex;
 					justify-content: space-between;
 					align-items: center;
 					margin-bottom: 8rpx;
-					
+
 					.chat-title {
 						font-size: 32rpx;
 						font-weight: 500;
 						color: #333;
 					}
-					
+
 					.chat-time {
 						font-size: 24rpx;
 						color: #999;
 					}
 				}
-				
+
 				.chat-preview {
 					.last-message {
 						font-size: 28rpx;
@@ -334,10 +305,10 @@
 					}
 				}
 			}
-			
+
 			.arrow {
 				margin-left: 16rpx;
-				
+
 				.arrow-icon {
 					font-size: 28rpx;
 					color: #ccc;
@@ -349,13 +320,13 @@
 	.empty-state {
 		text-align: center;
 		padding: 120rpx 40rpx;
-		
+
 		.empty-icon {
-			font-size: 160rpx;
+			width: 160rpx;
+			height: 160rpx;
 			margin-bottom: 32rpx;
-			display: block;
 		}
-		
+
 		.empty-text {
 			font-size: 28rpx;
 			color: #999;

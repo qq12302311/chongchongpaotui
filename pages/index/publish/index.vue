@@ -279,15 +279,15 @@
 							<text class="currency">¥</text>
 							<text class="amount">{{priceDetails.total.toFixed(2)}}</text>
 							<text class="arrow" :class="{ 'arrow-up': showPricePopup }">▼</text>
+							<!-- 价格疑问提示 -->
+							<view class="price-question" @click.stop="showPriceQuestionModal">
+								<text class="question-text">价格有疑问？</text>
+							</view>
 						</view>
 						<view class="coupon-section2">
 							<view class="coupon-reminder2">
 								<text class="reminder-text">价格含：跑腿、备宝</text>
 							</view>
-						</view>
-						<!-- 价格疑问提示 -->
-						<view class="price-question" @click.stop="showPriceQuestionModal">
-							<text class="question-text">价格有疑问？</text>
 						</view>
 					</view>
 					<button
@@ -598,12 +598,12 @@
 
 			// 每次页面显示时重新检查登录状态
 			// isLoggedIn 是计算属性，会自动更新
-			console.log('页面显示，登录状态:', this.isLoggedIn);
-			console.log('用户信息:', this.userInfo);
-			console.log('用户ID:', this.userInfo.user_id);
+			// console.log('页面显示，登录状态:', this.isLoggedIn);
+			// console.log('用户信息:', this.userInfo);
+			// console.log('用户ID:', this.userInfo.user_id);
 
 			// 重新计算价格（可能用户信息发生了变化）
-			this.calculatePrice();
+			// this.calculatePrice();
 		},
 
 		onLoad(options) {
@@ -636,12 +636,12 @@
 			// 页面渲染完成后执行的操作
 			this.initializeComponents();
 		},
-		onShow(){
+		async onShow(){
 			// 初始化区域选择数据
 			this.initAreaData();
 
 			// 获取服务商信息
-			this.getProviderInfo();
+			await this.getProviderInfo();
 
 			this.calculatePrice()
 
@@ -784,10 +784,16 @@
 			// 获取服务商信息
 			async getProviderInfo() {
 				try {
-					const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
-					if (!selectedDistrictId) {
-						console.log('未选择服务区域，跳过获取服务商信息');
-						return;
+					let selectedDistrictId;
+					const selectedDistrictId_new = uni.getStorageSync('selectedDistrictId_new');
+					if(selectedDistrictId_new) {
+						selectedDistrictId = selectedDistrictId_new
+					} else {
+						selectedDistrictId = uni.getStorageSync('selectedDistrictId');
+						if (!selectedDistrictId) {
+							console.log('未选择服务区域，跳过获取服务商信息');
+							return;
+						}
 					}
 
 					console.log('🏪 获取服务商信息，区域ID:', selectedDistrictId);
@@ -795,6 +801,7 @@
 					console.log('服务商信息:', res);
 
 					if (res.code === 200) {
+						uni.removeStorageSync('selectedDistrictId_new');
 						this.providerInfo = res.data;
 						// 保存到本地存储供价格计算使用
 						uni.setStorageSync('providerInfo', res.data);
@@ -842,18 +849,38 @@
 					// 初始化协议弹窗
 				}
 			},
+			// 角度转弧度
+			deg2rad(deg) {
+				return deg * (Math.PI / 180);
+			},
+			// 计算两点之间的距离（单位：千米）
+			calculateDistance(lat1, lon1, lat2, lon2) {
+				// 使用Haversine公式计算两点之间的距离
+				const R = 6371; // 地球半径（千米）
+				const dLat = this.deg2rad(lat2 - lat1);
+				const dLon = this.deg2rad(lon2 - lon1);
+				const a =
+					Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+					Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+					Math.sin(dLon / 2) * Math.sin(dLon / 2);
+				const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+				const distance = R * c;
+
+				// 保留一位小数
+				return distance.toFixed(1);
+			},
 			// 添加价格计算方法
 			calculatePrice() {
 				// 获取服务商信息
-				const providerInfo = uni.getStorageSync('providerInfo');
-				if (!providerInfo) {
+				if (!this.providerInfo) {
 					// 静默处理，不显示弹窗
 					return;
 				}
+				
 
-				this.providerInfo = providerInfo
+				// this.providerInfo = providerInfo	
 
-				const info = providerInfo.prices;
+				const info = this.providerInfo.prices;
 
 				// 获取数量，如果为空则使用0进行计算
 				const quantity = parseInt(this.formData.quantity) || 0;
@@ -878,7 +905,14 @@
 				let extraDistanceFee = 0;
 
 				// 如果距离超过基础距离，计算额外费用
-				if (this.formData.distance > info.bubao_base_distance) {
+				let distance = '0.0';
+				distance = this.calculateDistance(
+					this.providerInfo.latitude,
+					this.providerInfo.longitude,
+					this.formData.latitude,
+					this.formData.longitude
+				);
+				if (distance > info.bubao_base_distance) {
 					const extraDistance = Math.ceil((this.formData.distance - info.bubao_base_distance) / info.bubao_extra_distance);
 					extraDistanceFee = extraDistance * (parseFloat(info.bubao_extra_distance_fee) || 0);
 				}
@@ -1006,10 +1040,8 @@
 			},
 			increaseQuantity() {
 				const currentQuantity = parseInt(this.formData.quantity) || 0;
-				if (currentQuantity < 99) {
-					this.formData.quantity = currentQuantity + 1;
-					this.calculatePrice(); // 更新价格
-				}
+				this.formData.quantity = currentQuantity + 1;
+				this.calculatePrice(); // 更新价格
 			},
 			decreaseQuantity() {
 				const currentQuantity = parseInt(this.formData.quantity) || 0;
@@ -1034,8 +1066,8 @@
 						// 如果输入无效或小于1，设置为空
 						this.formData.quantity = '';
 					} else {
-						// 限制数量范围在1-99之间
-						this.formData.quantity = Math.min(99, value);
+						// 不限制数量上限
+						this.formData.quantity = value;
 					}
 				}
 				// 触发价格重新计算
@@ -2444,24 +2476,26 @@
 						transform: rotate(180deg);
 					}
 				}
-			}
-		}
 
-		.price-question {
-			cursor: pointer;
-			align-self: flex-start;
+				.price-question {
+					margin-left: 16rpx;
+					cursor: pointer;
 
-			.question-text {
-				font-size: 22rpx;
-				color: #2492F2;
-				text-decoration: underline;
-				transition: color 0.3s ease;
+					.question-text {
+						font-size: 22rpx;
+						color: #2492F2;
+						text-decoration: underline;
+						transition: color 0.3s ease;
 
-				&:active {
-					color: #1976D2;
+						&:active {
+							color: #1976D2;
+						}
+					}
 				}
 			}
 		}
+
+
 
 		.submit-btn {
 			width: 220rpx;
@@ -3341,6 +3375,8 @@
 		padding: 10rpx;
 		background-color: #FFF1F0;
 		border-radius: 8rpx;
+		display: inline-block;
+		width: fit-content;
 
 		.reminder-text {
 			font-size: 20rpx;

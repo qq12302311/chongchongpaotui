@@ -171,6 +171,14 @@
 				"navigationBarTextStyle": "white",
 				"navigationBarBackgroundColor": "#2492F2"
 			}
+		},
+		{
+			"path": "pages/chat/chat-simple",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2"
+			}
 		}
 	],
 	"subPackages": [
@@ -363,6 +371,14 @@
 						"navigationBarTextStyle": "white",
 						"navigationBarBackgroundColor": "#2492F2"
 					}
+				},
+				{
+					"path": "chat-list",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
 				}
 			]
 		},
@@ -486,6 +502,24 @@
 				},
 				{
 					"path": "riderAnalysis/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "骑手数据分析"
+					}
+				},
+				{
+					"path": "chatManage/chatList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "骑手数据分析"
+					}
+				},
+				{
+					"path": "chatManage/chat-simple",
 					"style": {
 						"navigationStyle": "custom",
 						"navigationBarTextStyle": "white",

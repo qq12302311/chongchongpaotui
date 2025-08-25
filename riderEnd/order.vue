@@ -60,7 +60,7 @@
             </view>
             <view class="order-time-row">
               <!-- <text class="order-time">发单时间：{{ order.task_date }}</text> -->
-              <text class="countdown" v-if="order.status === 'assigned' && order.countdown">剩计时：{{ order.countdown }}</text>
+              <text class="countdown" v-if="order.status === 'assigned' && order.countdown && order.countdown !== '未知时间'">倒计时：{{ order.countdown }}</text>
               <text class="countdown" v-else-if="order.status === 'finished' || order.status === 'completed'">任务用时：{{ order.taskDuration }}</text>
             </view>
           </view>
@@ -355,9 +355,10 @@ export default {
               contactName: item.name,
               contactPhone: item.phone_number,
               distance: this.calculateDistance(item.latitude, item.longitude),
-              countdown: this.calculateCountdown(item.deadline),
+              countdown: this.calculateCountdown(item.deadline, item.start_date),
               taskDuration: this.calculateTaskDuration(item.start_date, item.task_assignment?.finished_at),
               deadline: item.deadline,
+              startDate: item.start_date, // 添加开始时间字段
               timeLimit: item.time_limit, // 添加时效字段
               latitude: item.latitude,
               longitude: item.longitude,
@@ -581,23 +582,45 @@ export default {
     },
 
     // 计算倒计时
-    calculateCountdown(deadline) {
-      if (!deadline) return null
+    calculateCountdown(deadline, startDate) {
+      if (!deadline) return '未知时间'
 
-      const endDate = this.parseDate(deadline)
-      if (!endDate) return null
+      try {
+        // 根据订单时长决定提前时间：24小时单提前6小时，48小时以上提前12小时
+        const deadlineDate = new Date(deadline.replace(/-/g, '/'))
 
-      const endTime = endDate.getTime()
-      const now = new Date().getTime()
-      const diff = endTime - now
+        let advanceHours = 6; // 默认提前6小时
+        if (startDate) {
+          const startDateObj = new Date(startDate.replace(/-/g, '/'));
+          const durationHours = (deadlineDate - startDateObj) / (1000 * 60 * 60); // 计算时长（小时）
 
-      if (diff <= 0) return null
+          if (durationHours >= 72) {
+            advanceHours = 18; // 72小时以上提前18小时
+		  } else if (durationHours >= 48) {
+            advanceHours = 12; // 48小时以上提前12小时
+          } else if (durationHours >= 24) {
+            advanceHours = 3;  // 24小时单提前6小时
+          }
+        }
 
-      const hours = Math.floor(diff / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+        deadlineDate.setHours(deadlineDate.getHours() - advanceHours)
+        const deadline_time = deadlineDate.getTime()
+        const now = new Date().getTime()
+        const diff = deadline_time - now
 
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        if (diff <= 0) {
+          return '已超时'
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+        return `${hours}小时${minutes}分${seconds}秒`
+      } catch (e) {
+        console.error('计算倒计时出错:', e)
+        return '计算错误'
+      }
     },
     // 计算任务用时
     calculateTaskDuration(startTime, endTime) {
@@ -657,7 +680,7 @@ export default {
       this.timer = setInterval(() => {
         this.orderList = this.orderList.map(order => ({
           ...order,
-          countdown: this.calculateCountdown(order.deadline)
+          countdown: this.calculateCountdown(order.deadline, order.startDate)
         }))
       }, 1000)
     },

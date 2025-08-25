@@ -290,8 +290,8 @@ export default {
 				// 更新上一页的表单数据
 				const formData = {
 					...prevPage.$vm.formData,
-					address: record.shop_address,
-					detailAddress: record.address || '',
+					address: record.address,
+					detailAddress: record.shop_address || '',
 					longitude: record.longitude,
 					latitude: record.latitude,
 					province: record.province_name || '',

@@ -576,6 +576,12 @@ export default {
 								} else {
 									publishPage.$vm.formData.district = addressComponent.district;
 								}
+								
+								// 修复 万宁市属于行政区，导致无法识别系统区域的问题
+								if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
+									publishPage.$vm.formData.city = addressComponent.district;
+									publishPage.$vm.formData.district = addressComponent.township;
+								}
 							} else if (this.addressType === 'end') {
 								publishPage.$vm.endAddress = item.address;
 								publishPage.$vm.endLocation = {
@@ -687,6 +693,12 @@ export default {
 								publishPage.$vm.formData.province = addressComponent.province;
 								publishPage.$vm.formData.city = addressComponent.city;
 								publishPage.$vm.formData.district = addressComponent.district;
+								
+								// 修复 万宁市属于行政区，导致无法识别系统区域的问题
+								if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
+									publishPage.$vm.formData.city = addressComponent.district;
+									publishPage.$vm.formData.district = addressComponent.township;
+								}
 							} else if (this.addressType === 'end') {
 								publishPage.$vm.endAddress = item.address;
 								publishPage.$vm.endLocation = {

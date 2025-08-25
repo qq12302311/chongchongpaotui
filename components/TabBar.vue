@@ -32,6 +32,14 @@
       <view class="tab-icon order-tab-icon" :class="{ 'active-icon': currentPage === 'order' }"></view>
       <text class="tab-text" :class="{ 'active-text': currentPage === 'order' }">订单管理</text>
     </view>
+    <view
+      class="tab-item"
+      :class="{ active: currentPage === 'chat' }"
+      @click="switchTab('chat')"
+    >
+      <view class="tab-icon chat-tab-icon" :class="{ 'active-icon': currentPage === 'chat' }"></view>
+      <text class="tab-text" :class="{ 'active-text': currentPage === 'chat' }">对话</text>
+    </view>
   </view>
 </template>
 
@@ -250,6 +258,32 @@ export default {
       left: 50%;
       transform: translateX(-50%);
       box-shadow: 0 8rpx 0 #666, 0 16rpx 0 #666;
+    }
+  }
+
+  .chat-tab-icon {
+    &::before {
+      content: '';
+      position: absolute;
+      width: 36rpx;
+      height: 28rpx;
+      border: 3rpx solid #666;
+      border-radius: 18rpx;
+      top: 6rpx;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 8rpx solid #666;
+      border-top: 6rpx solid transparent;
+      border-bottom: 6rpx solid transparent;
+      bottom: 8rpx;
+      left: 20rpx;
     }
   }
 

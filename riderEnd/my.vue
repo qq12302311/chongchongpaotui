@@ -188,7 +188,7 @@
           </view>
         </view>
         <view class="reward-description">
-          <text>！您可获得被推荐骑手订单额2.5%奖金，连续一年</text>
+          <text>！您可获得被推荐骑手订单额2.5%奖金，连续100天</text>
         </view>
         <view class="share-cancel" @click="showShareModal = false">取消</view>
       </view>

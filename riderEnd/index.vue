@@ -103,10 +103,10 @@
                 <text class="ad-emoji">⚡</text>
               </view> -->
               <view class="ad-text">
-                <text class="ad-main-text" style="margin-right: 5px;">推广 |</text>
+                <text class="ad-promotion-text" style="margin-right: 5px;">推广 </text>
                 <text class="ad-main-text">不管您是哪家"充"，我们都在用</text>
                 <text class="ad-brand-text">充充</text>
-                <text class="ad-sub-text">！互助运维！</text>
+                <text class="ad-sub-text">！推荐骑手有奖金！</text>
               </view>
               <!-- <view class="ad-decoration">
                 <view class="ad-sparkle">✨</view>
@@ -273,6 +273,41 @@
       @confirm="goToAuth"
     />
 
+    <!-- 自动撤销任务提醒弹窗 -->
+    <view v-if="showCancelModal" class="cancel-modal-mask" @click="closeCancelModal">
+      <view class="cancel-modal-container" @click.stop>
+        <view class="cancel-modal-header">
+          <text class="cancel-modal-title">任务撤销提醒</text>
+          <view class="cancel-modal-close" @click="closeCancelModal">×</view>
+        </view>
+        <view class="cancel-modal-content">
+          <view v-if="canceledTasks.length === 1" class="single-task">
+            <text class="cancel-text">您有1个任务已被系统自动撤销：</text>
+            <view class="task-item">
+              <text class="task-info">订单号：{{ canceledTasks[0].task.task_no }}</text>
+              <text class="task-info">门店名称：{{ canceledTasks[0].task.task_detail.store_name }}</text>
+              <text class="task-info">撤销时间：{{ formatCancelTime(canceledTasks[0].created_at) }}</text>
+              <text class="task-reason">撤销原因：{{ canceledTasks[0].cancel_reason || '超时未处理' }}</text>
+            </view>
+          </view>
+          <view v-else class="multiple-tasks">
+            <text class="cancel-text">您有{{ canceledTasks.length }}个任务已被系统自动撤销：</text>
+            <scroll-view scroll-y class="task-list">
+              <view v-for="(task, index) in canceledTasks" :key="index" class="task-item">
+                <text class="task-info">订单号：{{ task.task.task_no }}</text>
+                <text class="task-info">门店名称：{{ canceledTasks[0].task.task_detail.store_name  }}</text>
+                <text class="task-info">撤销时间：{{ formatCancelTime(task.created_at) }}</text>
+                <text class="task-reason">撤销原因：{{ task.cancel_reason || '超时未处理' }}</text>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+        <view class="cancel-modal-footer">
+          <view class="modal-btn confirm" @click="closeCancelModal">我知道了</view>
+        </view>
+      </view>
+    </view>
+
     <!-- 隐藏的canvas用于生成分享图片 -->
     <canvas
       canvas-id="shareCanvas"
@@ -312,6 +347,8 @@ export default {
       isRefreshing: false,
       totalCityCount: 0, // 全国已开通城市数量
       showPosterModal: false, // 海报弹窗显示状态
+      showCancelModal: false, // 撤销任务弹窗显示状态
+      canceledTasks: [], // 撤销的任务列表
       posterList: [ // 海报列表
         {
           id: 1,
@@ -420,6 +457,9 @@ export default {
 
     // 检查是否需要显示海报弹窗
     this.checkPosterModal()
+
+    // 检查自动撤销的任务
+    this.checkAutoCanceledTasks()
   },
   onPullDownRefresh() {
     this.refreshList()
@@ -1141,6 +1181,89 @@ export default {
           // 记录今天已显示过海报弹窗
           uni.setStorageSync('riderPosterModalLastShown', today);
         }, 1000);
+      }
+    },
+
+    // 检查自动撤销的任务
+    async checkAutoCanceledTasks() {
+      try {
+        const riderUserInfo = uni.getStorageSync('riderUserInfo');
+        if (!riderUserInfo || !riderUserInfo.id) {
+          return;
+        }
+
+        // 检查今天是否已经弹窗过
+        const today = new Date().toDateString(); // 获取今天的日期字符串
+        const lastShownDate = uni.getStorageSync('cancelModalLastShown');
+
+        if (lastShownDate === today) {
+          console.log('今天已经显示过撤销任务弹窗，跳过');
+          return;
+        }
+
+        // 获取当前时间和24小时前的时间
+        const endDate = new Date();
+        const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+
+        // 格式化时间为 YYYY-MM-DD HH:mm:ss
+        const formatDateTime = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        };
+
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        const params = {
+          start_date: formatDateTime(startDate),
+          end_date: formatDateTime(endDate),
+          service_member_id: riderUserInfo.id,
+          timestamp: timestamp,
+          sign: "chongchong"
+        };
+
+        console.log('检查自动撤销任务参数:', params);
+
+        const res = await this.$request('task/list/autocanceled', params, 'POST');
+
+        console.log('自动撤销任务接口响应:', res.data.data);
+
+        if (res.code === 200 && res.data.data && res.data.data.length > 0) {
+          this.canceledTasks = res.data.data;
+          // 记录今天已经显示过弹窗
+          uni.setStorageSync('cancelModalLastShown', today);
+          // 延迟显示，确保页面加载完成且不与海报弹窗冲突
+          setTimeout(() => {
+            this.showCancelModal = true;
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('检查自动撤销任务失败:', error);
+      }
+    },
+
+    // 关闭撤销任务弹窗
+    closeCancelModal() {
+      this.showCancelModal = false;
+      this.canceledTasks = [];
+    },
+
+    // 格式化撤销时间
+    formatCancelTime(timeStr) {
+      if (!timeStr) return '';
+      try {
+        const date = new Date(timeStr);
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${month}-${day} ${hours}:${minutes}`;
+      } catch (error) {
+        return timeStr;
       }
     },
 
@@ -1989,9 +2112,9 @@ export default {
         position: relative;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         height: 100%;
-        // padding: 0 30rpx;
+        padding-left: 20rpx;
         z-index: 2;
 
         .ad-icon {
@@ -2003,15 +2126,22 @@ export default {
           }
         }
 
-        .ad-text {
-          display: flex;
-          align-items: center;
-          flex-wrap: nowrap;
-          justify-content: center;
-          white-space: nowrap;
+                  .ad-text {
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            white-space: nowrap;
 
-          .ad-main-text {
+            .ad-main-text {
             font-size: 22rpx;
+            color: #2492F2;
+            font-weight: 400;
+            text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+          }
+
+          .ad-promotion-text {
+            font-size: 28rpx;
             color: #2492F2;
             font-weight: 400;
             text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
@@ -2027,7 +2157,7 @@ export default {
           }
 
           .ad-sub-text {
-            font-size: 24rpx;
+            font-size: 26rpx;
             color: #2492F2;
             font-weight: 400;
             text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
@@ -2791,6 +2921,146 @@ export default {
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+// 撤销任务弹窗样式
+.cancel-modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.cancel-modal-container {
+  width: 85%;
+  max-width: 600rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+}
+
+.cancel-modal-header {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  color: #fff;
+  padding: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+
+  .cancel-modal-title {
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+
+  .cancel-modal-close {
+    font-size: 40rpx;
+    font-weight: 300;
+    cursor: pointer;
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+
+    &:active {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.cancel-modal-content {
+  padding: 30rpx;
+  max-height: 500rpx;
+
+  .cancel-text {
+    font-size: 28rpx;
+    color: #333;
+    margin-bottom: 20rpx;
+    display: block;
+    font-weight: 500;
+  }
+
+  .single-task {
+    .task-item {
+      background-color: #f8f9fa;
+      border-radius: 12rpx;
+      padding: 20rpx;
+      margin-top: 15rpx;
+    }
+  }
+
+  .multiple-tasks {
+    .task-list {
+      max-height: 300rpx;
+      margin-top: 15rpx;
+    }
+
+    .task-item {
+      background-color: #f8f9fa;
+      border-radius: 12rpx;
+      padding: 20rpx;
+      margin-bottom: 15rpx;
+      border-left: 4rpx solid #ff6b6b;
+    }
+  }
+
+  .task-item {
+    .task-info {
+      font-size: 26rpx;
+      color: #666;
+      display: block;
+      margin-bottom: 8rpx;
+      line-height: 1.4;
+    }
+
+    .task-reason {
+      font-size: 24rpx;
+      color: #ff6b6b;
+      display: block;
+      font-weight: 500;
+    }
+  }
+}
+
+.cancel-modal-footer {
+  padding: 20rpx 30rpx 30rpx;
+  display: flex;
+  justify-content: center;
+
+  .modal-btn {
+    flex: 1;
+    height: 80rpx;
+    border-radius: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28rpx;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &.confirm {
+      background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+      color: #fff;
+
+      &:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+    }
   }
 }
 </style>

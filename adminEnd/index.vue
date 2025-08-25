@@ -222,6 +222,33 @@
       </view>
     </view>
 
+    <!-- 对话管理内容 -->
+    <view v-if="pageVisible.chat" class="page-content">
+      <view class="chat-management">
+        <!-- 对话管理说明文字 -->
+        <view class="section-header">
+          <view class="section-title">对话管理</view>
+          <view class="section-desc">管理和查看所有对话信息</view>
+        </view>
+
+        <!-- 对话功能卡片 -->
+        <view class="card-grid">
+          <view class="card" @click="navigateToChatList">
+            <view class="card-content">
+              <view class="card-icon-wrapper chat-color">
+                <view class="card-icon chat-list-icon"></view>
+              </view>
+              <view class="card-info">
+                <text class="card-title">对话列表</text>
+                <text class="card-desc">查看全部对话记录</text>
+              </view>
+            </view>
+            <view class="card-arrow"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部导航栏组件 -->
     <tab-bar :currentPage="currentPage" @change="switchPage"></tab-bar>
 
@@ -244,13 +271,14 @@ export default {
   data() {
     return {
       navBarHeight: 0,
-      currentPage: 'user', // 当前页面：home, user, rider, order
+      currentPage: 'user', // 当前页面：home, user, rider, order, chat
       // 各页面的内容显示状态
       pageVisible: {
         home: false,
         user: true,
         rider: false,
-        order: false
+        order: false,
+        chat: false
       },
       riderUserInfo: null,
       userLevel: 0,
@@ -263,7 +291,8 @@ export default {
         'home': '充充跑腿运维端',
         'user': '用户端管理',
         'rider': '骑手端管理',
-        'order': '订单管理'
+        'order': '订单管理',
+        'chat': '对话管理'
       }
       return titles[this.currentPage] || '充充跑腿运维端'
     }
@@ -360,6 +389,11 @@ export default {
     },
     navigateToOrderAnalysis() {
       uni.navigateTo({ url: '/adminEnd/orderManage/orderAnalysis' })
+    },
+
+    // 导航到对话列表页面
+    navigateToChatList() {
+      uni.navigateTo({ url: '/adminEnd/chatManage/chatList' })
     },
 
 
@@ -716,6 +750,10 @@ export default {
     &.setting-color {
       background: linear-gradient(135deg, rgba(253, 121, 168, 0.1) 0%, rgba(255, 118, 117, 0.2) 100%);
     }
+
+    &.chat-color {
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1) 0%, rgba(130, 88, 186, 0.2) 100%);
+    }
   }
 
   .card-icon {
@@ -865,6 +903,33 @@ export default {
         box-shadow:
           10rpx 0 0 #FFE66D,
           20rpx 0 0 #A8E6CF;
+      }
+    }
+
+    &.chat-list-icon {
+      // 对话列表图标 - 聊天气泡样式
+      &::before {
+        content: '';
+        position: absolute;
+        width: 32rpx;
+        height: 24rpx;
+        border: 3rpx solid #6c5ce7;
+        border-radius: 16rpx;
+        top: 8rpx;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-left: 6rpx solid #6c5ce7;
+        border-top: 4rpx solid transparent;
+        border-bottom: 4rpx solid transparent;
+        bottom: 12rpx;
+        left: 16rpx;
       }
     }
   }
@@ -1245,6 +1310,14 @@ export default {
 
 // 订单管理样式
 .order-management {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20rpx;
+}
+
+// 对话管理样式
+.chat-management {
   display: flex;
   flex-direction: column;
   height: 100%;

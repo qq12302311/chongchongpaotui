@@ -225,8 +225,8 @@
 		</view>
 
 		<!-- 微信申请协同处理按钮 -->
-		<view @click="showRegionWechat" class="wachat">
-			<text class="wechat-label">微信</text>
+		<view @click="goToChat" class="wachat">
+			<text class="wechat-label">前往</text>
 			<text class="apply-text">申请平台和客户协同处理</text>
 		</view>
 
@@ -234,6 +234,13 @@
 		<view class="feedback-card" v-if="orderInfo.status === 'finished' || orderInfo.status === 'completed'">
 			<view class="card-title">
 				<text>完成反馈</text>
+				<!-- 再次修改按钮，只在订单状态为待用户确认时显示 -->
+				<button
+					v-if="orderInfo.status === 'finished'"
+					class="modify-btn"
+					@click="modifyFeedback">
+					再次修改
+				</button>
 			</view>
 			<view class="feedback-content">
 				<view class="feedback-info">
@@ -329,10 +336,10 @@
 				<image src="https://ccpt.qiniu.0871.cn/rider/home.png" mode="aspectFit"></image>
 				<text>接单大厅</text>
 			</view>
-			<view class="chat-btn" @click="goToChat">
+			<!-- <view class="chat-btn" @click="goToChat">
 				<image src="https://ccpt.qiniu.0871.cn/rider/chat.png" mode="aspectFit"></image>
 				<text>聊天</text>
-			</view>
+			</view> -->
 			<template v-if="orderInfo.status === 'assigned'">
 				<button class="cancel-btn" @click="showCancelConfirm">放弃</button>
 				<button class="confirm-btn" @click="showFeedbackPopup">提交完成订单反馈</button>
@@ -511,6 +518,7 @@
 				feedbackRemark: '',
 				otherFeedback: '',
 				showCancelModal: false, // 控制放弃任务弹窗显示
+				isModifyMode: false, // 标识是否为修改模式
 				// 区域微信号映射
 				regionWechatMap: {
 					'京津冀 东三省 内蒙 海南': 'HKxgs2020',
@@ -561,11 +569,13 @@
 						const startDate = new Date(this.orderInfo.start_date.replace(/-/g, '/'));
 						const durationHours = (deadlineDate - startDate) / (1000 * 60 * 60); // 计算时长（小时）
 
-						if (durationHours >= 48) {
-							advanceHours = 12; // 48小时以上提前12小时
-						} else if (durationHours >= 24) {
-							advanceHours = 6;  // 24小时单提前6小时
-						}
+					  if (durationHours >= 72) {
+						advanceHours = 18; // 72小时以上提前18小时
+					  } else if (durationHours >= 48) {
+						advanceHours = 12; // 48小时以上提前12小时
+					  } else if (durationHours >= 24) {
+						advanceHours = 3;  // 24小时单提前6小时
+					  }
 					}
 
 					deadlineDate.setHours(deadlineDate.getHours() - advanceHours)
@@ -819,10 +829,28 @@
 				})
 			},
 			showFeedbackPopup() {
+				// 如果不是修改模式，清空所有数据
+				if (!this.isModifyMode) {
+					this.clearFeedbackData();
+				}
 				this.showPopup = true
+			},
+
+			// 清空反馈数据
+			clearFeedbackData() {
+				this.feedbackImages = {
+					checkin: '',
+					before: '',
+					after: ''
+				};
+				this.otherImages = [];
+				this.feedbackRemark = '';
+				this.otherFeedback = '';
 			},
 			closeFeedbackPopup() {
 				this.showPopup = false
+				// 重置修改模式标识
+				this.isModifyMode = false
 			},
 			async chooseImage(type) {
 				try {
@@ -1007,20 +1035,36 @@
 
 					// 构建提交数据
 					const submitData = {
-						task_id: this.taskId,
+						task_id: parseInt(this.taskId),
 						service_member_id: this.riderUserInfo.id,
 						after_pic_url: imageArray,
 						after_detail: this.feedbackRemark,
 						additional_feedback: this.otherFeedback,
-						sign: sign
+						sign: this.isModifyMode ? 'chongchong' : sign
 					};
 
-					// 发送请求
-					const res = await this.$request('task/finish', submitData, 'POST');
+					let res;
+					// 根据是否为修改模式调用不同的接口
+					if (this.isModifyMode) {
+						// 修改模式：调用更新接口
+						res = await uni.request({
+							url: 'https://ccpt.0871.cn/api/task/finish/update',
+							method: 'POST',
+							data: submitData,
+							header: {
+								'Content-Type': 'application/json'
+							}
+						});
+						// 处理uni.request的响应格式
+						res = res.data;
+					} else {
+						// 新建模式：调用原有接口
+						res = await this.$request('task/finish', submitData, 'POST');
+					}
 
 					if (res.code === 200) {
 						uni.showToast({
-							title: '提交成功',
+							title: this.isModifyMode ? '修改成功' : '提交成功',
 							icon: 'success'
 						});
 						// 关闭弹窗
@@ -1029,7 +1073,7 @@
 						this.getTaskInfo();
 					} else {
 						uni.showToast({
-							title: res.message || '提交失败',
+							title: res.message || (this.isModifyMode ? '修改失败' : '提交失败'),
 							icon: 'none'
 						});
 					}
@@ -1221,6 +1265,52 @@
 						});
 					}
 				});
+			},
+
+			// 再次修改完成反馈
+			modifyFeedback() {
+				// 设置为修改模式
+				this.isModifyMode = true;
+
+				// 预填充已提交的反馈数据
+				this.prefillFeedbackData();
+
+				// 打开反馈弹窗
+				this.showFeedbackPopup();
+			},
+
+			// 预填充反馈数据
+			prefillFeedbackData() {
+				if (!this.orderInfo.task_assignment) return;
+
+				const assignment = this.orderInfo.task_assignment;
+
+				// 预填充文本内容
+				this.feedbackRemark = assignment.after_detail || '';
+				this.otherFeedback = assignment.additional_feedback || '';
+
+				// 预填充图片
+				if (assignment.after_pic_url && assignment.after_pic_url.length > 0) {
+					const images = assignment.after_pic_url;
+
+					// 根据图片数量和位置预填充
+					// 第一张：到店打卡
+					if (images[0]) {
+						this.feedbackImages.checkin = images[0];
+					}
+					// 第二张：维护前
+					if (images[1]) {
+						this.feedbackImages.before = images[1];
+					}
+					// 第三张：维护后
+					if (images[2]) {
+						this.feedbackImages.after = images[2];
+					}
+					// 其他图片（第4张及以后）
+					if (images.length > 3) {
+						this.otherImages = images.slice(3);
+					}
+				}
 			},
 		}
 	}
@@ -2096,12 +2186,33 @@
 		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 
 		.card-title {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
 			font-size: 32rpx;
 			font-weight: 500;
 			color: #333;
 			margin-bottom: 20rpx;
 			border-left: 8rpx solid #2492F2;
 			padding-left: 20rpx;
+
+			.modify-btn {
+				background-color: #2492F2;
+				color: #fff;
+				border: none;
+				border-radius: 20rpx;
+				padding: 8rpx 20rpx;
+				font-size: 24rpx;
+				font-weight: 400;
+				margin: 0;
+				min-width: auto;
+				height: auto;
+				line-height: 1;
+
+				&:active {
+					background-color: #1976D2;
+				}
+			}
 		}
 
 		.feedback-content, .confirm-content {

@@ -11,7 +11,7 @@ export default {
     // 图片地址
     imageSrc: {
       type: String,
-      default: 'https://ccpt.qiniu.0871.cn/xuanfu1.png'
+      default: 'https://ccpt.qiniu.0871.cn/tuijian.png'
     },
     // 点击跳转的页面路径
     targetUrl: {
@@ -109,7 +109,7 @@ export default {
   right: 20rpx;
   bottom: calc(160rpx + env(safe-area-inset-bottom)); // 底部导航上面，位置上移
   width: 150rpx;
-  height: 150rpx;
+  height: 200rpx;
   z-index: 999;
   transition: all 0.3s ease;
 
@@ -119,7 +119,7 @@ export default {
 
   image {
     width: 150rpx;
-    height: 150rpx;
+    height: 200rpx;
   }
 }
 </style>

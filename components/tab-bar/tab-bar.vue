@@ -33,7 +33,7 @@
 				>
 					<image
 						class="icon"
-						:src="current === 2 ? 'https://ccpt.qiniu.0871.cn/duihua-active.svg' : 'https://ccpt.qiniu.0871.cn/duihua.svg'"
+						:src="current === 2 ? 'https://ccpt.qiniu.0871.cn/duihua2-active.svg' : 'https://ccpt.qiniu.0871.cn/duihua2.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 2 }">对话</text>
 				</view>

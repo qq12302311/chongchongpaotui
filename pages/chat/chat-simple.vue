@@ -112,10 +112,10 @@
 			this.title = options.title ? decodeURIComponent(options.title) : '订单协办'
 			
 			// 获取用户信息
-			const riderUserInfo = uni.getStorageSync('riderUserInfo')
+			const userInfo = uni.getStorageSync('userInfo')
 			this.user = {
-				id: riderUserInfo.id,
-				name: riderUserInfo.name || riderUserInfo.phone || '用户',
+				id: userInfo.user_id,
+				name: userInfo.name || userInfo.phone || '用户',
 				room_id: this.roomId
 			}
 
@@ -195,9 +195,7 @@
 					console.log('WebSocket连接已打开', res)
 					this.connectionStatus = 'connected'
 					this.reconnectCount = 0
-					// this.addMessage('系统', `已连接到聊天室 ${this.roomId}`, 'system')
 					this.addMessage('系统', `欢迎大家进入订单协办临时群（三方）！为保障各方权益，不得私留联系方式！业务沟通仅限本群进行，三方参与！感谢大家理解与配合！`, 'system')
-					// this.addMessage('系统', `已连接到聊天室 ${this.roomId}`, 'system')
 
 					// 启动心跳
 					// this.startHeartbeat()
@@ -367,7 +365,7 @@
 				console.log('准备发送消息:', payload)
 
 				// 先显示自己的消息
-				const userInfo = uni.getStorageSync('riderUserInfo')
+				const userInfo = uni.getStorageSync('userInfo')
 				const selfAvatar = userInfo.avatar || null
 				this.addMessage('我', checkedMessage, 'self', selfAvatar)
 				this.messageInput = '' // 立即清空输入框
@@ -456,8 +454,8 @@
 					method: 'POST',
 					data: {
 						room_id: this.roomId,
-						service_member_id: this.user.id,
-						messageable_type : "service_member",
+						user_id: this.user.id,
+						messageable_type : "user",
 						timestamp: Math.floor(Date.now() / 1000),
 						sign: 'chongchong'
 					},

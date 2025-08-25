@@ -1244,6 +1244,12 @@
 										} else {
 											publishPage.$vm.formData.district = selectedLocation.addressComponent.district;
 										}
+								
+										// 修复 万宁市属于行政区，导致无法识别系统区域的问题
+										if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
+											publishPage.$vm.formData.city = selectedLocation.addressComponent.district;
+											publishPage.$vm.formData.district = selectedLocation.addressComponent.township;
+										}
 									} else if (this.addressType === 'end') {
 										publishPage.$vm.endAddress = selectedLocation.address;
 										publishPage.$vm.endLocation = {

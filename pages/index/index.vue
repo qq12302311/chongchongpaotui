@@ -130,10 +130,16 @@ export default {
 			showPosterModal: false, // 海报弹窗显示状态
 			posterList: [ // 海报列表
 				{
-					id: 1,
-					image: 'https://ccpt.qiniu.0871.cn/p13.png',
-					title: '海报1',
-					url: ''
+				  id: 1,
+				  image: 'https://ccpt.qiniu.0871.cn/banner123.png',
+				  title: '海报1',
+				  url: ''
+				},
+				{
+				  id: 2,
+				  image: 'https://ccpt.qiniu.0871.cn/banner20.png',
+				  title: '海报2',
+				  url: ''
 				}
 				// {
 				// 	id: 2,

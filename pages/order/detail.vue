@@ -37,30 +37,6 @@
 						</view>
 					</view>
 				</block>
-				<view class="order-info-row">
-					<view class="left-info">
-						<view class="order-number">
-							<text>订单编号：{{orderInfo.task_no}}</text>
-						</view>
-						<!-- 等待接单状态 -->
-						<view v-if="orderInfo.status === 'waiting'" class="waiting-status">等待接单...</view>
-						<!-- 进行中状态 -->
-						<view v-if="orderInfo.status === 'assigned'" class="assigned-status">进行中...</view>
-						<!-- 完成待确认状态 -->
-						<view v-if="orderInfo.status === 'finished'" class="finished-status">完成待确认...</view>
-						<!-- 已完成状态 -->
-						<view v-if="orderInfo.status === 'completed'" class="completed-status">已完成...</view>
-						<!-- 超时完成状态 -->
-						<view v-if="orderInfo.status === 'finished_timeout'" class="timeout-status">超时完成...</view>
-						<view class="order-time">
-							<text>发布时间：{{orderInfo.task_date}}</text>
-						</view>
-						<!-- 等待接单提示 -->
-						<view v-if="orderInfo.status === 'waiting'" class="waiting-tip">
-							<text>骑手将在时效范围内随时接单/完单，请耐心等候</text>
-						</view>
-					</view>
-				</view>
 
 
 				<view class="divider"></view>
@@ -74,11 +50,14 @@
 					  mode="aspectFit">
 					</image>
 					<!-- <image class="order-icon" src="https://ccpt.qiniu.0871.cn/publish/banner.png" mode="aspectFit"> -->
-					</image>
 					<view class="title-content">
 						<view class="main-title">【{{orderInfo.task_name}}】 充充跑腿订单</view>
-						<!-- <view class="contact">{{orderInfo.name}} {{orderInfo.phone_number}}</view> -->
-						<view class="order-price">¥{{orderInfo.order_amount}}</view>
+						<view class="meta-row">
+							<text class="meta-number">订单编号：{{orderInfo.task_no}}</text>
+						</view>
+						<view class="meta-row">
+							<text class="meta-time">发布时间：{{orderInfo.task_date}}</text>
+						</view>
 					</view>
 				</view>
 
@@ -174,9 +153,21 @@
 						</view>
 					</view>
 					<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.additional_notes"></view>
-					<view class="detail-item price-title">
+					
+					<!-- 价格明细（可展开） -->
+					<view class="detail-item price-detail-toggle" @click="togglePriceDetail">
 						<view class="item-dot"></view>
-						<view class="item-label">价格明细：</view>
+						<view class="item-label">价格明细</view>
+						<view class="price-toggle">
+							<!-- <text class="price-summary">¥{{orderInfo.order_amount}}</text> -->
+							<view class="toggle-icon" :class="{ 'expanded': showPriceDetail }">
+								<uni-icons type="bottom" size="16" color="#2492F2"></uni-icons>
+							</view>
+						</view>
+					</view>
+					
+					<!-- 价格明细展开内容 -->
+					<view class="price-detail-content" v-if="showPriceDetail">
 						<view class="price-items">
 							<view class="price-item">
 								<text class="label">基础服务费</text>
@@ -192,6 +183,7 @@
 							</view>
 						</view>
 					</view>
+					
 					<view class="divider"></view>
 					</view>
 					<!-- 模糊效果层 -->
@@ -395,6 +387,7 @@
 					extra_amount: 0
 				},
 				isFullyExpanded: false,
+				showPriceDetail: false,
 				showCancelModal: false,
 				cancelModalData: {
 					title: '',
@@ -747,6 +740,11 @@
 			toggleFullExpand() {
 				this.isFullyExpanded = !this.isFullyExpanded
 			},
+			
+			// 切换价格明细的展开/收起状态
+			togglePriceDetail() {
+				this.showPriceDetail = !this.showPriceDetail
+			},
 			// 格式化日期时间
 			formatDateTime(dateTimeStr) {
 				if (!dateTimeStr) return '未知时间';
@@ -1097,12 +1095,21 @@
 						margin-bottom: 10rpx;
 					}
 
-					.order-price {
-						font-size: 36rpx;
-						color: #ff4d4f;
-						font-weight: 500;
+											.meta-row {
+							display: flex;
+							align-items: center;
+							gap: 20rpx;
+							margin-top: 6rpx;
+						}
+						.meta-number {
+							font-size: 24rpx;
+							color: #666;
+						}
+						.meta-time {
+							font-size: 24rpx;
+							color: #999;
+						}
 					}
-				}
 			}
 
 
@@ -1343,19 +1350,6 @@
 			padding-bottom: 20rpx;
 			border-bottom: 2rpx solid #f5f5f5;
 
-			&.price-title {
-				border-bottom: none;
-				margin-bottom: 0;
-				padding-bottom: 0;
-				align-items: center;
-
-				.price-items {
-					flex: 1;
-					display: flex;
-					flex-direction: column;
-					align-items: flex-end;
-				}
-			}
 
 			.item-dot {
 				width: 12rpx;
@@ -1390,9 +1384,49 @@
 			}
 		}
 
+		.price-detail-toggle {
+			cursor: pointer;
+			transition: background-color 0.2s;
+			
+			&:hover {
+				background-color: #f8f9fa;
+			}
+			
+			.price-toggle {
+				display: flex;
+				align-items: center;
+				width: 100%;
+				
+				.price-summary {
+					font-size: 32rpx;
+					color: #ff4d4f;
+					font-weight: 500;
+					margin-left: auto;
+					margin-right: 12rpx;
+				}
+				
+				.toggle-icon {
+					transition: transform 0.3s ease;
+					flex-shrink: 0;
+					
+					&.expanded {
+						transform: rotate(180deg);
+					}
+				}
+			}
+		}
+		
+		.price-detail-content {
+			margin-top: 16rpx;
+			padding: 20rpx;
+			background-color: #f8f9fa;
+			border-radius: 8rpx;
+			margin-left: 40rpx;
+		}
+		
 		.price-item {
 			display: flex;
-			justify-content: flex-end;
+			justify-content: space-between;
 			align-items: center;
 			margin-bottom: 10rpx;
 
@@ -1403,20 +1437,22 @@
 			.label {
 				font-size: 28rpx;
 				color: #333;
-				margin-right: 20rpx;
+				flex: 1;
 			}
 
 			.value {
 				font-size: 28rpx;
 				color: #333;
-				min-width: 120rpx;
+				font-weight: 500;
 				text-align: right;
+				min-width: 120rpx;
 			}
 
 			&.total {
 				margin-top: 10rpx;
-				border-top: 2rpx solid #f5f5f5;
+				border-top: 2rpx solid #e8e8e8;
 				padding-top: 10rpx;
+				font-weight: 600;
 			}
 		}
 

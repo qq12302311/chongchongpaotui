@@ -17,18 +17,22 @@
 
     <!-- 顶部背景 -->
     <view class="top-bg">
-      <image class="logo" src="https://ccpt.qiniu.0871.cn/rider/logo.png" mode="aspectFit"></image>
-      <view class="welcome-text">欢迎注册充充跑腿骑手端</view>
+      <!-- <image class="logo" src="https://ccpt.qiniu.0871.cn/rider/logo.png" mode="aspectFit"></image>
+      <view class="welcome-text">欢迎注册充充跑腿骑手端</view> -->
     </view>
 
     <!-- 注册表单 -->
     <view class="register-form">
       <!-- 标题和推荐人信息 -->
       <view class="form-header">
-        <view class="form-title">欢迎注册充充骑手账号！</view>
-        <view class="referrer-info" v-if="referrerId">
-          <text class="referrer-text">推荐人 {{ formattedReferrerId }}</text>
+        <view class="header-top">
+          <view class="form-title">欢迎注册充充骑手账号！</view>
+          <view class="referrer-info" v-if="referrerId">
+            <text class="referrer-text">推荐人 {{ formattedReferrerId }}</text>
+          </view>
         </view>
+        <!-- 说明文字 -->
+        <view class="notice-text">(限共享充电宝从业人员入驻)</view>
       </view>
 
       <!-- 服务商选择 -->
@@ -362,7 +366,10 @@
             :class="{ 'brand-selected': isBrandSelected(brand.value) }"
             @click="toggleBrandSelection(brand.value)"
           >
-            <text class="brand-name">{{ brand.label }}</text>
+            <view class="brand-content">
+              <text class="brand-name">{{ getBrandName(brand) }}</text>
+              <text class="brand-description">{{ getBrandDescription(brand) }}</text>
+            </view>
             <text class="check-icon" v-if="isBrandSelected(brand.value)">✓</text>
           </view>
         </scroll-view>
@@ -460,7 +467,7 @@ export default {
       // 可服务品牌选择相关
       showServiceBrandsPicker: false,
       serviceBrands: [
-        { label: '美团（自带美团大象APP工作账号)）', value: 'meituan' },
+        { label: '美团（自带美团大象APP工作账号）', value: 'meituan' },
         { label: '怪兽（自带怪兽赤兔APP工作账号）', value: 'guaishou' },
         { label: '竹芒（自带竹芒合伙人APP工作账号）', value: 'zhumang' },
         { label: '小电（自带小电电小二APP工作账号）', value: 'xiaodian' }
@@ -1399,6 +1406,24 @@ export default {
       return brand ? brand.label : brandValue;
     },
 
+    // 获取品牌名称（括号前的部分）
+    getBrandName(brand) {
+      const label = brand.label;
+      const index = label.indexOf('（');
+      return index !== -1 ? label.substring(0, index) : label;
+    },
+
+    // 获取品牌描述（括号内的部分）
+    getBrandDescription(brand) {
+      const label = brand.label;
+      const startIndex = label.indexOf('（');
+      const endIndex = label.indexOf('）');
+      if (startIndex !== -1 && endIndex !== -1) {
+        return label.substring(startIndex, endIndex + 1);
+      }
+      return '';
+    },
+
     removeBrand(index) {
       this.formData.service_brands.splice(index, 1);
       this.validateServiceBrands();
@@ -1591,17 +1616,19 @@ export default {
 
 .nav-placeholder {
   height: 90px; /* 根据实际导航栏高度调整 */
+  background: linear-gradient(180deg, #4094F4, #4C98F1);
 }
 
 .top-bg {
-  height: 400rpx;
-  background: linear-gradient(135deg, #2492F2, #1a7ad9);
+  height: 300rpx;
+  background: url('https://ccpt.qiniu.0871.cn/rider/crea_banner.png') no-repeat center center;
+  background-size: cover;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-top: -90px;
+  // margin-top: -90px;
   padding-top: 60px;
 
   &::after {
@@ -1636,10 +1663,14 @@ export default {
 
   // 标题和推荐人信息水平布局
   .form-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 60rpx;
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20rpx;
+    }
 
     .form-title {
       font-size: 40rpx;
@@ -1653,6 +1684,12 @@ export default {
         color: #999;
         white-space: nowrap;
       }
+    }
+
+    .notice-text {
+      font-size: 24rpx;
+      color: #ff4444;
+      margin-top: 10rpx;
     }
   }
 
@@ -2148,10 +2185,25 @@ export default {
           background-color: #f0f9ff;
         }
 
+        .brand-content {
+          flex: 1;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 12rpx;
+        }
+
         .brand-name {
           font-size: 30rpx;
           color: #333;
           font-weight: 500;
+          line-height: 1.2;
+        }
+
+        .brand-description {
+          font-size: 24rpx;
+          color: #ff4444;
+          line-height: 1.2;
         }
 
         .check-icon {

@@ -108,7 +108,7 @@
 			this.navBarHeight = menuButtonInfo.bottom + 12
 
 			// 获取参数
-			this.roomId = options.roomId || '1040'
+			this.roomId = options.room_id
 			this.title = options.title ? decodeURIComponent(options.title) : '订单协办'
 			
 			// 获取用户信息
@@ -195,9 +195,7 @@
 					console.log('WebSocket连接已打开', res)
 					this.connectionStatus = 'connected'
 					this.reconnectCount = 0
-					// this.addMessage('系统', `已连接到聊天室 ${this.roomId}`, 'system')
 					this.addMessage('系统', `欢迎大家进入订单协办临时群（三方）！为保障各方权益，不得私留联系方式！业务沟通仅限本群进行，三方参与！感谢大家理解与配合！`, 'system')
-					// this.addMessage('系统', `已连接到聊天室 ${this.roomId}`, 'system')
 
 					// 启动心跳
 					// this.startHeartbeat()

@@ -73,6 +73,91 @@
         </view>
       </view>
 
+      <!-- 省份用户分布图 - 暂时隐藏 -->
+      <!-- <view class="chart-section">
+        <view class="chart-header">
+          <view class="chart-title">省份用户分布</view>
+        </view>
+        <view class="chart-container province-chart">
+          <qiun-data-charts
+            v-if="provinceChartData && provinceChartData.series && provinceChartData.series.length > 0"
+            type="column"
+            :opts="provinceChartOpts"
+            :chartData="provinceChartData"
+            :ontouch="true"
+            :tapLegend="true"
+            :tooltipShow="true"
+            :canvas2d="true"
+            canvasId="provinceChart"
+            @getIndex="getProvinceChartIndex"
+            @getLegendIndex="getProvinceLegendIndex"
+          />
+          <view v-else class="chart-loading">
+            <text>省份数据加载中...</text>
+          </view>
+        </view>
+      </view> -->
+
+      <!-- 用户下单排行榜 -->
+      <view class="ranking-section">
+        <view class="ranking-header">
+          <view class="ranking-title">用户下单排行榜</view>
+          <view class="sort-filter">
+            <view 
+              class="sort-item" 
+              :class="{ active: sortField === 'user_id' }"
+              @click="changeSortField('user_id')"
+            >用户ID</view>
+            <view 
+              class="sort-item" 
+              :class="{ active: sortField === 'task_count' }"
+              @click="changeSortField('task_count')"
+            >订单数</view>
+            <view 
+              class="sort-item" 
+              :class="{ active: sortField === 'total_amount' }"
+              @click="changeSortField('total_amount')"
+            >金额</view>
+          </view>
+        </view>
+        <view class="ranking-container">
+          <view v-if="rankingLoading" class="ranking-loading">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="rankingData && rankingData.length > 0" class="ranking-list">
+            <view class="ranking-table">
+              <view class="table-header">
+                <view class="header-cell rank">排名</view>
+                <view class="header-cell user-id">用户ID</view>
+                <view class="header-cell order-count">订单数</view>
+                <view class="header-cell amount">金额(元)</view>
+              </view>
+              <view class="table-body">
+                <view 
+                  v-for="(item, index) in rankingData" 
+                  :key="index" 
+                  class="table-row"
+                  :class="{ 'top-three': index < 3 }"
+                >
+                  <view class="table-cell rank">
+                    <view class="rank-number" :class="index === 0 ? 'rank-first' : index === 1 ? 'rank-second' : index === 2 ? 'rank-third' : 'rank-normal'">
+                      {{ index + 1 }}
+                    </view>
+                  </view>
+                  <view class="table-cell user-id">{{ item.user_id || '--' }}</view>
+                  <view class="table-cell order-count">{{ item.task_count || 0 }}</view>
+                  <view class="table-cell amount">{{ formatAmount(item.total_amount) }}</view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view v-else class="ranking-empty">
+            <text>暂无排行数据</text>
+          </view>
+        </view>
+      </view>
+
 
     </view>
 
@@ -91,7 +176,7 @@ export default {
   data() {
     return {
       chartOpts: {
-        color: ["#2492F2", "#52C41A", "#FF6B35", "#FF4D4F"],
+        color: ["#2492F2", "#52C41A", "#FF6B35", "#FF4D4F", "#722ED1", "#EB2F96"],
         padding: [15, 10, 0, 15],
         enableScroll: true,
         legend: {},
@@ -112,6 +197,33 @@ export default {
           },
         },
       },
+      // 省份图表配置
+      provinceChartOpts: {
+        color: ["#1890FF", "#52C41A", "#FA8C16", "#F5222D", "#722ED1", "#EB2F96"],
+        padding: [15, 15, 0, 15],
+        enableScroll: true,
+        legend: {},
+        xAxis: {
+          disableGrid: false,
+          scrollShow: true,
+          itemCount: 6,
+          rotateLabel: true,
+          fontSize: 10
+        },
+        yAxis: {
+          gridType: "dash",
+          dashLength: 2,
+          fontSize: 12
+        },
+        extra: {
+          column: {
+            type: "group",
+            width: 20,
+            activeBgColor: "#F4F4F4",
+            activeBgOpacity: 0.3
+          }
+        }
+      },
       navBarHeight: 0,
       loading: false,
       analysisData: {},
@@ -120,6 +232,13 @@ export default {
       registerChartData: null,
       // 时间类型选择
       registerTimeType: 1, // 用户注册图表时间类型：1-日, 2-周, 3-月，默认选中日
+      // 省份用户分布图表数据
+      provinceChartData: null,
+      // 用户下单排行榜相关
+      rankingData: null,
+      rankingLoading: false,
+      sortField: 'task_count', // 默认按订单数排序
+      sortOrder: 'desc',
     }
   },
 
@@ -135,6 +254,9 @@ export default {
 
     // 加载数据
     this.loadAnalysisData();
+    
+    // 加载排行榜数据
+    this.loadRankingData();
   },
 
   methods: {
@@ -175,19 +297,23 @@ export default {
         console.log('🔍 res.data.total:', res.data ? res.data.total : 'res.data不存在');
 
         if (res.status === 'success' && res.data) {
-          // 检查total字段在哪个层级
-          let dataToProcess = res.data;
+          // 检查total字段在哪个层级，并合并所有可能的数据字段
+          let dataToProcess = { ...res.data };
 
-          // 如果res.data中没有total，但res中有total，则合并数据
+          // 如果res.data中没有total，但res中有total，则合并total
           if (!res.data.total && res.total) {
             console.log('🔧 total字段在res根级别，合并到data中');
-            dataToProcess = {
-              ...res.data,
-              total: res.total
-            };
+            dataToProcess.total = res.total;
+          }
+
+          // 如果res.data中没有province_members，但res中有province_members，则合并province_members
+          if (!res.data.province_members && res.province_members) {
+            console.log('🔧 province_members字段在res根级别，合并到data中');
+            dataToProcess.province_members = res.province_members;
           }
 
           console.log('📊 最终传递给processAnalysisData的数据:', dataToProcess);
+          console.log('🔍 dataToProcess.province_members:', dataToProcess.province_members);
           this.processAnalysisData(dataToProcess);
         } else {
           uni.showToast({
@@ -289,6 +415,9 @@ export default {
 
       // 处理图表数据
       this.generateRegisterChartData(data);
+      
+      // 处理省份用户分布数据
+      this.generateProvinceChartData(data);
 
       console.log('🎯 最终处理后的用户分析数据:', {
         analysisData: this.analysisData,
@@ -315,6 +444,15 @@ export default {
             {
               name: "新增用户",
               data: [25, 32, 18, 28, 15, 42, 35]
+            },
+            {
+              name: "推荐注册", 
+              data: [5, 8, 4, 6, 3, 9, 7],
+              show: false // 默认隐藏
+            },
+            {
+              name: "每日下单用户",
+              data: [20, 28, 15, 23, 12, 35, 30]
             }
           ]
         };
@@ -334,34 +472,89 @@ export default {
         console.log(`📊 用户系列${index}: name="${s.name}", data长度=${s.data ? s.data.length : 0}`);
       });
 
-      // 查找注册用户系列（可能的名称：每日注册用户、每周注册用户、每月注册用户）
-      let registerSeries = data.series.find(s =>
-        s.name === '每日注册用户' ||
-        s.name === '每周注册用户' ||
-        s.name === '每月注册用户' ||
-        s.name.includes('注册用户') ||
-        s.name.includes('注册') ||
-        s.name.includes('用户')
-      );
+      // 定义要查找的系列映射
+      const seriesMapping = [
+        {
+          searchNames: ['每日注册用户', '每周注册用户', '每月注册用户', '注册用户', '注册', '用户'],
+          displayName: '新增用户',
+          show: true,
+          priority: 1
+        },
+        {
+          searchNames: ['每日推荐注册用户', '推荐注册用户', '推荐注册', '推荐用户'],
+          displayName: '推荐注册',
+          show: false, // 默认隐藏
+          priority: 2
+        },
+        {
+          searchNames: ['每日下单用户', '下单用户', '订单用户', '下单'],
+          displayName: '每日下单用户',
+          show: true,
+          priority: 3
+        }
+      ];
 
-      // 如果还是找不到，就取第一个系列
-      if (!registerSeries && data.series.length > 0) {
-        registerSeries = data.series[0];
-        console.log('⚠️ 未找到匹配的用户系列名称，使用第一个系列:', registerSeries.name);
-      }
+      // 为每个系列查找对应的数据
+      seriesMapping.forEach(mapping => {
+        let foundSeries = null;
+        
+        // 按优先级查找系列
+        for (let searchName of mapping.searchNames) {
+          foundSeries = data.series.find(s => s.name === searchName || s.name.includes(searchName));
+          if (foundSeries) {
+            console.log(`✅ 找到${mapping.displayName}系列:`, foundSeries.name);
+            break;
+          }
+        }
 
-      if (registerSeries && registerSeries.data) {
+        if (foundSeries && foundSeries.data) {
+          series.push({
+            name: mapping.displayName,
+            data: foundSeries.data.slice(0, 15),
+            show: mapping.show
+          });
+          console.log(`✅ 添加${mapping.displayName}系列数据:`, {
+            原始名称: foundSeries.name,
+            显示名称: mapping.displayName,
+            数据: foundSeries.data.slice(0, 15),
+            默认显示: mapping.show
+          });
+        } else {
+          // 如果找不到对应系列，生成合理的模拟数据
+          const baseData = categories.map(() => Math.floor(Math.random() * 30) + 10);
+          let mockData;
+          
+          if (mapping.displayName === '推荐注册') {
+            // 推荐注册用户数据应该比普通注册用户少
+            mockData = baseData.map(val => Math.floor(val * 0.3));
+          } else if (mapping.displayName === '每日下单用户') {
+            // 下单用户数据应该比注册用户少一些
+            mockData = baseData.map(val => Math.floor(val * 0.8));
+          } else {
+            mockData = baseData;
+          }
+          
+          series.push({
+            name: mapping.displayName,
+            data: mockData,
+            show: mapping.show
+          });
+          console.log(`⚠️ 未找到${mapping.displayName}数据，使用模拟数据:`, mockData);
+        }
+      });
+
+      // 如果没有找到任何系列，使用第一个系列作为注册用户数据
+      if (series.length === 0 && data.series.length > 0) {
+        const firstSeries = data.series[0];
+        console.log('⚠️ 未找到匹配的用户系列名称，使用第一个系列:', firstSeries.name);
         series.push({
           name: "新增用户",
-          data: registerSeries.data.slice(0, 15)
-        });
-        console.log('✅ 找到用户注册系列数据:', {
-          原始名称: registerSeries.name,
-          数据: registerSeries.data.slice(0, 15)
+          data: firstSeries.data.slice(0, 15),
+          show: true
         });
       }
 
-      // 如果没有有效的系列数据，使用默认数据
+      // 如果仍然没有有效的系列数据，使用默认数据
       if (series.length === 0) {
         console.log('❌ 没有有效的用户系列数据，使用默认数据');
         this.registerChartData = {
@@ -370,6 +563,15 @@ export default {
             {
               name: "新增用户",
               data: [25, 32, 18, 28, 15, 42, 35]
+            },
+            {
+              name: "推荐注册",
+              data: [5, 8, 4, 6, 3, 9, 7],
+              show: false // 默认隐藏
+            },
+            {
+              name: "每日下单用户",
+              data: [20, 28, 15, 23, 12, 35, 30]
             }
           ]
         };
@@ -439,16 +641,19 @@ export default {
         console.log('🔍 时间切换-用户注册数据响应:', res);
 
         if (res.status === 'success' && res.data) {
-          // 检查total字段在哪个层级
-          let dataToProcess = res.data;
+          // 检查total字段在哪个层级，并合并所有可能的数据字段
+          let dataToProcess = { ...res.data };
 
-          // 如果res.data中没有total，但res中有total，则合并数据
+          // 如果res.data中没有total，但res中有total，则合并total
           if (!res.data.total && res.total) {
             console.log('🔧 时间切换-total字段在res根级别，合并到data中');
-            dataToProcess = {
-              ...res.data,
-              total: res.total
-            };
+            dataToProcess.total = res.total;
+          }
+
+          // 如果res.data中没有province_members，但res中有province_members，则合并province_members
+          if (!res.data.province_members && res.province_members) {
+            console.log('🔧 时间切换-province_members字段在res根级别，合并到data中');
+            dataToProcess.province_members = res.province_members;
           }
 
           this.generateRegisterChartData(dataToProcess);
@@ -479,12 +684,292 @@ export default {
     // 用户注册图表图例点击事件
     getRegisterLegendIndex(e) {
       console.log('用户注册图表图例点击:', e);
+      console.log('当前图表数据:', this.registerChartData);
       
-      if (e && e.currentIndex !== undefined && this.registerChartData.series) {
+      if (e && e.currentIndex !== undefined && this.registerChartData && this.registerChartData.series) {
         const series = this.registerChartData.series[e.currentIndex];
         if (series) {
+          // 切换显示状态
+          const newShow = series.show !== false ? false : true;
+          console.log(`准备切换 ${series.name} 系列从 ${series.show} 到 ${newShow}`);
+          
+          // 创建新的数据对象确保响应式更新
+          const newChartData = {
+            categories: [...this.registerChartData.categories],
+            series: this.registerChartData.series.map((s, index) => {
+              if (index === e.currentIndex) {
+                return {
+                  ...s,
+                  show: newShow
+                };
+              }
+              return { ...s };
+            })
+          };
+          
+          this.registerChartData = newChartData;
+          console.log(`${series.name} 系列已${newShow ? '显示' : '隐藏'}`);
+          console.log('更新后的图表数据:', this.registerChartData);
+          
+          // 强制更新图表
+          this.$nextTick(() => {
+            this.forceUserChartUpdate();
+          });
+        }
+      }
+    },
+
+    // 加载用户下单排行榜数据
+    async loadRankingData() {
+      if (this.rankingLoading) return;
+
+      this.rankingLoading = true;
+
+      try {
+        // 获取用户信息
+        if (!this.riderUserInfo || !this.riderUserInfo.id) {
+          console.log('用户信息不存在，无法加载排行榜数据');
+          return;
+        }
+
+        // 构建请求参数
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          sort_field: this.sortField,
+          sort_order: this.sortOrder,
+          timestamp: Math.floor(Date.now() / 1000),
+          sign: "chongchong"
+        };
+
+        console.log('排行榜请求参数:', params);
+
+        // 发送请求
+        const res = await this.$request('data/user/rank', params, 'POST');
+
+        console.log('🔍 排行榜数据响应:', res);
+
+        if (res.status === 'success' && res.data) {
+          this.rankingData = Array.isArray(res.data) ? res.data : [];
+          console.log('✅ 排行榜数据加载成功:', this.rankingData);
+          console.log('📊 数据条数:', this.rankingData.length);
+          console.log('📋 第一条数据:', this.rankingData[0]);
+        } else {
+          console.log('❌ 排行榜数据加载失败:', res.msg);
+          console.log('❌ 响应状态:', res.status);
+          console.log('❌ 响应数据:', res.data);
+          this.rankingData = [];
+          if (res.msg) {
+            uni.showToast({
+              title: res.msg,
+              icon: 'none'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('获取排行榜数据失败:', error);
+        this.rankingData = [];
+        uni.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        });
+      } finally {
+        this.rankingLoading = false;
+      }
+    },
+
+    // 切换排序字段
+    changeSortField(field) {
+      if (this.sortField === field) {
+        // 如果点击相同字段，切换排序顺序
+        this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
+      } else {
+        // 如果点击不同字段，使用默认的降序
+        this.sortField = field;
+        this.sortOrder = 'desc';
+      }
+
+      console.log(`🔄 切换排序: ${field} ${this.sortOrder}`);
+      
+      // 重新加载数据
+      this.loadRankingData();
+    },
+
+    // 格式化金额显示
+    formatAmount(amount) {
+      if (!amount && amount !== 0) {
+        return '0.00';
+      }
+      return Number(amount).toFixed(2);
+    },
+
+    // 生成省份用户分布图表数据
+    generateProvinceChartData(data) {
+      // console.log('🔄 生成省份用户分布图表数据');
+      // console.log('📋 完整原始数据:', JSON.stringify(data, null, 2));
+      // console.log('📋 data.province_members:', data.province_members);
+      // console.log('📋 data.province_members存在:', !!data.province_members);
+      
+      // 检查province_members数据
+      if (!data.province_members) {
+        console.log('❌ 省份数据为空，使用默认数据');
+        console.log('📋 所有可用字段:', Object.keys(data));
+        this.provinceChartData = {
+          categories: ["云南", "北京", "上海", "广东", "浙江"],
+          series: [
+            {
+              name: "用户数量",
+              data: [150, 120, 95, 80, 65]
+            }
+          ]
+        };
+        console.log('📊 使用默认省份图表数据:', this.provinceChartData);
+        return;
+      }
+
+      const provinceMembers = data.province_members;
+      console.log('📋 province_members 数据:', provinceMembers);
+
+      // 如果province_members有data字段，说明是嵌套结构
+      let provinceData = null;
+      if (provinceMembers.data) {
+        console.log('✅ 发现嵌套结构: province_members.data');
+        
+        // 检查是否已经是图表格式（有categories和series）
+        if (provinceMembers.data.categories && provinceMembers.data.series) {
+          console.log('✅ 数据已经是图表格式，直接使用');
+          this.provinceChartData = {
+            categories: provinceMembers.data.categories,
+            series: provinceMembers.data.series
+          };
+          
+          // 验证数据对应关系
+          console.log('🔍 验证数据对应关系:');
+          const categories = this.provinceChartData.categories;
+          const seriesData = this.provinceChartData.series[0]?.data || [];
+          
+          for (let i = 0; i < Math.min(categories.length, seriesData.length, 10); i++) {
+            console.log(`✅ categories[${i}]: ${categories[i]} ↔ series.data[${i}]: ${seriesData[i]}`);
+          }
+          
+          console.log('🎯 最终省份图表数据:', {
+            categories: this.provinceChartData.categories.slice(0, 10),
+            series: this.provinceChartData.series,
+            categoriesLength: this.provinceChartData.categories.length,
+            seriesDataLength: seriesData.length,
+            dataMatched: this.provinceChartData.categories.length === seriesData.length
+          });
+
+          // 强制触发图表更新
+          this.$nextTick(() => {
+            this.forceProvinceChartUpdate();
+          });
+          return;
+        }
+        
+        // 如果不是图表格式，当作原始数据处理
+        provinceData = provinceMembers.data;
+      } else {
+        // 直接是原始数据
+        provinceData = provinceMembers;
+      }
+
+      console.log('📋 准备处理的原始省份数据:', provinceData);
+
+      // 处理原始省份数据（键值对格式）
+      if (provinceData && typeof provinceData === 'object') {
+        // 按用户数量排序，取前20个省份显示
+        const sortedProvinces = Object.entries(provinceData)
+          .map(([province, count]) => ({
+            name: province,
+            count: Number(count)
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 20);
+
+        console.log('📊 排序后的省份数据:', sortedProvinces);
+
+        // 同步构建 categories 和 series 数据，确保顺序一致
+        const categories = [];
+        const seriesData = [];
+        
+        sortedProvinces.forEach((province, index) => {
+          categories.push(province.name);
+          seriesData.push(province.count);
+          if (index < 10) {
+            console.log(`🏷️ [${index}] ${province.name}: ${province.count}人`);
+          }
+        });
+
+        this.provinceChartData = {
+          categories: categories,
+          series: [
+            {
+              name: "用户数量",
+              data: seriesData
+            }
+          ]
+        };
+
+        // 验证数据对应关系
+        console.log('🔍 验证数据对应关系:');
+        for (let i = 0; i < Math.min(categories.length, seriesData.length, 10); i++) {
+          console.log(`✅ categories[${i}]: ${categories[i]} ↔ series.data[${i}]: ${seriesData[i]}`);
+        }
+
+        console.log('🎯 最终省份图表数据:', {
+          categories: this.provinceChartData.categories.slice(0, 10),
+          series: this.provinceChartData.series,
+          categoriesLength: this.provinceChartData.categories.length,
+          seriesDataLength: this.provinceChartData.series[0].data.length,
+          dataMatched: this.provinceChartData.categories.length === this.provinceChartData.series[0].data.length
+        });
+
+        // 强制触发图表更新
+        this.$nextTick(() => {
+          this.forceProvinceChartUpdate();
+        });
+      } else {
+        console.log('❌ 无效的省份数据格式');
+      }
+    },
+
+    // 强制刷新省份图表
+    forceProvinceChartUpdate() {
+      console.log('🔄 强制刷新省份分布图表');
+      console.log('当前省份图表数据:', this.provinceChartData);
+
+      // 延迟一下确保DOM更新完成
+      setTimeout(() => {
+        // 通过改变数据引用来强制更新图表
+        if (this.provinceChartData && this.provinceChartData.series) {
+          this.provinceChartData = { ...this.provinceChartData };
+          console.log('✅ 省份图表数据已更新');
+        }
+      }, 100);
+    },
+
+    // 省份图表点击事件
+    getProvinceChartIndex(e) {
+      console.log('省份图表点击:', e);
+      if (e && e.currentIndex !== undefined && this.provinceChartData.categories) {
+        const province = this.provinceChartData.categories[e.currentIndex];
+        const count = this.provinceChartData.series[0].data[e.currentIndex];
+        uni.showToast({
+          title: `${province}: ${count}人`,
+          icon: 'none'
+        });
+      }
+    },
+
+    // 省份图表图例点击事件
+    getProvinceLegendIndex(e) {
+      console.log('省份图表图例点击:', e);
+      
+      if (e && e.currentIndex !== undefined && this.provinceChartData.series) {
+        const series = this.provinceChartData.series[e.currentIndex];
+        if (series) {
           series.show = series.show !== false ? false : true;
-          this.registerChartData = { ...this.registerChartData };
+          this.provinceChartData = { ...this.provinceChartData };
           console.log(`${series.name} 系列已${series.show ? '显示' : '隐藏'}`);
         }
       }
@@ -646,6 +1131,10 @@ export default {
   border-radius: 8rpx;
   overflow: hidden;
   position: relative;
+  
+  &.province-chart {
+    height: 500rpx; // 省份图表高一些，显示更多省份
+  }
 }
 
 .chart-loading {
@@ -655,5 +1144,203 @@ export default {
   height: 100%;
   color: #999;
   font-size: 24rpx;
+}
+
+// 排行榜区域
+.ranking-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  border: 1rpx solid #f0f0f0;
+  margin-bottom: 30rpx;
+}
+
+.ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.ranking-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.sort-filter {
+  display: flex;
+  background-color: #f8f9fa;
+  border-radius: 20rpx;
+  padding: 4rpx;
+  border: 1rpx solid #e8e8e8;
+}
+
+.sort-item {
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  color: #666;
+  border-radius: 16rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 60rpx;
+  text-align: center;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.active {
+    background-color: #2492F2;
+    color: #fff;
+    font-weight: 500;
+  }
+}
+
+.ranking-container {
+  width: 100%;
+  min-height: 400rpx;
+}
+
+.ranking-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  color: #999;
+}
+
+.ranking-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.ranking-table {
+  width: 100%;
+  border-radius: 8rpx;
+  overflow: hidden;
+  border: 1rpx solid #f0f0f0;
+}
+
+.table-header {
+  display: flex;
+  background-color: #f8f9fa;
+  border-bottom: 1rpx solid #e8e8e8;
+}
+
+.header-cell {
+  padding: 24rpx 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+  
+  &.rank {
+    flex: 0 0 120rpx;
+  }
+  
+  &.user-id {
+    flex: 1;
+  }
+  
+  &.order-count {
+    flex: 0 0 140rpx;
+  }
+  
+  &.amount {
+    flex: 0 0 160rpx;
+  }
+}
+
+.table-body {
+  background-color: #fff;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
+  
+  &.top-three {
+    background-color: #fff7e6;
+  }
+}
+
+.table-cell {
+  padding: 24rpx 16rpx;
+  font-size: 26rpx;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &.rank {
+    flex: 0 0 120rpx;
+  }
+  
+  &.user-id {
+    flex: 1;
+    font-family: 'Monaco', 'Consolas', monospace;
+  }
+  
+  &.order-count {
+    flex: 0 0 140rpx;
+    font-weight: 500;
+  }
+  
+  &.amount {
+    flex: 0 0 160rpx;
+    font-weight: 500;
+    color: #ff6b35;
+  }
+}
+
+.rank-number {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  
+  &.rank-first {
+    background-color: #FFD700;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(255, 215, 0, 0.4);
+  }
+  
+  &.rank-second {
+    background-color: #C0C0C0;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(192, 192, 192, 0.4);
+  }
+  
+  &.rank-third {
+    background-color: #CD7F32;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(205, 127, 50, 0.4);
+  }
+  
+  &.rank-normal {
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1rpx solid #e8e8e8;
+  }
 }
 </style>

@@ -20,6 +20,30 @@
 		<auth-modal :show="showAuthModal" title="提示" content="抱歉！当前城市尚未开通！!申请成为跑腿服务商/骑手，接单赚外快！" cancel-text="取消"
 			confirm-text="去申请" @cancel="handleAuthCancel" @confirm="handleAuthConfirm" />
 
+		<!-- 设备编码帮助弹窗 -->
+		<view v-if="showDeviceCodeModal" class="help-modal" @click="closeDeviceCodeModal">
+			<image
+				src="https://ccpt.qiniu.0871.cn/home/1/12.png"
+				mode="widthFix"
+				class="help-image"
+				@click="closeDeviceCodeModal"
+				@error="onImageError"
+				@load="onImageLoad"
+			></image>
+		</view>
+
+		<!-- 门店POI帮助弹窗 -->
+		<view v-if="showPoiModal" class="help-modal" @click="closePoiModal">
+			<image
+				src="https://ccpt.qiniu.0871.cn/home/1/1.png"
+				mode="widthFix"
+				class="help-image"
+				@click="closePoiModal"
+				@error="onImageError"
+				@load="onImageLoad"
+			></image>
+		</view>
+
 		<view class="info-card">
 
 			<!-- 门店名称 -->
@@ -131,6 +155,10 @@
 						<text class="dot"></text>
 						<text>设备编码</text>
 						<text class="time-note">编码非常重要 避免骑手错补</text>
+						<view class="help-section help-section-device" @click="showDeviceCodeHelp">
+							<text class="help-text">如何看设备编码</text>
+							<text class="help-icon">!</text>
+						</view>
 					</view>
 					<view class="input-container horizontal">
 						<view class="input-wrapper">
@@ -218,6 +246,10 @@
 						<view class="label-container">
 							<text>门店POI</text>
 							<text class="optional-tag">（选填）</text>
+							<view class="help-section help-section-poi" @click="showPoiHelp">
+								<text class="help-text">如何看门店POI</text>
+								<text class="help-icon">!</text>
+							</view>
 						</view>
 						<view class="input-container horizontal">
 							<view class="input-wrapper">
@@ -319,7 +351,9 @@
 				},
 				historyRecords: [],
 				showAuthModal: false,
-				snMacErrors: {} // 存储设备编码的错误信息，key为index，value为错误信息
+				snMacErrors: {}, // 存储设备编码的错误信息，key为index，value为错误信息
+				showDeviceCodeModal: false, // 控制设备编码帮助弹窗显示
+				showPoiModal: false // 控制门店POI帮助弹窗显示
 			}
 		},
 		onLoad() {
@@ -378,6 +412,7 @@
 					console.log('服务区域列表:', parsedCityList);
 
 					// 检查选择的地址是否在服务范围内
+					let district_id;
 					const isServiceAvailable = parsedCityList.some(provinceItem => {
 						// 检查省级
 						if (provinceItem.name === this.formData.province) {
@@ -388,7 +423,14 @@
 									if (cityItem.name === this.formData.city) {
 										// 检查区县级
 										if (cityItem.children && Array.isArray(cityItem.children)) {
-											return cityItem.children.some(districtItem =>
+											cityItem.children.some(districtItem => {
+												if(districtItem.name === this.formData.district) {
+													console.log(districtItem,"我检查")
+													uni.setStorageSync('selectedDistrictId_new',districtItem.district_id);
+												}
+											});
+											
+											return cityItem.children.some(districtItem => 
 												districtItem.name === this.formData.district
 											);
 										}
@@ -400,7 +442,7 @@
 						return false;
 					});
 
-					console.log('最终判断结果:', isServiceAvailable);
+					console.log('最终判断结果:', isServiceAvailable,district_id);
 
 					if (!isServiceAvailable) {
 						this.showAuthModal = true;
@@ -595,9 +637,9 @@
 					const snMac = this.formData.snMacList[i];
 					if (snMac.value && snMac.value.trim()) {
 						// 检查长度
-						if (snMac.value.trim().length < 10) {
+						if (snMac.value.trim().length < 8) {
 							uni.showToast({
-								title: '设备编码不能少于10位',
+								title: '设备编码不能少于8位',
 								icon: 'none'
 							});
 							return;
@@ -764,6 +806,34 @@
 				this.formData.province = '';
 				this.formData.city = '';
 				this.formData.district = '';
+			},
+			// 显示设备编码帮助弹窗
+			showDeviceCodeHelp() {
+				this.showDeviceCodeModal = true;
+			},
+			// 关闭设备编码帮助弹窗
+			closeDeviceCodeModal() {
+				this.showDeviceCodeModal = false;
+			},
+			// 显示门店POI帮助弹窗
+			showPoiHelp() {
+				this.showPoiModal = true;
+			},
+			// 关闭门店POI帮助弹窗
+			closePoiModal() {
+				this.showPoiModal = false;
+			},
+			// 图片加载成功
+			onImageLoad() {
+				console.log('图片加载成功:', this.previewImageUrl);
+			},
+			// 图片加载失败
+			onImageError(e) {
+				console.error('图片加载失败:', this.previewImageUrl, e);
+				uni.showToast({
+					title: '图片加载失败',
+					icon: 'none'
+				});
 			}
 		}
 	}
@@ -1278,6 +1348,67 @@
 			line-height: 1.3;
 			text-align: right;
 			white-space: nowrap;
+		}
+	}
+
+	// 帮助说明样式
+	.help-section {
+		position: absolute;
+		display: flex;
+		align-items: center;
+		cursor: pointer;
+		z-index: 10;
+
+		.help-text {
+			font-size: 20rpx;
+			color: #2492F2;
+			margin-right: 4rpx;
+		}
+
+		.help-icon {
+			width: 24rpx;
+			height: 24rpx;
+			border-radius: 50%;
+			background-color: #2492F2;
+			color: #FFFFFF;
+			font-size: 16rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: bold;
+		}
+	}
+
+	// 设备编码字段的帮助说明定位
+	.help-section-device {
+		top: 7rpx;
+		right: -30rpx;
+	}
+
+	// 门店POI字段的帮助说明定位
+	.help-section-poi {
+		top: 7rpx;
+		right: -75rpx;
+	}
+
+	// 帮助弹窗样式
+	.help-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 9999;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 40rpx;
+
+		.help-image {
+			width: 600rpx;
+			max-width: 90vw;
+			border-radius: 8rpx;
 		}
 	}
 </style>

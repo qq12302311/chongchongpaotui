@@ -458,6 +458,7 @@ export default {
       // 时间筛选相关
       currentTimeFilter: 'yesterday',
       timeFilterOptions: [
+        { label: '全时段', value: 'all' },
         { label: '今日', value: 'today' },
         { label: '昨日', value: 'yesterday' },
         { label: '3日前', value: '3days' },
@@ -711,6 +712,9 @@ export default {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       switch (timeFilter) {
+        case 'all':
+          // 全时段：不传递时间参数
+          return {};
         case 'today':
           // 今日：今天00:00:00 到 今天23:59:59
           return {
@@ -1746,7 +1750,7 @@ export default {
   color: #666;
   transition: all 0.3s ease;
   cursor: pointer;
-  min-width: 200rpx;
+  min-width: 100rpx;
 
   &:active {
     transform: scale(0.95);
