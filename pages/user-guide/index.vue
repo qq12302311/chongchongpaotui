@@ -37,11 +37,19 @@
 
     <!-- 底部安全区域 -->
     <view class="safe-area-bottom"></view>
+
+    <!-- 悬浮聊天图标 -->
+    <FloatingChatIconUser />
   </view>
 </template>
 
 <script>
+import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+
 export default {
+  components: {
+    FloatingChatIconUser
+  },
   data() {
     return {
       imageLoading: true,

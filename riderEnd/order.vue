@@ -116,6 +116,9 @@
       :auto-open-share="true"
       :custom-click="handleFloatingImageClick"
     ></floating-image>
+
+    <!-- 悬浮聊天图标 -->
+    <floating-chat-icon></floating-chat-icon>
   </view>
 </template>
 
@@ -123,13 +126,15 @@
 import NavBar from '@/components/NavBar.vue'
 import TabBar from '@/components/rider/tab-bar/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
+import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 import md5 from 'md5'
 
 export default {
   components: {
     NavBar,
     TabBar,
-    FloatingImage
+    FloatingImage,
+    FloatingChatIcon
   },
   data() {
     return {

@@ -510,6 +510,9 @@
 				</view>
 			</view>
 		</uni-popup>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
@@ -517,6 +520,7 @@
 	import NavBar from '@/components/NavBar.vue'
 	import TimePicker from '@/components/time-picker/index.vue'
 	import StoreInfo from '@/components/StoreInfo.vue'
+	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import AuthModal from '@/components/AuthModal/index.vue'
 
 	export default {
@@ -524,7 +528,8 @@
 			NavBar,
 			TimePicker,
 			StoreInfo,
-			AuthModal
+			AuthModal,
+			FloatingChatIconUser
 		},
 		data() {
 			return {

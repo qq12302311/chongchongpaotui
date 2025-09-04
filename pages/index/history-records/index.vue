@@ -124,11 +124,19 @@
 				</view>
 			</view>
 		</view>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
 <script>
+import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+
 export default {
+	components: {
+		FloatingChatIconUser
+	},
 	data() {
 		return {
 			navBarHeight: 0,

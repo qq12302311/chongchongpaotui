@@ -90,24 +90,29 @@
 								<text class="title-text">{{province.name}}</text>
 								<text class="city-count">{{province.children.length}}个城市</text>
 							</view>
-							<view class="expand-icon" :class="{ expanded: expandedProvinces[provinceIndex] }">
+							<view class="expand-icon" :class="{ expanded: expandedProvinces[provinceIndex] === true }">
 								<text>▼</text>
 							</view>
 						</view>
 						<!-- 城市列表 -->
-						<view v-if="expandedProvinces[provinceIndex]" class="cities-container">
+						<view v-if="expandedProvinces[provinceIndex] === true" class="cities-container">
 							<view
 								v-for="(city, cityIndex) in province.children"
 								:key="cityIndex"
 								class="city-section"
 							>
 								<!-- 城市标题 -->
-								<view class="city-title">
-									<text class="title-text">{{city.name}}</text>
-									<text class="district-count">{{city.children ? city.children.length : 0}}个区县</text>
+								<view class="city-title" @click="toggleCity(provinceIndex, cityIndex)">
+									<view class="city-info">
+										<text class="title-text">{{city.name}}</text>
+										<text class="district-count">{{city.children ? city.children.length : 0}}个区县</text>
+									</view>
+									<view class="expand-icon" :class="{ expanded: expandedCities[provinceIndex + '-' + cityIndex] === true }">
+										<text>▼</text>
+									</view>
 								</view>
 								<!-- 区县列表 -->
-								<view class="district-list">
+								<view v-if="expandedCities[provinceIndex + '-' + cityIndex] === true" class="district-list">
 									<view
 										v-for="(district, districtIndex) in city.children"
 										:key="districtIndex"
@@ -159,6 +164,7 @@ export default {
 			hasMoreProvinces: true ,// 是否还有更多省份
 			riderUserInfo: null,
 			expandedProvinces: {}, // 记录哪些省份是展开的
+			expandedCities: {}, // 记录哪些城市是展开的
 		}
 	},
 	created() {
@@ -213,6 +219,9 @@ export default {
 			this.displayedProvinces = this.cityList.slice(0, this.pageSize);
 			this.currentPage = 1;
 			this.hasMoreProvinces = this.cityList.length > this.pageSize;
+			// 初始化展开状态，所有省份默认收起
+			this.expandedProvinces = {};
+			this.expandedCities = {};
 		},
 		// 加载更多省份
 		loadMoreProvinces() {
@@ -303,6 +312,11 @@ export default {
 		// 切换省份展开/收起状态
 		toggleProvince(provinceIndex) {
 			this.$set(this.expandedProvinces, provinceIndex, !this.expandedProvinces[provinceIndex]);
+		},
+		// 切换城市展开/收起状态
+		toggleCity(provinceIndex, cityIndex) {
+			const cityKey = provinceIndex + '-' + cityIndex;
+			this.$set(this.expandedCities, cityKey, !this.expandedCities[cityKey]);
 		}
 	}
 }
@@ -512,10 +526,22 @@ export default {
 	font-weight: 500;
 	color: #333333;
 	margin-bottom: 16rpx;
-	padding-left: 20rpx;
+	padding: 10rpx 20rpx;
 	width: 100%;
 	box-sizing: border-box;
 	position: relative;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	border-radius: 8rpx;
+
+	&:hover {
+		background-color: #f8f9fa;
+	}
+
+	&:active {
+		background-color: #e9ecef;
+		transform: scale(0.98);
+	}
 
 	&::before {
 		content: '';
@@ -528,6 +554,13 @@ export default {
 		background-color: #2492F2;
 		border-radius: 3rpx;
 	}
+}
+
+.city-info {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex: 1;
 }
 
 .district-list {

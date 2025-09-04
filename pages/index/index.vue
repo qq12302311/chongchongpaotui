@@ -87,6 +87,9 @@
 			@close="handlePosterClose"
 			@posterClick="handlePosterClick"
 		/>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
@@ -96,6 +99,7 @@ import TabBar from '@/components/tab-bar/tab-bar.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
+import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 import userMixin from '@/mixins/userMixin.js'
 
 export default {
@@ -104,7 +108,8 @@ export default {
 		TabBar,
 		AuthModal,
 		PosterModal,
-		FloatingImage
+		FloatingImage,
+		FloatingChatIconUser
 	},
 	mixins: [userMixin],
 	data() {

@@ -61,15 +61,20 @@
         <view class="notice-item" v-if="!isWithdrawDay">• 当前不在提现日期内，下次可提现日期：{{ nextWithdrawDate }}</view>
       </view>
     </view>
+
+    <!-- 悬浮聊天图标 -->
+    <FloatingChatIcon />
   </view>
 </template>
 
 <script>
 import NavBar from '@/components/NavBar.vue'
+import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 
 export default {
   components: {
-    NavBar
+    NavBar,
+    FloatingChatIcon
   },
   data() {
     return {

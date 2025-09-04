@@ -32,6 +32,10 @@
 								<view class="status-gif" v-if="orderInfo.status === 'assigned'">
 									<image src="https://ccpt.qiniu.0871.cn/aa.gif" mode="aspectFit" class="gif-image"></image>
 								</view>
+								<!-- 已完成状态的图片 -->
+								<view class="status-gif" v-if="orderInfo.status === 'completed'">
+									<image src="https://ccpt.qiniu.0871.cn/order/wancheng.png" mode="aspectFit" class="gif-image"></image>
+								</view>
 								<view class="status-tag">{{getStatusText(orderInfo.status)}} <text class="arrow"></text></view>
 							</view>
 						</view>
@@ -54,6 +58,9 @@
 						<view class="main-title">【{{orderInfo.task_name}}】 充充跑腿订单</view>
 						<view class="meta-row">
 							<text class="meta-number">订单编号：{{orderInfo.task_no}}</text>
+							<view class="copy-order-btn" @tap="copyOrderNumber">
+								<text class="copy-text">复制</text>
+							</view>
 						</view>
 						<view class="meta-row">
 							<text class="meta-time">发布时间：{{orderInfo.task_date}}</text>
@@ -90,7 +97,10 @@
 					</view>
 					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
 						<view v-for="(code, index) in orderInfo.task_detail.sn_mac_code" :key="index" class="sn-code-item">
-							<text>设备SN号：{{code.value}}</text>
+							<text class="sn-code-text">设备SN号：{{code.value}}</text>
+							<view class="copy-code-btn" @tap="copyDeviceCode(code.value)">
+								<text class="copy-text">复制</text>
+							</view>
 						</view>
 					</view>
 					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
@@ -108,12 +118,18 @@
 					<view class="detail-item">
 						<view class="item-dot"></view>
 						<view class="item-label">服务门店：</view>
-						<view class="item-value">
-							{{orderInfo.task_detail ? orderInfo.task_detail.store_name : ''}}
+						<view class="item-value store-name-container">
+							<text class="store-name-text">{{orderInfo.task_detail ? orderInfo.task_detail.store_name : ''}}</text>
+							<view class="copy-store-btn" @tap="copyStoreName">
+								<text class="copy-text">复制</text>
+							</view>
 						</view>
 					</view>
-					<view class="detail-sub-item">
-						<text>{{orderInfo.province_name}}{{orderInfo.city_name}}{{orderInfo.district_name}}{{orderInfo.shop_address}}{{orderInfo.address}}</text>
+					<view class="detail-sub-item address-container">
+						<text class="address-text">{{orderInfo.province_name}}{{orderInfo.city_name}}{{orderInfo.district_name}}{{orderInfo.shop_address}}{{orderInfo.address}}</text>
+						<view class="copy-address-btn" @tap="copyAddress">
+							<text class="copy-text">复制</text>
+						</view>
 					</view>
 					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.description">
 						<text>{{orderInfo.task_detail.description}}</text>
@@ -343,18 +359,23 @@
 			@cancel="handleConfirmCancel"
 			@confirm="handleConfirmConfirm"
 		></AuthModal>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
 <script>
 	import NavBar from '@/components/NavBar.vue'
 	import AuthModal from '@/components/AuthModal/index.vue'
+	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import md5 from 'md5'
 
 	export default {
 		components: {
 			NavBar,
-			AuthModal
+			AuthModal,
+			FloatingChatIconUser
 		},
 		data() {
 			return {
@@ -890,6 +911,121 @@
 				}
 
 				return `${startTime} - ${endTime}`;
+			},
+
+			// 复制订单编号
+			copyOrderNumber() {
+				const orderNo = this.orderInfo.task_no;
+				if (!orderNo) {
+					uni.showToast({
+						title: '订单编号为空',
+						icon: 'none'
+					});
+					return;
+				}
+				
+				uni.setClipboardData({
+					data: orderNo,
+					success: () => {
+						uni.showToast({
+							title: '复制成功',
+							icon: 'success'
+						});
+					},
+					fail: (error) => {
+						console.error('复制失败:', error);
+						uni.showToast({
+							title: '复制失败',
+							icon: 'none'
+						});
+					}
+				});
+			},
+
+			// 复制设备编码
+			copyDeviceCode(code) {
+				if (!code) {
+					uni.showToast({
+						title: '编码为空',
+						icon: 'none'
+					});
+					return;
+				}
+				
+				uni.setClipboardData({
+					data: code,
+					success: () => {
+						uni.showToast({
+							title: '设备编码已复制',
+							icon: 'success'
+						});
+					},
+					fail: (error) => {
+						console.error('复制失败:', error);
+						uni.showToast({
+							title: '复制失败',
+							icon: 'none'
+						});
+					}
+				});
+			},
+
+			// 复制门店名称
+			copyStoreName() {
+				const storeName = this.orderInfo.task_detail && this.orderInfo.task_detail.store_name;
+				if (!storeName) {
+					uni.showToast({
+						title: '门店名称为空',
+						icon: 'none'
+					});
+					return;
+				}
+				
+				uni.setClipboardData({
+					data: storeName,
+					success: () => {
+						uni.showToast({
+							title: '门店名称已复制',
+							icon: 'success'
+						});
+					},
+					fail: (error) => {
+						console.error('复制失败:', error);
+						uni.showToast({
+							title: '复制失败',
+							icon: 'none'
+						});
+					}
+				});
+			},
+
+			// 复制详细地址
+			copyAddress() {
+				const address = `${this.orderInfo.province_name}${this.orderInfo.city_name}${this.orderInfo.district_name}${this.orderInfo.shop_address}${this.orderInfo.address}`;
+				if (!address) {
+					uni.showToast({
+						title: '地址为空',
+						icon: 'none'
+					});
+					return;
+				}
+				
+				uni.setClipboardData({
+					data: address,
+					success: () => {
+						uni.showToast({
+							title: '地址已复制',
+							icon: 'success'
+						});
+					},
+					fail: (error) => {
+						console.error('复制失败:', error);
+						uni.showToast({
+							title: '复制失败',
+							icon: 'none'
+						});
+					}
+				});
 			}
 		}
 	}
@@ -1100,6 +1236,29 @@
 							align-items: center;
 							gap: 20rpx;
 							margin-top: 6rpx;
+
+							.copy-order-btn {
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								padding: 4rpx 8rpx;
+								background-color: #F9C561;
+								border-radius: 4rpx;
+								cursor: pointer;
+								position: relative;
+								z-index: 10;
+								
+								&:active {
+									background-color: #F0B84A;
+								}
+								
+								.copy-text {
+									font-size: 20rpx;
+									color: #ffffff;
+									line-height: 1;
+									pointer-events: none;
+								}
+							}
 						}
 						.meta-number {
 							font-size: 24rpx;
@@ -1381,6 +1540,41 @@
 					word-break: break-all;
 					white-space: pre-wrap;
 				}
+
+				// 门店名称容器样式
+				&.store-name-container {
+					display: flex;
+					align-items: center;
+					justify-content: flex-end;
+
+					.store-name-text {
+						margin-right: 8rpx;
+					}
+
+					.copy-store-btn {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						padding: 4rpx 8rpx;
+						background-color: #F9C561;
+						border-radius: 4rpx;
+						cursor: pointer;
+						position: relative;
+						z-index: 10;
+						flex-shrink: 0;
+						
+						&:active {
+							background-color: #F0B84A;
+						}
+						
+						.copy-text {
+							font-size: 20rpx;
+							color: #ffffff;
+							line-height: 1;
+							pointer-events: none;
+						}
+					}
+				}
 			}
 		}
 
@@ -1465,10 +1659,75 @@
 			border-bottom: 2rpx solid #f5f5f5;
 
 			.sn-code-item {
+				display: flex;
+				align-items: center;
 				margin-bottom: 10rpx;
 
 				&:last-child {
 					margin-bottom: 0;
+				}
+
+				.sn-code-text {
+					margin-right: 8rpx;
+				}
+
+				.copy-code-btn {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					padding: 4rpx 8rpx;
+					background-color: #F9C561;
+					border-radius: 4rpx;
+					cursor: pointer;
+					position: relative;
+					z-index: 10;
+					flex-shrink: 0;
+					
+					&:active {
+						background-color: #F0B84A;
+					}
+					
+					.copy-text {
+						font-size: 20rpx;
+						color: #ffffff;
+						line-height: 1;
+						pointer-events: none;
+					}
+				}
+			}
+
+			// 地址容器样式
+			&.address-container {
+				display: flex;
+				align-items: center;
+
+				.address-text {
+					flex: 1;
+					margin-right: 8rpx;
+				}
+
+				.copy-address-btn {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					padding: 4rpx 8rpx;
+					background-color: #F9C561;
+					border-radius: 4rpx;
+					cursor: pointer;
+					position: relative;
+					z-index: 10;
+					flex-shrink: 0;
+					
+					&:active {
+						background-color: #F0B84A;
+					}
+					
+					.copy-text {
+						font-size: 20rpx;
+						color: #ffffff;
+						line-height: 1;
+						pointer-events: none;
+					}
 				}
 			}
 		}

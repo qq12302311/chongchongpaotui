@@ -23,7 +23,7 @@
 		<!-- 设备编码帮助弹窗 -->
 		<view v-if="showDeviceCodeModal" class="help-modal" @click="closeDeviceCodeModal">
 			<image
-				src="https://ccpt.qiniu.0871.cn/home/1/12.png"
+				src="https://ccpt.qiniu.0871.cn/home/chakanpoi.jpg"
 				mode="widthFix"
 				class="help-image"
 				@click="closeDeviceCodeModal"
@@ -35,7 +35,7 @@
 		<!-- 门店POI帮助弹窗 -->
 		<view v-if="showPoiModal" class="help-modal" @click="closePoiModal">
 			<image
-				src="https://ccpt.qiniu.0871.cn/home/1/1.png"
+				src="https://ccpt.qiniu.0871.cn/home/chakanpoi.jpg"
 				mode="widthFix"
 				class="help-image"
 				@click="closePoiModal"
@@ -315,15 +315,20 @@
 		<view class="bottom-button">
 			<button class="save-btn" @click="saveStoreInfo">保存</button>
 		</view>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
 <script>
 	import AuthModal from '@/components/AuthModal/index.vue'
+	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 
 	export default {
 		components: {
-			AuthModal
+			AuthModal,
+			FloatingChatIconUser
 		},
 		data() {
 			return {
@@ -335,7 +340,7 @@
 						id: Date.now(),
 						value: ''
 					}],
-					device_outside: null, // 设备是否外摆，默认不选中
+					device_outside: '', // 设备是否外摆，必填项，空字符串表示未选择
 					poiRemark: '', // 添加门店POI备注字段
 					phone: '',
 					contact: '',
@@ -357,37 +362,74 @@
 			}
 		},
 		onLoad() {
-			// 获取用户信息
+			// 安全获取用户信息
 			const userInfo = uni.getStorageSync('userInfo')
-			if (userInfo) {
+			if (userInfo && typeof userInfo === 'object') {
 				// 设置默认的联系电话和联系人
 				this.formData.phone = userInfo.phone_number || ''
 				this.formData.contact = userInfo.username || ''
 				this.formData.user_id = userInfo.user_id || 0
+			} else {
+				console.warn('用户信息获取失败或格式错误');
+				this.formData.user_id = 0;
 			}
 
-			// 获取本地存储的门店信息
-			const storeInfo = uni.getStorageSync('storeInfo')
-			if (storeInfo) {
-				// 确保 snMacList 是对象数组
-				if (storeInfo.snMacList) {
-					storeInfo.snMacList = storeInfo.snMacList.map(item => {
-						if (typeof item === 'string') {
-							return {
-								id: Date.now(),
-								value: item
+			// 安全获取本地存储的门店信息
+			try {
+				const storeInfo = uni.getStorageSync('storeInfo')
+				if (storeInfo && typeof storeInfo === 'object') {
+					// 确保 snMacList 是对象数组格式
+					if (storeInfo.snMacList && Array.isArray(storeInfo.snMacList)) {
+						storeInfo.snMacList = storeInfo.snMacList.map((item, index) => {
+							if (typeof item === 'string') {
+								return {
+									id: Date.now() + index,
+									value: item
+								}
+							} else if (item && typeof item === 'object' && item.value !== undefined) {
+								return {
+									id: item.id || Date.now() + index,
+									value: String(item.value)
+								}
 							}
-						}
-						return item
-					})
+							return {
+								id: Date.now() + index,
+								value: ''
+							}
+						})
+					} else {
+						// 如果没有或格式不正确，使用默认值
+						storeInfo.snMacList = this.formData.snMacList;
+					}
+					
+					// 安全合并数据，确保数据类型正确
+					this.formData = {
+						...this.formData,
+						address: String(storeInfo.address || ''),
+						detailAddress: String(storeInfo.detailAddress || ''),
+						storeName: String(storeInfo.storeName || ''),
+						snMacList: storeInfo.snMacList,
+						device_outside: (storeInfo.device_outside === 0 || storeInfo.device_outside === 1 || storeInfo.device_outside === 2) ? storeInfo.device_outside : '', // 只接受有效的数值选择
+						poiRemark: String(storeInfo.poiRemark || ''),
+						phone: String(storeInfo.phone || this.formData.phone),
+						contact: String(storeInfo.contact || this.formData.contact),
+						doorImages: Array.isArray(storeInfo.doorImages) ? storeInfo.doorImages : [],
+						locationDesc: String(storeInfo.locationDesc || ''),
+						province: String(storeInfo.province || ''),
+						city: String(storeInfo.city || ''),
+						district: String(storeInfo.district || ''),
+						latitude: parseFloat(storeInfo.latitude) || 0,
+						longitude: parseFloat(storeInfo.longitude) || 0,
+						distance: parseFloat(storeInfo.distance) || 0,
+						user_id: storeInfo.user_id || this.formData.user_id,
+					}
 				}
-				this.formData = {
-					...this.formData,
-					...storeInfo
-				}
+			} catch (error) {
+				console.error('获取本地门店信息失败:', error);
+				// 使用默认值，不影响页面正常显示
 			}
 
-			// 获取历史门店记录
+			// 获取历史门店记录（移到onShow中执行）
 			// this.historyRecords = uni.getStorageSync('storeHistoryRecords') || []
 		},
 		onShow() {
@@ -454,25 +496,59 @@
 		},
 		methods: {
 			async gethistoryRecords() {
-				// 显示加载提示
-				uni.showLoading({
-					title: '加载中...',
-					mask: true
-				});
-				const submitData = {
-					user_id: this.formData.user_id
-				}
-				// 调用接口保存数据
-				const res = await this.$request('user/addresses/get', submitData, 'POST');
+				try {
+					// 检查用户ID是否有效
+					if (!this.formData.user_id || this.formData.user_id <= 0) {
+						console.warn('用户ID无效，无法获取历史记录');
+						this.historyRecords = [];
+						return;
+					}
 
-				if (res.status === 'success') {
-					this.historyRecords = res.data
+					// 显示加载提示
+					uni.showLoading({
+						title: '加载中...',
+						mask: true
+					});
 
-					// 保存到本地存储
-					uni.setStorageSync('storeHistoryRecords', this.historyRecords)
+					const submitData = {
+						user_id: this.formData.user_id
+					}
+
+					// 调用接口获取数据
+					const res = await this.$request('user/addresses/get', submitData, 'POST');
+
+					if (res && res.status === 'success') {
+						// 确保返回的数据是数组格式
+						this.historyRecords = Array.isArray(res.data) ? res.data : [];
+
+						// 保存到本地存储
+						try {
+							uni.setStorageSync('storeHistoryRecords', this.historyRecords);
+						} catch (storageError) {
+							console.warn('保存历史记录到本地失败:', storageError);
+						}
+					} else {
+						console.warn('获取历史记录失败:', res?.msg || res?.message || '未知错误');
+						this.historyRecords = [];
+					}
+				} catch (error) {
+					console.error('获取历史记录接口调用失败:', error);
+					this.historyRecords = [];
+					
+					// 尝试从本地获取历史记录作为降级方案
+					try {
+						const localRecords = uni.getStorageSync('storeHistoryRecords');
+						if (Array.isArray(localRecords)) {
+							this.historyRecords = localRecords;
+							console.log('使用本地缓存的历史记录');
+						}
+					} catch (localError) {
+						console.warn('获取本地历史记录失败:', localError);
+					}
+				} finally {
+					// 隐藏加载提示
+					uni.hideLoading();
 				}
-				// 隐藏加载提示
-				uni.hideLoading();
 			},
 			handleAddressSelect() {
 				uni.navigateTo({
@@ -525,38 +601,126 @@
 				this.formData.doorImages.splice(index, 1)
 			},
 			uploadImage() {
+				const maxCount = 5 - this.formData.doorImages.length;
+				if (maxCount <= 0) {
+					uni.showToast({
+						title: '最多只能上传5张图片',
+						icon: 'none'
+					});
+					return;
+				}
+
 				uni.chooseImage({
-					count: 5 - this.formData.doorImages.length,
+					count: maxCount,
+					sizeType: ['compressed', 'original'],
+					sourceType: ['album', 'camera'],
 					success: (res) => {
-						// console.log(res)
-						this.qiniuUploadFile(res.tempFilePaths)
-						// this.formData.doorImages = [...this.formData.doorImages, ...res.tempFilePaths]
-					}
-				})
-			},
-			// 开始上传七牛云
-			qiniuUploadFile(tempFilePaths) {
-				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
-					filePath: tempFilePaths[0],
-					name: 'image', // 必须填写，后台用来接收文件
-					formData: {
-						'spaceName': 'agan_complain' // 其他要上传的参数
+						if (res.tempFilePaths && res.tempFilePaths.length > 0) {
+							// 逐个上传图片
+							this.uploadMultipleImages(res.tempFilePaths);
+						}
 					},
-					success: (uploadFileRes) => {
-						// const res = JSON.stringify(uploadFileRes.data)
-						const res = JSON.parse(uploadFileRes.data)
-						console.log(res)
-						// this.valiFormData.image_json.push(res.path)
-						this.formData.doorImages = [...this.formData.doorImages, res.path]
-					},
-					fail: (uploadFileErr) => {
-						console.error('图片上传失败', uploadFileErr);
+					fail: (error) => {
+						console.error('选择图片失败:', error);
+						uni.showToast({
+							title: '选择图片失败',
+							icon: 'none'
+						});
 					}
 				});
 			},
+			
+			// 批量上传图片
+			async uploadMultipleImages(tempFilePaths) {
+				const uploadPromises = tempFilePaths.map(filePath => this.qiniuUploadFile(filePath));
+				
+				try {
+					uni.showLoading({
+						title: '上传中...',
+						mask: true
+					});
+
+					const results = await Promise.allSettled(uploadPromises);
+					let successCount = 0;
+					
+					results.forEach((result, index) => {
+						if (result.status === 'fulfilled') {
+							successCount++;
+						} else {
+							console.error(`第${index + 1}张图片上传失败:`, result.reason);
+						}
+					});
+
+					uni.hideLoading();
+
+					if (successCount > 0) {
+						uni.showToast({
+							title: `成功上传${successCount}张图片`,
+							icon: 'success'
+						});
+					} else {
+						uni.showToast({
+							title: '图片上传失败，请重试',
+							icon: 'none'
+						});
+					}
+				} catch (error) {
+					uni.hideLoading();
+					console.error('批量上传失败:', error);
+					uni.showToast({
+						title: '上传失败，请重试',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 单个图片上传到七牛云
+			qiniuUploadFile(filePath) {
+				return new Promise((resolve, reject) => {
+					uni.uploadFile({
+						url: 'https://tixian.0871.cn/upload/qiniuImageUpload',
+						filePath: filePath,
+						name: 'image',
+						formData: {
+							'spaceName': 'agan_complain'
+						},
+						timeout: 30000, // 设置30秒超时
+						success: (uploadFileRes) => {
+							try {
+								if (uploadFileRes.statusCode === 200) {
+									const res = JSON.parse(uploadFileRes.data);
+									if (res && res.path) {
+										// 添加到图片列表
+										this.formData.doorImages = [...this.formData.doorImages, res.path];
+										console.log('图片上传成功:', res.path);
+										resolve(res.path);
+									} else {
+										console.error('服务器返回数据格式错误:', res);
+										reject(new Error('服务器返回数据格式错误'));
+									}
+								} else {
+									console.error('上传失败，状态码:', uploadFileRes.statusCode);
+									reject(new Error(`上传失败，状态码: ${uploadFileRes.statusCode}`));
+								}
+							} catch (parseError) {
+								console.error('解析上传结果失败:', parseError);
+								reject(new Error('解析上传结果失败'));
+							}
+						},
+						fail: (error) => {
+							console.error('图片上传失败:', error);
+							reject(new Error('网络错误或上传超时'));
+						}
+					});
+				});
+			},
 			updateField(field, value) {
-				this.formData[field] = value
+				this.formData[field] = value;
+				
+				// 特殊处理：当设置 device_outside 时，添加日志便于调试
+				if (field === 'device_outside') {
+					console.log('设置 device_outside 值:', value, '类型:', typeof value);
+				}
 			},
 			updateSnMacValue(index, value) {
 				if (this.formData.snMacList[index]) {
@@ -588,115 +752,186 @@
 					this.$set(this.snMacErrors, index, '');
 				}
 			},
-			async saveStoreInfo() {
-				// 优先检查门店地址
+			// 表单验证函数
+			validateFormData() {
+				// 检查地址
 				if (!this.formData.address || this.formData.address.trim() === '') {
-					uni.showToast({
-						title: '请选择门店地址',
-						icon: 'none'
-					});
-					return;
+					return { isValid: false, message: '请选择门店地址' };
 				}
 
-				// 检查其他必填项
-				const requiredFields = [{
-						field: 'storeName',
-						name: '门店名称'
-					},
-					{
-						field: 'phone',
-						name: '联系电话'
-					},
-					{
-						field: 'snMacList',
-						name: '设备编码'
-					}
-				];
-
-				// 检查是否有未填写的必填项
-				const missingFields = requiredFields.filter(item => {
-					if (item.field === 'snMacList') {
-						// 检查所有设备编码是否都有值
-						return this.formData.snMacList.some(snMac => !snMac.value || snMac.value.trim() ===
-						'');
-					}
-					const value = this.formData[item.field];
-					return !value || (typeof value === 'string' && value.trim() === '');
-				});
-
-				if (missingFields.length > 0) {
-					uni.showToast({
-						title: `请填写${missingFields[0].name}`,
-						icon: 'none'
-					});
-					return;
+				// 检查门店名称
+				if (!this.formData.storeName || this.formData.storeName.trim() === '') {
+					return { isValid: false, message: '请填写门店名称' };
 				}
 
-				// 检查设备编码格式和长度
+				// 检查联系电话
+				if (!this.formData.phone || this.formData.phone.trim() === '') {
+					return { isValid: false, message: '请填写联系电话' };
+				}
+
+				// 验证手机号格式
+				const phoneRegex = /^1[3-9]\d{9}$/;
+				if (!phoneRegex.test(this.formData.phone.trim())) {
+					return { isValid: false, message: '请输入正确的手机号码格式' };
+				}
+
+				// 检查设备编码
+				if (!this.formData.snMacList || this.formData.snMacList.length === 0) {
+					return { isValid: false, message: '请添加至少一个设备编码' };
+				}
+
+				// 验证所有设备编码
 				for (let i = 0; i < this.formData.snMacList.length; i++) {
 					const snMac = this.formData.snMacList[i];
-					if (snMac.value && snMac.value.trim()) {
-						// 检查长度
-						if (snMac.value.trim().length < 8) {
-							uni.showToast({
-								title: '设备编码不能少于8位',
-								icon: 'none'
-							});
-							return;
-						}
-						// 检查格式
-						const regex = /^[a-zA-Z0-9]+$/;
-						if (!regex.test(snMac.value.trim())) {
-							uni.showToast({
-								title: '设备编码只能包含数字和字母',
-								icon: 'none'
-							});
-							return;
-						}
+					if (!snMac.value || snMac.value.trim() === '') {
+						return { isValid: false, message: `请填写第${i + 1}个设备编码` };
+					}
+
+					const trimmedValue = snMac.value.trim();
+					// 检查长度
+					if (trimmedValue.length < 8) {
+						return { isValid: false, message: `第${i + 1}个设备编码不能少于8位` };
+					}
+					
+					// 检查格式（只允许字母和数字）
+					const regex = /^[a-zA-Z0-9]+$/;
+					if (!regex.test(trimmedValue)) {
+						return { isValid: false, message: `第${i + 1}个设备编码只能包含数字和字母` };
 					}
 				}
 
-				// 检查手机号格式
-				const phoneRegex = /^1[3-9]\d{9}$/;
-				if (!phoneRegex.test(this.formData.phone)) {
-					uni.showToast({
-						title: '请输入正确的手机号码',
-						icon: 'none'
-					});
-					return;
+				// 严格验证设备是否外摆必填项 - 必须是有效的数值选择
+				console.log('验证 device_outside 值:', this.formData.device_outside, '类型:', typeof this.formData.device_outside);
+				
+				if (this.formData.device_outside === '' || 
+					this.formData.device_outside === null || 
+					this.formData.device_outside === undefined ||
+					(this.formData.device_outside !== 0 && this.formData.device_outside !== 1 && this.formData.device_outside !== 2)) {
+					return { isValid: false, message: '请选择设备是否外摆（外摆/非外摆/不清楚）' };
 				}
 
-				// 保存到历史记录
-
-				// 转换 device_outside 值：1->true, 0->false, 其他值保持不变
-				let deviceOutsideValue = this.formData.device_outside;
-				if (deviceOutsideValue === 1) {
-					deviceOutsideValue = true;
-				} else if (deviceOutsideValue === 0) {
-					deviceOutsideValue = false;
-				}
-
-				const submitData = {
-					user_id: this.formData.user_id,
-					store_name: this.formData.storeName,
-					address: this.formData.address,
-					detail_address: this.formData.detailAddress,
-					longitude: this.formData.longitude,
-					latitude: this.formData.latitude,
-					province: this.formData.province,
-					city: this.formData.city,
-					district: this.formData.district,
-					snMaclist: this.formData.snMacList,
-					device_outside: deviceOutsideValue, // 设备是否外摆
-					poi_remark: this.formData.poiRemark, // 添加门店POI备注
-					doorImages: this.formData.doorImages,
-					location_description: this.formData.locationDesc,
-					phone_number: this.formData.phone,
-					name: this.formData.contact,
-					distance: this.formData.distance,
-				};
-
+				return { isValid: true, message: '' };
+			},
+			
+			// 更新发布页面数据
+			updatePublishPageData(deviceOutsideValue) {
 				try {
+					// 获取所有页面
+					const pages = getCurrentPages();
+					// 获取发布订单页实例（上一个页面）
+					const publishPage = pages[pages.length - 2];
+
+					if (publishPage && publishPage.$vm) {
+						// 更新发布订单页的 formData
+						publishPage.$vm.formData = {
+							...publishPage.$vm.formData,
+							storeName: this.formData.storeName,
+							address: this.formData.address,
+							detailAddress: this.formData.detailAddress,
+							phone: this.formData.phone,
+							contact: this.formData.contact,
+							snMacList: this.formData.snMacList,
+							device_outside: deviceOutsideValue,
+							poiRemark: this.formData.poiRemark,
+							doorImages: this.formData.doorImages,
+							locationDesc: this.formData.locationDesc,
+							latitude: this.formData.latitude,
+							longitude: this.formData.longitude,
+							province: this.formData.province,
+							city: this.formData.city,
+							district: this.formData.district,
+							distance: this.formData.distance,
+						};
+
+						// 强制更新发布页面
+						publishPage.$vm.$forceUpdate();
+						console.log('已更新发布页面数据');
+					} else {
+						console.warn('未找到发布页面实例，无法更新数据');
+					}
+				} catch (error) {
+					console.error('更新发布页面数据失败:', error);
+					// 这里不阻断保存流程，只记录错误
+				}
+			},
+			async saveStoreInfo() {
+				try {
+					// 验证表单数据
+					const validationResult = this.validateFormData();
+					if (!validationResult.isValid) {
+						console.error('表单验证失败:', validationResult.message, '当前 device_outside 值:', this.formData.device_outside);
+						uni.showToast({
+							title: validationResult.message,
+							icon: 'none',
+							duration: 3000
+						});
+						return;
+					}
+
+					// 双重检查：确保 device_outside 一定有有效值
+					if (this.formData.device_outside !== 0 && this.formData.device_outside !== 1 && this.formData.device_outside !== 2) {
+						console.error('设备是否外摆验证失败，当前值:', this.formData.device_outside);
+						uni.showToast({
+							title: '请选择设备是否外摆选项',
+							icon: 'none',
+							duration: 3000
+						});
+						return;
+					}
+
+					// 检查地址坐标是否完整
+					if (!this.formData.latitude || !this.formData.longitude) {
+						uni.showToast({
+							title: '请重新选择门店地址，确保位置准确',
+							icon: 'none',
+							duration: 3000
+						});
+						return;
+					}
+
+					// 转换 device_outside 值
+					let deviceOutsideValue = this.formData.device_outside;
+					if (deviceOutsideValue === 1) {
+						deviceOutsideValue = true;
+					} else if (deviceOutsideValue === 0) {
+						deviceOutsideValue = false;
+					} else if (deviceOutsideValue === 2) {
+						deviceOutsideValue = null; // "不清楚"的情况
+					} else {
+						// 理论上不会到这里，因为验证已经确保必须选择
+						deviceOutsideValue = null;
+					}
+
+					// 处理设备编码数据，确保格式正确
+					const processedSnMacList = this.formData.snMacList
+						.filter(item => item.value && item.value.trim()) // 过滤空值
+						.map(item => ({
+							id: item.id,
+							value: item.value.trim().toUpperCase() // 统一转为大写
+						}));
+
+					const submitData = {
+						user_id: this.formData.user_id || 0,
+						store_name: this.formData.storeName.trim(),
+						address: this.formData.address.trim(),
+						detail_address: this.formData.detailAddress ? this.formData.detailAddress.trim() : '',
+						longitude: parseFloat(this.formData.longitude) || 0,
+						latitude: parseFloat(this.formData.latitude) || 0,
+						province: this.formData.province || '',
+						city: this.formData.city || '',
+						district: this.formData.district || '',
+						snMaclist: processedSnMacList,
+						device_outside: deviceOutsideValue,
+						poi_remark: this.formData.poiRemark ? this.formData.poiRemark.trim() : '',
+						doorImages: this.formData.doorImages || [],
+						location_description: this.formData.locationDesc ? this.formData.locationDesc.trim() : '',
+						phone_number: this.formData.phone.trim(),
+						name: this.formData.contact ? this.formData.contact.trim() : '',
+						distance: parseFloat(this.formData.distance) || 0,
+					};
+
+					console.log('提交数据:', submitData);
+
 					// 显示加载提示
 					uni.showLoading({
 						title: '保存中...',
@@ -709,40 +944,12 @@
 					// 隐藏加载提示
 					uni.hideLoading();
 
+					console.log('保存响应:', res);
+
 					if (res.status === 'success') {
-						// 获取所有页面
-						const pages = getCurrentPages()
-						// 获取发布订单页实例
-						const publishPage = pages[pages.length - 2]
-
-						// console.log(publishPage,'页面路径')
-
-						if (publishPage) {
-							// 更新发布订单页的 formData
-							publishPage.$vm.formData = {
-								...publishPage.$vm.formData,
-								storeName: this.formData.storeName,
-								address: this.formData.address,
-								detailAddress: this.formData.detailAddress,
-								phone: this.formData.phone,
-								contact: this.formData.contact,
-								snMacList: this.formData.snMacList,
-								device_outside: deviceOutsideValue, // 设备是否外摆，使用转换后的值
-								poiRemark: this.formData.poiRemark, // 添加门店POI备注
-								doorImages: this.formData.doorImages,
-								locationDesc: this.formData.locationDesc,
-								latitude: this.formData.latitude,
-								longitude: this.formData.longitude,
-								province: this.formData.province,
-								city: this.formData.city,
-								district: this.formData.district,
-								distance: this.formData.distance, // 测算距离km
-							}
-
-							// 触发发布订单页的更新
-							// publishPage.$vm.$forceUpdate()
-						}
-
+						// 保存成功后更新页面数据
+						this.updatePublishPageData(deviceOutsideValue);
+						
 						// 显示保存成功提示
 						uni.showToast({
 							title: '保存成功',
@@ -750,29 +957,56 @@
 							duration: 2000
 						});
 
-						// 延迟跳转，让用户看到成功提示
+						// 延迟跳转
 						setTimeout(() => {
 							uni.navigateBack({
 								delta: 1
 							});
 						}, 1500);
 					} else {
+						// 根据不同错误类型显示不同提示
+						let errorMessage = '保存失败，请重试';
+						if (res.msg) {
+							errorMessage = res.msg;
+						} else if (res.message) {
+							errorMessage = res.message;
+						} else if (res.error) {
+							errorMessage = res.error;
+						}
+						
 						uni.showToast({
-							title: res.msg || '保存失败',
-							icon: 'none'
+							title: errorMessage,
+							icon: 'none',
+							duration: 3000
 						});
+						
+						console.error('保存失败，服务器返回:', res);
 					}
 				} catch (error) {
 					// 隐藏加载提示
 					uni.hideLoading();
 
 					console.error('保存门店信息失败:', error);
+					
+					let errorMessage = '网络错误，请检查网络连接后重试';
+					
+					// 根据错误类型提供更具体的错误信息
+					if (error.message && error.message.includes('timeout')) {
+						errorMessage = '请求超时，请稍后重试';
+					} else if (error.message && error.message.includes('400')) {
+						errorMessage = '提交数据格式错误，请检查填写内容';
+					} else if (error.message && error.message.includes('500')) {
+						errorMessage = '服务器错误，请稍后重试';
+					} else if (error.message) {
+						errorMessage = `请求失败：${error.message}`;
+					}
+					
 					uni.showToast({
-						title: '网络错误，请重试',
-						icon: 'none'
+						title: errorMessage,
+						icon: 'none',
+						duration: 3000
 					});
 				}
-
 			},
 			// 格式化时间
 			formatTime(timestamp) {

@@ -131,11 +131,19 @@
 
     <!-- 底部安全区域 -->
     <view class="safe-area-bottom"></view>
+
+    <!-- 悬浮聊天图标 -->
+    <FloatingChatIcon />
   </view>
 </template>
 
 <script>
+import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
+
 export default {
+  components: {
+    FloatingChatIcon
+  },
   data() {
     return {
       // 用户信息

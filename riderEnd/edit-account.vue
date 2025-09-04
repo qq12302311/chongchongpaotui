@@ -123,15 +123,20 @@
         <text>提交</text>
       </view>
     </view>
+
+    <!-- 悬浮聊天图标 -->
+    <FloatingChatIcon />
   </view>
 </template>
 
 <script>
 import NavBar from '@/components/NavBar.vue'
+import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 
 export default {
   components: {
-    NavBar
+    NavBar,
+    FloatingChatIcon
   },
   data() {
     return {

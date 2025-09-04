@@ -448,6 +448,90 @@
 				</view>
 			</view>
 		</uni-popup>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
+
+		<!-- 订单确认弹窗 -->
+		<uni-popup ref="orderConfirmPopup" type="center" @change="onOrderConfirmPopupChange" :mask-click="false" :z-index="100000">
+			<view class="order-confirm-popup">
+				<view class="confirm-header">
+					<image src="https://ccpt.qiniu.0871.cn/home/querengongdan.png" class="confirm-header-bg" mode="aspectFill"></image>
+				</view>
+				<view class="confirm-content">
+					<!-- 服务信息块 -->
+					<view class="service-info-block">
+						<view class="confirm-item service-item">
+							<view class="confirm-value brand-value service-value">
+								<image v-if="selectedBrand === 'meituan'" src="https://ccpt.qiniu.0871.cn/publish/meituan.png" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'guaishou'" src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'jiedian'" src="https://ccpt.qiniu.0871.cn/publish/jiedian.png" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'xiaodian'" src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" class="brand-icon" mode="aspectFit"></image>
+								<text class="brand-text">{{ getBrandName() }}</text>
+							</view>
+							<text class="confirm-label service-label">服务品牌</text>
+						</view>
+						<view class="confirm-item service-item">
+							<text class="confirm-value service-value">补宝 x{{ formData.quantity }}</text>
+							<text class="confirm-label service-label">服务项目</text>
+						</view>
+						<view class="confirm-item service-item">
+							<text class="confirm-value service-value">{{ getDeviceCode() }}</text>
+							<text class="confirm-label service-label">设备编码</text>
+						</view>
+					</view>
+					<!-- 门店信息块 -->
+					<view class="service-info-block">
+						<view class="confirm-item service-item">
+							<text class="confirm-value store-value">{{ formData.storeName }}</text>
+							<text class="confirm-label service-label">门店名称</text>
+						</view>
+						<view class="confirm-item-left">
+							<text class="confirm-label">门店地址</text>
+							<text class="confirm-value-left">{{ formData.address }}</text>
+						</view>
+						<view class="confirm-item-left">
+							<text class="confirm-label">门店POI</text>
+							<text class="confirm-value-left">{{ formData.poiRemark || '未填写' }}</text>
+						</view>
+						<view class="confirm-item-left" v-if="formData.detailAddress">
+							<text class="confirm-label">补充地址</text>
+							<text class="confirm-value-left">{{ formData.detailAddress }}</text>
+						</view>
+					</view>
+					<!-- 约定时效与作业时段信息块 -->
+					<view class="service-info-block">
+						<view class="confirm-item service-item">
+							<text class="confirm-value service-value">{{ beforeDeadlineTextShow || '未选择' }}</text>
+							<text class="confirm-label service-label">约定时效</text>
+						</view>
+						<view class="confirm-item service-item">
+							<text class="confirm-value service-value">{{ getWorkTimeDisplay() }}</text>
+							<text class="confirm-label service-label">作业时段</text>
+						</view>
+					</view>
+					<!-- 我的备注信息块 -->
+					<view class="service-info-block">
+						<view class="confirm-item service-item" v-if="formData.additional_notes">
+							<text class="confirm-value service-value">{{ formData.additional_notes }}</text>
+							<text class="confirm-label service-label">我的备注</text>
+						</view>
+						<view class="confirm-item service-item" v-if="formData.locationDesc">
+							<text class="confirm-value service-value">{{ formData.locationDesc }}</text>
+							<text class="confirm-label service-label">门店详情</text>
+						</view>
+						<view class="confirm-item service-item" v-if="!formData.additional_notes && !formData.locationDesc">
+							<text class="confirm-value service-value">未填写</text>
+							<text class="confirm-label service-label">备注信息</text>
+						</view>
+					</view>
+				</view>
+				<view class="confirm-footer">
+					<button class="cancel-btn" @click="closeOrderConfirmPopup">返回修改</button>
+					<button class="confirm-btn" @click="confirmSubmitOrder">确认并支付</button>
+				</view>
+			</view>
+		</uni-popup>
 	</view>
 </template>
 
@@ -456,13 +540,15 @@
 	import TimePicker from '@/components/time-picker/index.vue'
 	import StoreInfo from '@/components/StoreInfo.vue'
 	import AuthModal from '@/components/AuthModal/index.vue'
+	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 
 	export default {
 		components: {
 			NavBar,
 			TimePicker,
 			StoreInfo,
-			AuthModal
+			AuthModal,
+			FloatingChatIconUser
 		},
 		data() {
 			return {
@@ -547,7 +633,9 @@
 				tempTimeRangeIndex: [10, 0, 19, 0], // 临时时间段索引
 				indicatorStyle: 'height: 50px;', // picker-view指示器样式
 				// 用户信息
-				currentUserInfo: {}
+				currentUserInfo: {},
+				// 订单确认弹窗
+				showOrderConfirmPopup: false
 			}
 		},
 		// 添加计算属性，处理表单字段状态
@@ -1196,6 +1284,16 @@
 					return;
 				}
 
+				// 显示订单确认弹窗
+				this.showOrderConfirmPopup = true;
+				this.$refs.orderConfirmPopup.open();
+			},
+
+			// 确认提交订单
+			async confirmSubmitOrder() {
+				// 关闭确认弹窗
+				this.closeOrderConfirmPopup();
+
 				// 显示加载提示
 				uni.showLoading({
 					title: '提交中...',
@@ -1232,8 +1330,8 @@
 						order_amount: this.formData.estimatedPrice,
 						service_time_type: this.formData.timeType, // 直接使用 timeType 值
 						time_limit: this.formData.timeType === 'before_deadline' ? parseInt(this.formData.appointmentTime) : null,
-						range_start_date: this.formData.timeType === 'time_range' ? this.formData.timeInterval.substring(0, 19) : null,
-						range_end_date: this.formData.timeType === 'time_range' ? this.formData.timeInterval.substring(20) : null,
+						range_start_date: this.formData.timeType === 'time_range' && this.formData.timeInterval ? this.formData.timeInterval.substring(0, 19) : null,
+						range_end_date: this.formData.timeType === 'time_range' && this.formData.timeInterval ? this.formData.timeInterval.substring(20) : null,
 						distance: this.formData.distance, // 需要计算服务地点到服务商基地的导航距离
 						detail: this.selectedService,
 						// 添加基础服务费用
@@ -1530,6 +1628,59 @@
 			closePriceQuestionPopup() {
 				this.showPriceQuestionPopup = false
 			},
+
+			// 关闭订单确认弹窗
+			closeOrderConfirmPopup() {
+				this.showOrderConfirmPopup = false;
+				this.$refs.orderConfirmPopup.close();
+			},
+
+			// 订单确认弹窗状态变化
+			onOrderConfirmPopupChange(e) {
+				this.showOrderConfirmPopup = e.show;
+			},
+
+			// 获取品牌名称
+			getBrandName() {
+				const brandMap = {
+					'meituan': '美团',
+					'guaishou': '怪兽',
+					'jiedian': '街电',
+					'xiaodian': '小电'
+				};
+				return brandMap[this.selectedBrand] || '';
+			},
+
+			// 获取设备编码
+			getDeviceCode() {
+				// 从 formData.snMacList 中获取设备编码
+				if (this.formData.snMacList && Array.isArray(this.formData.snMacList)) {
+					const codes = this.formData.snMacList
+						.filter(item => item && ((typeof item === 'string' && item.trim()) || (item.value && item.value.trim())))
+						.map(item => typeof item === 'string' ? item.trim() : item.value.trim());
+					if (codes.length > 0) {
+						return codes.join(', ');
+					}
+				}
+				return '未填写';
+			},
+
+			// 获取工作时段显示
+			getWorkTimeDisplay() {
+				if (this.formData.recommended_service_time_start && this.formData.recommended_service_time_end) {
+					const today = new Date();
+					const year = today.getFullYear();
+					const month = String(today.getMonth() + 1).padStart(2, '0');
+					const day = String(today.getDate()).padStart(2, '0');
+					// 如果是24小时均可
+					if (this.formData.recommended_service_time_start === '00:00' && this.formData.recommended_service_time_end === '00:00') {
+						return `${year}-${month}-${day} 24小时均可`;
+					}
+					return `${year}-${month}-${day} ${this.formData.recommended_service_time_start}-${this.formData.recommended_service_time_end}`;
+				}
+				return '未选择';
+			},
+
 
 			// 显示时间段选择弹窗
 			showTimeRangePicker() {
@@ -3624,5 +3775,271 @@
 
 	::v-deep .uni-popup-bottom {
 		z-index: 999999 !important;
+	}
+
+	/* 订单确认弹窗样式 */
+	.order-confirm-popup {
+		width: 600rpx;
+		background: transparent;
+		border-radius: 20rpx;
+		padding: 0;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.confirm-header {
+		position: relative;
+		height: 160rpx;
+		overflow: hidden;
+	}
+
+	.confirm-header-bg {
+		width: 100%;
+		height: 100%;
+	}
+
+	.confirm-content {
+		padding: 20rpx;
+		max-height: 800rpx;
+		overflow-y: auto;
+		background: #ffffff;
+	}
+
+	.confirm-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12rpx 0;
+	}
+
+
+	.confirm-label {
+		color: #666666;
+		font-size: 26rpx;
+		flex-shrink: 0;
+		width: 120rpx;
+	}
+
+	.confirm-value {
+		color: #333333;
+		font-size: 26rpx;
+		text-align: right;
+		flex: 1;
+		word-break: break-all;
+	}
+
+	.brand-value {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+	}
+
+	.brand-icon {
+		width: 40rpx;
+		height: 40rpx;
+		margin-right: 10rpx;
+	}
+
+	.brand-text {
+		color: #333333;
+		font-size: 28rpx;
+	}
+
+	.confirm-footer {
+		display: flex;
+		padding: 20rpx;
+		gap: 20rpx;
+		border-top: 1rpx solid #f0f0f0;
+		background: #ffffff;
+		border-radius: 0 0 20rpx 20rpx;
+	}
+
+	.cancel-btn {
+		flex: 1;
+		height: 70rpx;
+		line-height: 70rpx;
+		background: linear-gradient(135deg, #FF7F47 0%, #FF6B2B 100%);
+		color: #ffffff;
+		border: none;
+		border-radius: 35rpx;
+		font-size: 28rpx;
+		text-align: center;
+		font-weight: bold;
+	}
+
+	.cancel-btn:active {
+		background: linear-gradient(135deg, #FF6B2B 0%, #FF5722 100%);
+		opacity: 0.9;
+	}
+
+	.confirm-btn {
+		flex: 1;
+		height: 70rpx;
+		line-height: 70rpx;
+		background: linear-gradient(135deg, #4A9FFF 0%, #2E86FF 100%);
+		color: #ffffff;
+		border: none;
+		border-radius: 35rpx;
+		font-size: 28rpx;
+		text-align: center;
+		font-weight: bold;
+	}
+
+	.confirm-btn:active {
+		background: linear-gradient(135deg, #2E86FF 0%, #1976D2 100%);
+		opacity: 0.9;
+	}
+
+	/* 服务信息块样式 */
+	.service-info-block {
+		background: #F0F8FF;
+		border-radius: 12rpx;
+		padding: 15rpx;
+		margin-bottom: 12rpx;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.service-info-block::after {
+		content: '';
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 80rpx;
+		height: 80rpx;
+		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		opacity: 0.6;
+	}
+
+	.service-info-block .confirm-item {
+	}
+
+
+	/* 服务信息块内的特殊样式 */
+	.service-item {
+		flex-direction: row-reverse;
+	}
+
+	.service-value {
+		text-align: left !important;
+		color: #ff4444 !important;
+		font-weight: bold;
+	}
+
+	.service-label {
+		color: #666666 !important;
+		text-align: right;
+	}
+
+	/* 门店信息块样式 */
+	.store-info-block {
+		background: #F0F8FF;
+		border-radius: 12rpx;
+		padding: 15rpx;
+		margin-bottom: 12rpx;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.store-info-block::after {
+		content: '';
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 80rpx;
+		height: 80rpx;
+		background-image: url('https://ccpt.qiniu.0871.cn/home/di2.svg');
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		opacity: 0.6;
+	}
+
+	.store-info-block .confirm-item {
+	}
+
+
+	/* 门店信息块内的特殊样式 */
+	.store-item {
+		flex-direction: row-reverse;
+	}
+
+	/* 门店地址和POI需要特殊处理，使用正常的flex方向 */
+	.store-item:nth-child(2), .store-item:nth-child(3) {
+		flex-direction: row !important;
+	}
+
+	.store-item:nth-child(2) .confirm-value, .store-item:nth-child(3) .confirm-value {
+		text-align: left !important;
+		justify-content: flex-start !important;
+		order: 2;
+	}
+
+	.store-item:nth-child(2) .confirm-label, .store-item:nth-child(3) .confirm-label {
+		order: 1;
+		text-align: left !important;
+		margin-right: auto;
+	}
+
+	.confirm-value.store-value {
+		text-align: left !important;
+		color: #616161 !important;
+		font-weight: bold;
+	}
+
+	.store-label {
+		color: #666666 !important;
+		text-align: right;
+	}
+
+	/* 强制门店信息左对齐 */
+	.confirm-item .confirm-value.store-value {
+		text-align: left !important;
+		display: flex !important;
+		justify-content: flex-start !important;
+	}
+
+	/* 针对service-item中的门店信息强制左对齐 */
+	.service-item .confirm-value.store-value {
+		text-align: left !important;
+		justify-content: flex-start !important;
+		display: flex !important;
+	}
+
+	/* 专门针对门店地址和POI的样式覆盖 */
+	.store-item .confirm-value.store-value {
+		text-align: left !important;
+		justify-content: flex-start !important;
+		display: flex !important;
+		align-items: flex-start !important;
+	}
+
+	/* 左对齐的确认项样式 */
+	.confirm-item-left {
+		display: flex;
+		justify-content: flex-start;
+		align-items: flex-start;
+		padding: 12rpx 0;
+	}
+
+
+	.confirm-item-left .confirm-label {
+		color: #666666;
+		font-size: 26rpx;
+		width: 120rpx;
+		flex-shrink: 0;
+		text-align: left;
+	}
+
+	.confirm-value-left {
+		color: #616161;
+		font-size: 26rpx;
+		font-weight: bold;
+		text-align: left;
+		flex: 1;
+		word-break: break-all;
 	}
 </style>

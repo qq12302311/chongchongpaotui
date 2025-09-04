@@ -81,18 +81,23 @@
 				</scroll-view>
 			</view>
 		</view>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
 <script>
 import NavBar from '@/components/NavBar.vue'
+import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 import { provinceCityMap, cityCoordinates, updateMapByCity } from '@/utils/cityData.js'
 var QQMapWX = require('@/utils/qqmap-wx-jssdk.js');
 var qqmapsdk;
 
 export default {
 	components: {
-		NavBar
+		NavBar,
+		FloatingChatIconUser
 	},
 	data() {
 		return {

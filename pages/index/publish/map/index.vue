@@ -111,11 +111,15 @@
 				</view>
 			</view>
 		</view>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
 <script>
 	import NavBar from '@/components/NavBar.vue'
+	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import {
 		cityList,
 		updateMapByCity
@@ -136,7 +140,8 @@
 	export default {
 		components: {
 			NavBar,
-			AuthModal
+			AuthModal,
+			FloatingChatIconUser
 		},
 		data() {
 			return {

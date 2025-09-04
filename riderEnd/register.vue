@@ -1508,8 +1508,18 @@ export default {
 
           // 跳转到骑手端接单大厅
           setTimeout(() => {
+            // 获取本地存储的 referrer_id
+            const localReferrerId = uni.getStorageSync('current_referrer_id');
+            let redirectUrl = '/riderEnd/index';
+            
+            // 如果有 referrer_id，则传递给接单大厅
+            if (localReferrerId) {
+              redirectUrl = `/riderEnd/index?referrer_id=${localReferrerId}`;
+              console.log('注册成功后跳转到接单大厅，携带referrer_id:', localReferrerId);
+            }
+            
             uni.redirectTo({
-              url: '/riderEnd/index'
+              url: redirectUrl
             });
           }, 1000);
         } else {
@@ -1569,12 +1579,23 @@ export default {
       this.referrerId = options.referrerId;
       console.log('接收到推荐人ID:', this.referrerId);
 
+      // 将 referrer_id 保存到本地存储，供后续使用
+      uni.setStorageSync('current_referrer_id', this.referrerId);
+      console.log('推荐人ID已保存到本地存储:', this.referrerId);
+
       // 显示推荐信息提示
       // uni.showToast({
       //   title: `通过推荐人ccqs${this.referrerId}${Math.random() < 0.5 ? '2' : '5'}进入注册`,
       //   icon: 'none',
       //   duration: 3000
       // });
+    }
+
+    // 也处理 referrer_id 参数（兼容不同的参数名）
+    if (options.referrer_id) {
+      this.referrerId = options.referrer_id;
+      uni.setStorageSync('current_referrer_id', this.referrerId);
+      console.log('接收到referrer_id参数并保存到本地:', this.referrerId);
     }
 
     this.getServiceProviderId();

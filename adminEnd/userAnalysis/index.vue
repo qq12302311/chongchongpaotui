@@ -22,8 +22,8 @@
           <view class="stats-value new-users">{{ analysisData.todayNewUsers || 0 }}</view>
         </view>
         <view class="stats-card">
-          <view class="stats-title">活跃用户</view>
-          <view class="stats-value active-users">--</view>
+          <view class="stats-title">下单用户</view>
+          <view class="stats-value active-users">{{ analysisData.active_user || 0 }}</view>
         </view>
         <view class="stats-card">
           <view class="stats-title">用户余额</view>
@@ -410,6 +410,7 @@ export default {
         totalUsers: totalUsers, // 使用data/users-members接口返回的total.user
         todayNewUsers: todayNewUsers,
         activeUsers: Math.floor(totalUsers * 0.6), // 假设活跃用户为总用户的60%
+        active_user: data.total && data.total.active_user !== undefined ? Number(data.total.active_user) : 0, // 使用接口返回的下单用户数
         totalBalance: (totalUsers * 15.5).toFixed(2) // 假设平均余额15.5元
       };
 
@@ -453,6 +454,10 @@ export default {
             {
               name: "每日下单用户",
               data: [20, 28, 15, 23, 12, 35, 30]
+            },
+            {
+              name: "每日下单新用户",
+              data: [8, 12, 6, 10, 5, 15, 12]
             }
           ]
         };
@@ -491,6 +496,12 @@ export default {
           displayName: '每日下单用户',
           show: true,
           priority: 3
+        },
+        {
+          searchNames: ['每日下单新用户', '下单新用户', '新用户下单', '首次下单用户'],
+          displayName: '每日下单新用户',
+          show: true,
+          priority: 4
         }
       ];
 
@@ -530,6 +541,9 @@ export default {
           } else if (mapping.displayName === '每日下单用户') {
             // 下单用户数据应该比注册用户少一些
             mockData = baseData.map(val => Math.floor(val * 0.8));
+          } else if (mapping.displayName === '每日下单新用户') {
+            // 下单新用户数据应该比下单用户更少
+            mockData = baseData.map(val => Math.floor(val * 0.4));
           } else {
             mockData = baseData;
           }
@@ -572,6 +586,10 @@ export default {
             {
               name: "每日下单用户",
               data: [20, 28, 15, 23, 12, 35, 30]
+            },
+            {
+              name: "每日下单新用户",
+              data: [8, 12, 6, 10, 5, 15, 12]
             }
           ]
         };

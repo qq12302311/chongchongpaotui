@@ -137,7 +137,10 @@
             </view>
 
             <view class="service-time" :data-content="getDisplayAmount(order)"></view>
-            <button v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="take-order-btn" @click.stop="goToOrderDetail(order)">去接单</button>
+            <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons">
+              <button class="take-order-btn" @click.stop="goToOrderDetail(order)">去接单</button>
+              <button class="transfer-order-btn" @click.stop="goToOrderDetail(order)">转单</button>
+            </view>
             <view v-else-if="!order.isCompleted && !order.isAssigned && order.refundRequest" class="refund-label">订单退款中</view>
             <view v-else-if="order.isAssigned" class="assigned-label">
               <template v-if="order.isRecentTask">
@@ -159,7 +162,7 @@
 
         <!-- 无更多数据提示 -->
         <view v-if="!loading && !hasMore && orderList.length > 0" class="no-more-tip">
-          <text>已经到底了</text>
+          <text>仅展示近期10条历史订单...</text>
         </view>
 
         <!-- 无数据提示 -->
@@ -175,15 +178,15 @@
 
           <!-- 推荐骑手 -->
           <view class="recommend-item" @click="goToRiderRecommend">
-            <text class="recommend-text">推荐骑手，得订单2.5%奖金 连续拿一年！</text>
+            <text class="recommend-text">推荐骑手，得订单2.5%奖金 连拿100天！</text>
             <text class="recommend-btn">去推荐</text>
           </view>
 
           <!-- 推荐用户 -->
-          <view class="recommend-item" @click="goToUserRecommend">
+          <!-- <view class="recommend-item" @click="goToUserRecommend">
             <text class="recommend-text">推荐用户，得订单1.5%奖金 连续拿一年！</text>
             <text class="recommend-btn">去推荐</text>
-          </view>
+          </view> -->
         </view>
       </view>
     </view>
@@ -198,6 +201,9 @@
       :custom-click="handleFloatingImageClick"
     ></floating-image>
 
+    <!-- 悬浮聊天图标 -->
+    <floating-chat-icon></floating-chat-icon>
+
     <!-- 海报弹窗 -->
     <poster-modal
       :show="showPosterModal"
@@ -209,56 +215,77 @@
     <!-- 订单详情弹窗 -->
     <view v-if="showOrderModal" class="order-modal-mask" @click="closeOrderModal">
       <view class="order-modal-container" @click.stop>
-        <view class="order-modal-header">
-          <text class="order-modal-title">订单情况简述</text>
-          <view class="order-modal-close" @click="closeOrderModal">×</view>
-			<view class="order-modal-subtitle">
-			  <text class="subtitle-text">（接单后可见订单详情）</text>
+        <!-- 顶部装饰图片 -->
+        <image 
+          class="order-modal-header-image" 
+          src="https://ccpt.qiniu.0871.cn/duihua/dingdanjianshu.png" 
+          mode="widthFix"
+        ></image>
+        
+		<view class="asdasd" style="background-color:#fff; margin-top: -2rpx;">
+			<view class="order-modal-content">
+			  <!-- 订单基本信息 -->
+			  <view class="order-modal-info">
+				<!-- <view class="info-row">
+				  <text class="info-label">订单编号：</text>
+				  <text class="info-value">{{ currentOrderInfo.orderNumber }}</text>
+				</view>
+				<view class="info-row">
+				  <text class="info-label">发单时间：</text>
+				  <text class="info-value">{{ currentOrderInfo.orderTime }}</text>
+				</view> -->
+				<view class="info-row">
+				  <text class="info-label">服务地址：</text>
+				  <text class="info-value">{{ formatAddress(currentOrderInfo) }}</text>
+				</view>
+			   <!-- <view class="info-row">
+				  <text class="info-label">时效：</text>
+				  <text class="info-value service-time-value">{{ currentOrderInfo.serviceTime }}</text>
+				</view> -->
+				<view class="info-row">
+				  <text class="info-label">项目：</text>
+				  <text class="info-value service-item-value">{{ currentOrderInfo.serviceItem }}</text>
+				</view>
+				<view class="info-row">
+				  <text class="info-label">服务距离：</text>
+				  <text class="info-value">{{ currentOrderInfo.distance || 0 }}km</text>
+				</view>
+				<view class="info-row">
+				  <text class="info-label">订单金额：</text>
+				  <text class="info-value amount">{{ getDisplayAmount(currentOrderInfo) }}</text>
+				</view>
+				<!-- <view class="info-row">
+				  <text class="info-label">打赏金额：</text>
+				  <text class="info-value service-amount">8.0元</text>
+				</view> -->
+			  </view>
 			</view>
-        </view>
 
-        <view class="order-modal-content">
-          <!-- 订单基本信息 -->
-          <view class="order-modal-info">
-            <!-- <view class="info-row">
-              <text class="info-label">订单编号：</text>
-              <text class="info-value">{{ currentOrderInfo.orderNumber }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">发单时间：</text>
-              <text class="info-value">{{ currentOrderInfo.orderTime }}</text>
-            </view> -->
-            <view class="info-row">
-              <text class="info-label">服务地址：</text>
-              <text class="info-value">{{ formatAddress(currentOrderInfo) }}</text>
-            </view>
-           <!-- <view class="info-row">
-              <text class="info-label">时效：</text>
-              <text class="info-value service-time-value">{{ currentOrderInfo.serviceTime }}</text>
-            </view> -->
-            <view class="info-row">
-              <text class="info-label">项目：</text>
-              <text class="info-value service-item-value">{{ currentOrderInfo.serviceItem }}</text>
-            </view>
-            <view class="info-row distance-row">
-              <text class="info-label">距离：</text>
-              <text class="info-value">{{ currentOrderInfo.distance || 0 }}km</text>
-              <view class="modal-btn navigate inline-navigate" @click="navigateToOrder">导航看看</view>
-            </view>
-            <view class="info-row">
-              <text class="info-label">订单金额：</text>
-              <text class="info-value amount">{{ getDisplayAmount(currentOrderInfo) }}</text>
-            </view>
-          </view>
-        </view>
+			<!-- 关闭按钮 -->
+			<!-- <view class="order-modal-close" @click="closeOrderModal">×</view> -->
 
-        <view class="order-modal-footer">
-          <view class="modal-btn cancel" @click="closeOrderModal">取消</view>
-          <view class="modal-btn confirm" :class="{disabled: isAcceptingOrder}" @click="acceptOrder">
-            <text v-if="isAcceptingOrder">接单中...</text>
-            <text v-else>立即接单</text>
-          </view>
-        </view>
+			<!-- 转单奖励信息 -->
+			<view v-if="!currentOrderInfo.isTransferOrder" class="order-modal-reward">
+			  <text class="reward-label">转单奖励</text>
+			  <text class="reward-amount">{{ getTransferReward(currentOrderInfo) }}</text>
+			  <view class="reward-condition">
+				<text class="reward-condition-text">派出且成功完单</text>
+			  </view>
+			</view>
+
+			<view class="order-modal-footer">
+			  <view class="modal-btn cancel" @click="closeOrderModal">取消</view>
+			  <view v-if="!currentOrderInfo.isTransferOrder && !currentOrderInfo.isTransferMode" class="modal-btn transfer" @click="transferOrderInModal">订单转派</view>
+			  <view v-if="!currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isAcceptingOrder}" @click="acceptOrder">
+				<text v-if="isAcceptingOrder">接单中...</text>
+				<text v-else>立即接单</text>
+			  </view>
+			  <view v-if="currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isTransferringOrder}" @click="confirmTransferOrder">
+				<text v-if="isTransferringOrder">转单中...</text>
+				<text v-else>确认转单</text>
+			  </view>
+			</view>
+		</view>
       </view>
     </view>
 
@@ -276,34 +303,67 @@
     <!-- 自动撤销任务提醒弹窗 -->
     <view v-if="showCancelModal" class="cancel-modal-mask" @click="closeCancelModal">
       <view class="cancel-modal-container" @click.stop>
+        <!-- 顶部图片 -->
         <view class="cancel-modal-header">
-          <text class="cancel-modal-title">任务撤销提醒</text>
-          <view class="cancel-modal-close" @click="closeCancelModal">×</view>
+          <image 
+            class="cancel-modal-header-image" 
+            src="https://ccpt.qiniu.0871.cn/rider/new/chexiao.png" 
+            mode="widthFix"
+          ></image>
+          <text class="cancel-intro-text">您有{{ canceledTasks.length }}个任务已被系统自动撤销：</text>
         </view>
+        
+        <!-- 内容区域 -->
         <view class="cancel-modal-content">
+          
           <view v-if="canceledTasks.length === 1" class="single-task">
-            <text class="cancel-text">您有1个任务已被系统自动撤销：</text>
             <view class="task-item">
-              <text class="task-info">订单号：{{ canceledTasks[0].task.task_no }}</text>
-              <text class="task-info">门店名称：{{ canceledTasks[0].task.task_detail.store_name }}</text>
-              <text class="task-info">撤销时间：{{ formatCancelTime(canceledTasks[0].created_at) }}</text>
-              <text class="task-reason">撤销原因：{{ canceledTasks[0].cancel_reason || '超时未处理' }}</text>
+              <view class="task-row">
+                <text class="task-label">订单编号</text>
+                <text class="task-value">{{ canceledTasks[0].task.task_no }}</text>
+              </view>
+              <view class="task-row">
+                <text class="task-label">门店名称</text>
+                <text class="task-value">{{ canceledTasks[0].task.task_detail.store_name }}</text>
+              </view>
+              <view class="task-row">
+                <text class="task-label">撤销时间</text>
+                <text class="task-value">{{ formatCancelTime(canceledTasks[0].created_at) }}</text>
+              </view>
+              <view class="task-row">
+                <text class="task-label">撤销原因</text>
+                <text class="task-reason">{{ canceledTasks[0].cancel_reason || '订单超时自接单后36小时未完单' }}</text>
+              </view>
             </view>
           </view>
+          
           <view v-else class="multiple-tasks">
-            <text class="cancel-text">您有{{ canceledTasks.length }}个任务已被系统自动撤销：</text>
             <scroll-view scroll-y class="task-list">
               <view v-for="(task, index) in canceledTasks" :key="index" class="task-item">
-                <text class="task-info">订单号：{{ task.task.task_no }}</text>
-                <text class="task-info">门店名称：{{ canceledTasks[0].task.task_detail.store_name  }}</text>
-                <text class="task-info">撤销时间：{{ formatCancelTime(task.created_at) }}</text>
-                <text class="task-reason">撤销原因：{{ task.cancel_reason || '超时未处理' }}</text>
+                <view class="task-row">
+                  <text class="task-label">订单编号</text>
+                  <text class="task-value">{{ task.task.task_no }}</text>
+                </view>
+                <view class="task-row">
+                  <text class="task-label">门店名称</text>
+                  <text class="task-value">{{ task.task.task_detail.store_name }}</text>
+                </view>
+                <view class="task-row">
+                  <text class="task-label">撤销时间</text>
+                  <text class="task-value">{{ formatCancelTime(task.created_at) }}</text>
+                </view>
+                <view class="task-row">
+                  <text class="task-label">撤销原因</text>
+                  <text class="task-reason">{{ task.cancel_reason || '订单超时自接单后36小时未完单' }}</text>
+                </view>
               </view>
             </scroll-view>
           </view>
         </view>
+        
+        <!-- 底部按钮 -->
         <view class="cancel-modal-footer">
-          <view class="modal-btn confirm" @click="closeCancelModal">我知道了</view>
+          <view class="modal-btn-new confirm" @click="closeCancelModal">知道了 下次我尽快完成！</view>
         </view>
       </view>
     </view>
@@ -322,6 +382,7 @@ import TabBar from '@/components/rider/tab-bar/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
+import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 	import md5 from 'md5'
 
 export default {
@@ -330,7 +391,8 @@ export default {
     TabBar,
     PosterModal,
     FloatingImage,
-    AuthModal
+    AuthModal,
+    FloatingChatIcon
   },
   data() {
     return {
@@ -400,6 +462,7 @@ export default {
       showOrderModal: false,
       currentOrderInfo: {},
       isAcceptingOrder: false,
+      isTransferringOrder: false,
       // 分享描述缓存
       shareDesc: '',
       // 分享订单数据缓存
@@ -407,7 +470,34 @@ export default {
       // 分享统计数据缓存
       shareCountData: {},
       // 分享图片路径
-      shareImageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+      shareImageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+      // 分享参数
+      shareParams: null,
+      // 当前要转派的订单
+      currentTransferOrder: null
+    }
+  },
+  onLoad(options) {
+    // 处理分享进入的参数
+    if (options.referrer_id && options.shared_order_id) {
+      console.log('通过订单转派分享进入:', {
+        referrer_id: options.referrer_id,
+        shared_order_id: options.shared_order_id
+      });
+
+      // 将 referrer_id 保存到本地存储
+      uni.setStorageSync('current_referrer_id', options.referrer_id);
+
+      // 保存分享参数，后续可用于处理订单接单逻辑
+      this.shareParams = {
+        referrer_id: options.referrer_id,
+        shared_order_id: options.shared_order_id
+      };
+
+      // 延迟显示转派订单详情弹窗，等待订单列表加载完成
+      setTimeout(() => {
+        this.showTransferOrderModal(options.shared_order_id);
+      }, 1000);
     }
   },
   onShow() {
@@ -458,8 +548,8 @@ export default {
     // 检查是否需要显示海报弹窗
     this.checkPosterModal()
 
-    // 检查自动撤销的任务
-    this.checkAutoCanceledTasks()
+    // 检查自动撤销的任务 - 已关闭调试
+    // this.checkAutoCanceledTasks()
   },
   onPullDownRefresh() {
     this.refreshList()
@@ -471,37 +561,70 @@ export default {
   },
   // 微信分享到好友
   async onShareAppMessage() {
-	// 显示加载提示
-	uni.showLoading({
-		title: '加载中...',
-		mask: true
-	});
+    console.log('onShareAppMessage 被调用');
+    console.log('currentTransferOrder:', this.currentTransferOrder);
+    console.log('currentOrderInfo:', this.currentOrderInfo);
 
-	try {
-	  // 异步获取分享描述，但不等待结果
-	  const shareImageUrl = await this.generateShareDescSync();
+    // 如果是订单转派分享，优先使用 currentTransferOrder，如果为空则使用 currentOrderInfo
+    const order = this.currentTransferOrder || this.currentOrderInfo;
 
-	  // 隐藏加载提示
-	  uni.hideLoading();
+    if (order && order.id) {
+      console.log('分享订单转派信息:', order);
+      console.log('订单价格:', order.price);
+      console.log('转单奖励:', this.getTransferReward(order));
 
-	  return {
-		title: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
-		desc: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
-		path: '/riderEnd/index',
-		imageUrl: shareImageUrl
-	  }
-	} catch (error) {
-	  console.error('分享准备失败:', error);
-	  // 隐藏加载提示
-	  uni.hideLoading();
+      const shareData = {
+        title: `${order.serviceItem} | ${this.getTransferDisplayAmount(order)} | ${this.formatAddress(order)}`,
+        desc: `【订单转派】距离: ${order.distance}km | 转单奖励: ${this.getTransferReward(order)}`,
+        path: `/riderEnd/index?referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
+        imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+      };
 
-	  return {
-		title: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
-		desc: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
-		path: '/riderEnd/index',
-		imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
-	  }
-	}
+      // 延迟清除转派订单信息，确保分享完成
+      setTimeout(() => {
+        this.currentTransferOrder = null;
+      }, 1000);
+
+      uni.showToast({
+        title: '订单转派成功',
+        icon: 'success'
+      });
+
+      return shareData;
+    }
+    
+    // 默认分享逻辑
+    // 显示加载提示
+    uni.showLoading({
+      title: '加载中...',
+      mask: true
+    });
+
+    try {
+      // 异步获取分享描述，但不等待结果
+      const shareImageUrl = await this.generateShareDescSync();
+
+      // 隐藏加载提示
+      uni.hideLoading();
+
+      return {
+        title: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
+        desc: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
+        path: '/riderEnd/index',
+        imageUrl: shareImageUrl
+      }
+    } catch (error) {
+      console.error('分享准备失败:', error);
+      // 隐藏加载提示
+      uni.hideLoading();
+
+      return {
+        title: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
+        desc: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
+        path: '/riderEnd/index',
+        imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+      }
+    }
   },
   // 微信分享到朋友圈
   onShareTimeline() {
@@ -1021,7 +1144,7 @@ export default {
       } else if (!order.isCompleted && !order.isAssigned && order.refundRequest) {
         // 退款中订单不能接单
         uni.showToast({
-          title: '此订单正在退款处理中，无法接单',
+          title: '该订单状态可能有变，请联系调度核实！',
           icon: 'none',
           duration: 2000
         });
@@ -1036,10 +1159,56 @@ export default {
       }
     },
 
+    // 转单功能
+    transferOrder(order) {
+      // 如果是recent_tasks的订单，不跳转页面
+      if (order.isRecentTask) {
+        return;
+      }
+
+      // 普通订单显示弹窗，标记为转单模式
+      if (!order.isCompleted && !order.isAssigned && !order.refundRequest) {
+        // 检查骑手认证状态
+        if (!this.checkRiderVerification()) {
+          // 未认证，显示认证提示弹窗
+          this.showAuthModal = true;
+          return;
+        }
+        // 已认证，显示订单详情弹窗，标记为转单模式
+        this.showTransferOrderDetailModal(order);
+      }
+    },
+
+    // 显示转单订单详情弹窗
+    showTransferOrderDetailModal(order) {
+      // 标记这是转单模式，用于在弹窗中显示转单按钮而不是接单按钮
+      this.currentOrderInfo = { ...order, isTransferMode: true };
+      this.showOrderModal = true;
+    },
+
     // 显示订单详情弹窗
     showOrderDetailModal(order) {
       this.currentOrderInfo = order;
       this.showOrderModal = true;
+    },
+
+    // 显示转派订单详情弹窗
+    showTransferOrderModal(orderId) {
+      // 在订单列表中查找对应的订单
+      const order = this.orderList.find(o => o.id == orderId);
+      if (order) {
+        // 标记这是转派订单，用于隐藏转派相关功能
+        this.currentOrderInfo = { ...order, isTransferOrder: true };
+        this.showOrderModal = true;
+      } else {
+        // 如果在当前列表中找不到，可能需要重新加载或显示提示
+        uni.showToast({
+          title: '转派订单加载中，请稍后',
+          icon: 'none'
+        });
+        // 重新加载订单列表
+        this.refreshData();
+      }
     },
 
     // 关闭订单详情弹窗
@@ -1097,11 +1266,24 @@ export default {
           sign: sign
         };
 
+        // 从本地存储获取 referrer_id 并添加到参数中
+        const localReferrerId = uni.getStorageSync('current_referrer_id');
+        if (localReferrerId) {
+          params.referrer_id = localReferrerId;
+          console.log('接单时添加 referrer_id 参数:', localReferrerId);
+        }
+
         const res = await this.$request('task/accept', params, 'POST');
 
         if (res.code === 200) {
           // 保存订单ID，因为关闭弹窗会清空currentOrderInfo
           const orderId = this.currentOrderInfo.id;
+
+          // 接单成功后清除本地存储的 referrer_id
+          if (localReferrerId) {
+            uni.removeStorageSync('current_referrer_id');
+            console.log('接单成功，已清除本地 referrer_id');
+          }
 
           uni.showToast({
             title: '接单成功',
@@ -1131,6 +1313,131 @@ export default {
         });
       } finally {
         this.isAcceptingOrder = false;
+      }
+    },
+
+    // 转单操作
+    transferOrder() {
+      try {
+        // 直接转发订单信息
+        // 设置当前要转发的订单信息
+        this.currentTransferOrder = this.currentOrderInfo;
+        
+        // 为当前订单添加 referrer_id 标记
+        const orderIndex = this.orderList.findIndex(order => order.id === this.currentOrderInfo.id);
+        if (orderIndex !== -1) {
+          this.orderList[orderIndex].referrer_id = this.riderUserInfo.id;
+        }
+        
+        console.log('准备转派订单信息:', {
+          order_id: this.currentOrderInfo.id,
+          referrer_id: this.riderUserInfo.id
+        });
+
+        // 直接调用小程序转发接口
+        if (typeof wx !== 'undefined' && wx.updateShareMenu) {
+          // 更新分享菜单
+          wx.updateShareMenu({
+            withShareTicket: true,
+            isUpdatableMessage: false,
+            activityId: '',
+            templateInfo: {},
+            success: () => {
+              console.log('更新分享菜单成功');
+            },
+            fail: (err) => {
+              console.error('更新分享菜单失败:', err);
+            }
+          });
+        }
+
+        // 直接触发转发分享
+        if (typeof wx !== 'undefined' && wx.shareAppMessage) {
+          const order = this.currentOrderInfo; // 使用 currentOrderInfo，因为此时还未关闭弹窗
+          console.log('转单分享订单信息:', order);
+          console.log('订单价格:', order.price);
+          console.log('转单奖励:', this.getTransferReward(order));
+
+          const shareData = {
+            title: `${order.serviceItem} | ${this.getTransferDisplayAmount(order)} | ${this.formatAddress(order)}`,
+            desc: `【订单转派】距离: ${order.distance}km | 转单奖励: ${this.getTransferReward(order)}`,
+            path: `/riderEnd/index?referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
+            imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+            success: (res) => {
+              console.log('订单转派分享成功', res);
+              uni.showToast({
+                title: '订单转派成功',
+                icon: 'success'
+              });
+              this.closeOrderModal();
+              // 清除转派订单信息
+              this.currentTransferOrder = null;
+            },
+            fail: (err) => {
+              console.error('订单转派分享失败:', err);
+              uni.showToast({
+                title: '转派失败，请重试',
+                icon: 'none'
+              });
+              // 清除转派订单信息
+              this.currentTransferOrder = null;
+            }
+          };
+          
+          wx.shareAppMessage(shareData);
+        } else {
+          // 备用方案：如果无法直接调用，则提示用户
+          uni.showToast({
+            title: '请点击右上角转发',
+            icon: 'none',
+            duration: 2000
+          });
+          this.closeOrderModal();
+        }
+      } catch (error) {
+        console.error('订单转派失败:', error);
+        uni.showToast({
+          title: '转派失败，请重试',
+          icon: 'none'
+        });
+        // 清除转派订单信息
+        this.currentTransferOrder = null;
+      }
+    },
+
+    // 弹窗中的转单操作（订单转派）
+    transferOrderInModal() {
+      this.transferOrder();
+    },
+
+    // 确认转单操作
+    async confirmTransferOrder() {
+      if (this.isTransferringOrder) return;
+
+      this.isTransferringOrder = true;
+
+      try {
+        // 这里可以添加转单的具体接口调用
+        // 目前先显示提示
+        uni.showToast({
+          title: '转单功能开发中',
+          icon: 'none',
+          duration: 2000
+        });
+
+        // 模拟转单成功
+        setTimeout(() => {
+          this.closeOrderModal();
+          this.isTransferringOrder = false;
+        }, 1000);
+
+      } catch (error) {
+        console.error('转单失败:', error);
+        uni.showToast({
+          title: '转单失败，请重试',
+          icon: 'none'
+        });
+        this.isTransferringOrder = false;
       }
     },
 
@@ -1168,6 +1475,66 @@ export default {
       return `¥${realAmount.toFixed(2)}`;
     },
 
+    // 计算转单奖励金额
+    getTransferReward(order) {
+      if (!order || !order.price) return '3元';
+
+      let amount = 0;
+      if (typeof order.price === 'string') {
+        amount = parseFloat(order.price.replace('¥', ''));
+      } else {
+        amount = Number(order.price);
+      }
+
+      // 根据订单金额计算转单奖励
+      if (amount <= 20) {
+        return '3元';
+      } else if (amount <= 50) {
+        return '6元';
+      } else {
+        return '9元';
+      }
+    },
+
+    // 计算转单奖励数值（不带单位）
+    getTransferRewardAmount(order) {
+      if (!order || !order.price) return 3;
+
+      let amount = 0;
+      if (typeof order.price === 'string') {
+        amount = parseFloat(order.price.replace('¥', ''));
+      } else {
+        amount = Number(order.price);
+      }
+
+      // 根据订单金额计算转单奖励
+      if (amount <= 20) {
+        return 3;
+      } else if (amount <= 50) {
+        return 6;
+      } else {
+        return 9;
+      }
+    },
+
+    // 计算转单后的订单金额（原金额减去转单奖励）
+    getTransferDisplayAmount(order) {
+      if (!this.riderUserInfo || !this.riderUserInfo.rate) return order.price;
+
+      let amount = 0;
+      if (typeof order.price === 'string') {
+        amount = parseFloat(order.price.replace('¥', ''));
+      } else {
+        amount = Number(order.price);
+      }
+
+      const rate = Number(this.riderUserInfo.rate);
+      const rewardAmount = this.getTransferRewardAmount(order);
+      const finalAmount = (amount * rate) - rewardAmount;
+
+      return `¥${finalAmount.toFixed(2)}`;
+    },
+
     // 检查是否需要显示海报弹窗
     checkPosterModal() {
       const today = new Date().toDateString();
@@ -1192,14 +1559,14 @@ export default {
           return;
         }
 
-        // 检查今天是否已经弹窗过
-        const today = new Date().toDateString(); // 获取今天的日期字符串
-        const lastShownDate = uni.getStorageSync('cancelModalLastShown');
+        // 为了方便调试，直接显示弹窗，跳过日期检查
+        // const today = new Date().toDateString(); // 获取今天的日期字符串
+        // const lastShownDate = uni.getStorageSync('cancelModalLastShown');
 
-        if (lastShownDate === today) {
-          console.log('今天已经显示过撤销任务弹窗，跳过');
-          return;
-        }
+        // if (lastShownDate === today) {
+        //   console.log('今天已经显示过撤销任务弹窗，跳过');
+        //   return;
+        // }
 
         // 获取当前时间和24小时前的时间
         const endDate = new Date();
@@ -1232,10 +1599,28 @@ export default {
 
         console.log('自动撤销任务接口响应:', res.data.data);
 
-        if (res.code === 200 && res.data.data && res.data.data.length > 0) {
-          this.canceledTasks = res.data.data;
-          // 记录今天已经显示过弹窗
-          uni.setStorageSync('cancelModalLastShown', today);
+        // 为了方便调试，无论是否有数据都显示弹窗
+        if (res.code === 200) {
+          // 如果有真实数据就使用真实数据，否则使用模拟数据
+          if (res.data.data && res.data.data.length > 0) {
+            this.canceledTasks = res.data.data;
+          } else {
+            // 模拟撤销任务数据用于调试
+            this.canceledTasks = [
+              {
+                id: 1,
+                task: {
+                  task_no: 'TEST001',
+                  task_detail: {
+                    store_name: '测试门店'
+                  }
+                },
+                created_at: new Date().toISOString(),
+                cancel_reason: '超时未处理'
+              }
+            ];
+          }
+
           // 延迟显示，确保页面加载完成且不与海报弹窗冲突
           setTimeout(() => {
             this.showCancelModal = true;
@@ -1243,13 +1628,67 @@ export default {
         }
       } catch (error) {
         console.error('检查自动撤销任务失败:', error);
+        // 即使接口失败也显示模拟数据用于调试
+        this.canceledTasks = [
+          {
+            id: 1,
+            task: {
+              task_no: 'DEBUG001',
+              task_detail: {
+                store_name: '调试门店'
+              }
+            },
+            created_at: new Date().toISOString(),
+            cancel_reason: '调试模式'
+          }
+        ];
+
+        setTimeout(() => {
+          this.showCancelModal = true;
+        }, 2000);
       }
     },
 
     // 关闭撤销任务弹窗
-    closeCancelModal() {
+    async closeCancelModal() {
+      // 如果有撤销任务，调用已读接口
+      if (this.canceledTasks && this.canceledTasks.length > 0) {
+        await this.markCanceledTasksAsRead();
+      }
+
       this.showCancelModal = false;
       this.canceledTasks = [];
+
+      // 调试模式下不记录日期，以便每次都能显示弹窗
+      // uni.setStorageSync('cancelModalLastShown', new Date().toDateString());
+    },
+
+    // 标记撤销任务为已读
+    async markCanceledTasksAsRead() {
+      try {
+        // 提取所有撤销任务的ID
+        const ids = this.canceledTasks.map(task => task.id);
+        const timestamp = Math.floor(Date.now() / 1000);
+        
+        const params = {
+          ids: ids,
+          service_member_id: this.riderUserInfo.id,
+          sign: "chongchong",
+          timestamp: timestamp
+        };
+
+        console.log('标记撤销任务已读参数:', params);
+
+        const res = await this.$request('task/update/autocanceled', params, 'POST');
+
+        if (res.code === 200) {
+          console.log('撤销任务已标记为已读');
+        } else {
+          console.error('标记撤销任务已读失败:', res.message || res);
+        }
+      } catch (error) {
+        console.error('调用撤销任务已读接口失败:', error);
+      }
     },
 
     // 格式化撤销时间
@@ -2385,19 +2824,48 @@ export default {
         }
       }
 
-      .take-order-btn {
+      .order-action-buttons {
         position: absolute;
         right: 0;
         bottom: 10rpx;
+        display: flex;
+        height: 50rpx;
+        border-radius: 25rpx;
+        overflow: hidden;
+        box-shadow: 0 2rpx 8rpx rgba(255, 107, 0, 0.3);
+      }
+
+      .take-order-btn {
         width: 120rpx;
         height: 50rpx;
         line-height: 50rpx;
         background-color: #ff6b00;
         color: #fff;
         font-size: 24rpx;
-        border-radius: 25rpx;
+        font-weight: 500;
+        border-radius: 25rpx 0 0 25rpx;
         text-align: center;
         padding: 0;
+        border: none;
+        margin: 0;
+        position: relative;
+      }
+
+      .transfer-order-btn {
+        width: 80rpx;
+        height: 50rpx;
+        line-height: 50rpx;
+        background-color: #fff;
+        color: #ff6b00;
+        font-size: 24rpx;
+        font-weight: 500;
+        border-radius: 0 25rpx 25rpx 0;
+        text-align: center;
+        padding: 0;
+        border: 2rpx solid #ff6b00;
+        border-left: none;
+        margin: 0;
+        box-sizing: border-box;
       }
 
       .completed-label {
@@ -2660,11 +3128,39 @@ export default {
 .order-modal-container {
   width: 85%;
   max-width: 600rpx;
-  background-color: #fff;
   border-radius: 20rpx;
   overflow: hidden;
   animation: modalSlideIn 0.3s ease;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+  // box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+  position: relative;
+
+  .order-modal-close {
+    position: absolute;
+    right: 20rpx;
+    top: 20rpx;
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36rpx;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+
+    &:active {
+      background-color: rgba(0, 0, 0, 0.5);
+      transform: scale(0.95);
+    }
+  }
+}
+
+.order-modal-header-image {
+  height: auto;
+  display: block;
+  border-radius: 20rpx 20rpx 0 0;
 }
 
 @keyframes fadeIn {
@@ -2683,47 +3179,17 @@ export default {
   }
 }
 
-.order-modal-header {
-	position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f0f0f0;
-  background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-
-  .order-modal-title {
-    font-size: 32rpx;
-    font-weight: 600;
-    color: #333;
-  }
-
-  .order-modal-close {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36rpx;
-    color: #999;
-    background-color: #f8f9fa;
-    border-radius: 50%;
-    cursor: pointer;
-
-    &:active {
-      background-color: #e8e8e8;
-      transform: scale(0.95);
-    }
-  }
-}
-
 .order-modal-content {
-  padding: 30rpx;
+  background-color: #fff;
+  padding: 0 30rpx 0rpx 30rpx;
   max-height: 60vh;
   overflow-y: auto;
 }
 
 .order-modal-info {
+	background-color: #e6f1fa;
+	padding: 10px;
+	border-radius: 8px;
   .info-row {
     display: flex;
     margin-bottom: 20rpx;
@@ -2744,6 +3210,7 @@ export default {
       color: #333;
       flex: 1;
       font-weight: 500;
+      text-align: right;
 
       &.amount {
         color: #ff4d4f;
@@ -2759,6 +3226,12 @@ export default {
       &.service-item-value {
         color: #F04141;
         font-weight: 500;
+      }
+
+      &.service-amount {
+        color: #ff4d4f;
+        font-weight: 600;
+        font-size: 28rpx;
       }
     }
 
@@ -2783,9 +3256,57 @@ export default {
   }
 }
 
+// 转单奖励信息样式
+.order-modal-reward {
+  background-color: #e6f1fa;
+      border: 1rpx solid #e6f1fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin: 20rpx 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .reward-label {
+    font-size: 26rpx;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .reward-amount {
+    font-size: 28rpx;
+    color: #ff6b35;
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+  }
+
+  .reward-condition {
+	  padding: 6rpx 6rpx;
+	  background-color: #ffe6f0;
+	  border: 1rpx solid #ffb3d1;
+	  border-radius: 8rpx;
+	  margin-left: 10rpx;
+	  min-height: auto;
+	  height: auto;
+	  display: flex;
+	  align-items: center;
+
+    .reward-condition-text {
+      font-size: 18rpx;
+      color: #e91e63;
+      font-weight: 400;
+      line-height: 1.2;
+      word-wrap: break-word;
+      margin: 0;
+      padding: 0;
+    }
+  }
+}
+
 .order-modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 20rpx 30rpx;
   border-top: 1rpx solid #f0f0f0;
   gap: 16rpx;
@@ -2806,9 +3327,22 @@ export default {
     background-color: #f8f9fa;
     color: #666;
     border: 1rpx solid #e8e8e8;
+    flex: 1;
 
     &:active {
       background-color: #e8e8e8;
+      transform: scale(0.95);
+    }
+  }
+
+  &.transfer {
+    background: linear-gradient(135deg, #ff9500 0%, #ff7300 100%);
+    color: #fff;
+    border: 1rpx solid #ff9500;
+    flex: 1;
+
+    &:active {
+      opacity: 0.9;
       transform: scale(0.95);
     }
   }
@@ -2824,29 +3358,12 @@ export default {
     }
   }
 
-  &.inline-navigate {
-    background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-    color: #fff;
-    border: 1rpx solid #52c41a;
-    padding: 6rpx 12rpx;
-    font-size: 23rpx;
-    // min-width: 50rpx;
-    position: absolute;
-    right: 0;
-    top: 50%;
-	right: 72px;
-    transform: translateY(-50%);
-
-    &:active {
-      opacity: 0.9;
-      transform: translateY(-50%) scale(0.95);
-    }
-  }
-
   &.confirm {
-    background: linear-gradient(135deg, #2492F2 0%, #1976D2 100%);
+    // background: linear-gradient(135deg, #ff936b 0%, #F35C43 100%);
+	background: #F35C43;
     color: #fff;
-    border: 1rpx solid #2492F2;
+    // border: 1rpx solid #2492F2;
+    flex: 1;
 
     &:active {
       opacity: 0.9;
@@ -2865,22 +3382,7 @@ export default {
   }
 }
 
-.distance-row {
-  position: relative;
-}
 
-.order-modal-subtitle {
-	top: 39px;
-	    left: -9px;
-	position: absolute;
-  text-align: center;
-  padding: 0 32rpx 16rpx;
-}
-
-.subtitle-text {
-  color: #ff4d4f;
-  font-size: 22rpx;
-}
 
 // 广告横幅动画效果
 @keyframes pulse {
@@ -2942,95 +3444,102 @@ export default {
 .cancel-modal-container {
   width: 85%;
   max-width: 600rpx;
-  background-color: #fff;
   border-radius: 20rpx;
   overflow: hidden;
   animation: modalSlideIn 0.3s ease;
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+  background: transparent;
 }
 
 .cancel-modal-header {
-  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-  color: #fff;
-  padding: 30rpx;
+	position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  position: relative;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  margin-bottom: -2rpx;
 
-  .cancel-modal-title {
-    font-size: 32rpx;
-    font-weight: 600;
+  .cancel-modal-header-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 20rpx 20rpx 0 0;
   }
-
-  .cancel-modal-close {
-    font-size: 40rpx;
-    font-weight: 300;
-    cursor: pointer;
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
-
-    &:active {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-  }
-}
-
-.cancel-modal-content {
-  padding: 30rpx;
-  max-height: 500rpx;
-
-  .cancel-text {
+  .cancel-intro-text {
+	  position: absolute;
     font-size: 28rpx;
     color: #333;
     margin-bottom: 20rpx;
     display: block;
     font-weight: 500;
+    line-height: 1.4;
+	top: 115px;
+	    left: 12px;
   }
+}
 
-  .single-task {
+.cancel-modal-content {
+  padding: 0px 20rpx 1rpx 20rpx;
+  max-height: 500rpx;
+  background-color: #fff;
+  margin-top: 0;
+
+
+  .single-task, .multiple-tasks {
     .task-item {
-      background-color: #f8f9fa;
+      background-color: #F0F8FF;
       border-radius: 12rpx;
-      padding: 20rpx;
-      margin-top: 15rpx;
+      padding: 24rpx;
+      margin-bottom: 15rpx;
+      // border-left: 4rpx solid #FF6B35;
+
+      .task-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12rpx;
+        min-height: 40rpx;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .task-label {
+          font-size: 26rpx;
+          color: #666;
+          font-weight: 500;
+          flex-shrink: 0;
+          width: 140rpx;
+          line-height: 1.4;
+        }
+
+        .task-value {
+          font-size: 26rpx;
+          color: #333;
+          font-weight: 500;
+          text-align: right;
+          flex: 1;
+          line-height: 1.4;
+          word-break: break-all;
+        }
+
+        .task-reason {
+          font-size: 26rpx;
+          color: #FF6B35;
+          font-weight: 600;
+          text-align: right;
+          flex: 1;
+          line-height: 1.4;
+          word-break: break-all;
+        }
+      }
     }
   }
 
   .multiple-tasks {
     .task-list {
       max-height: 300rpx;
-      margin-top: 15rpx;
-    }
-
-    .task-item {
-      background-color: #f8f9fa;
-      border-radius: 12rpx;
-      padding: 20rpx;
-      margin-bottom: 15rpx;
-      border-left: 4rpx solid #ff6b6b;
-    }
-  }
-
-  .task-item {
-    .task-info {
-      font-size: 26rpx;
-      color: #666;
-      display: block;
-      margin-bottom: 8rpx;
-      line-height: 1.4;
-    }
-
-    .task-reason {
-      font-size: 24rpx;
-      color: #ff6b6b;
-      display: block;
-      font-weight: 500;
     }
   }
 }
@@ -3039,8 +3548,10 @@ export default {
   padding: 20rpx 30rpx 30rpx;
   display: flex;
   justify-content: center;
+  background-color: #fff;
+  border-radius: 0 0 20rpx 20rpx;
 
-  .modal-btn {
+  .modal-btn-new {
     flex: 1;
     height: 80rpx;
     border-radius: 40rpx;
@@ -3053,12 +3564,14 @@ export default {
     transition: all 0.3s ease;
 
     &.confirm {
-      background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+      background: linear-gradient(135deg, #FF6B35 0%, #F35C43 100%);
       color: #fff;
+      box-shadow: 0 4rpx 12rpx rgba(255, 107, 53, 0.3);
 
       &:active {
         transform: scale(0.98);
         opacity: 0.9;
+        box-shadow: 0 2rpx 8rpx rgba(255, 107, 53, 0.4);
       }
     }
   }

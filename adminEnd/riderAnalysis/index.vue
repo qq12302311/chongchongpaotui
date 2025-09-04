@@ -22,8 +22,8 @@
           <view class="stats-value new-riders">{{ analysisData.todayNewRiders || 0 }}</view>
         </view>
         <view class="stats-card">
-          <view class="stats-title">活跃骑手</view>
-          <view class="stats-value active-riders">--</view>
+          <view class="stats-title">接单骑手</view>
+          <view class="stats-value active-riders">{{ analysisData.active_member || 0 }}</view>
         </view>
         <view class="stats-card">
           <view class="stats-title">骑手收入</view>
@@ -264,6 +264,7 @@ export default {
         totalRiders: totalRiders, // 使用data/users-members接口返回的total.member
         todayNewRiders: todayNewRiders,
         activeRiders: Math.floor(totalRiders * 0.7), // 假设活跃骑手为总骑手的70%
+        active_member: data.total && data.total.active_member !== undefined ? Number(data.total.active_member) : 0, // 使用接口返回的接单骑手数
         totalIncome: (totalRiders * 125.5).toFixed(2) // 假设平均收入125.5元
       };
 

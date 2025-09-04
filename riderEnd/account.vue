@@ -89,17 +89,22 @@
       @cancel="closeWithdrawModal"
       @confirm="goToAddAccount"
     />
+
+    <!-- 悬浮聊天图标 -->
+    <FloatingChatIcon />
   </view>
 </template>
 
 <script>
 import NavBar from '@/components/NavBar.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
+import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 
 export default {
   components: {
     NavBar,
-    AuthModal
+    AuthModal,
+    FloatingChatIcon
   },
   data() {
     return {

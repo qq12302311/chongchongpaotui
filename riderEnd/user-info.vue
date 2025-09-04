@@ -59,15 +59,20 @@
 		<view class="privacy-notice">
 			*身份信息已认证，信息安全保障中！
 		</view>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIcon />
 	</view>
 </template>
 
 <script>
 	import NavBar from '@/components/NavBar.vue'
+	import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 
 	export default {
 		components: {
-			NavBar
+			NavBar,
+			FloatingChatIcon
 		},
 		data() {
 			return {

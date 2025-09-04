@@ -157,6 +157,9 @@
 				<view class="service-cancel" @click="closeServiceModal">关闭</view>
 			</view>
 		</view>
+
+		<!-- 悬浮聊天图标 -->
+		<FloatingChatIconUser />
 	</view>
 </template>
 
@@ -164,13 +167,15 @@
 	import NavBar from '@/components/NavBar.vue'
 	import TabBar from '@/components/tab-bar/tab-bar.vue'
 	import FloatingImage from '@/components/FloatingImage/index.vue'
+	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import userMixin from '@/mixins/userMixin.js'
 
 	export default {
 		components: {
 			NavBar,
 			TabBar,
-			FloatingImage
+			FloatingImage,
+			FloatingChatIconUser
 		},
 		mixins: [userMixin],
 		data() {

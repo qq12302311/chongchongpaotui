@@ -45,7 +45,7 @@
             <view class="title-icon zone-icon"></view>
             <text>服务区域</text>
           </view>
-          <view class="filter-items">
+          <view class="filter-items zone-filter-items">
             <view class="zone-selector" @click="showCascadeSelector">
               <text class="zone-text">{{ zoneOptions.length > 0 ? zoneOptions[0].label : '全部区域' }}</text>
               <view class="zone-arrow"></view>
@@ -1680,7 +1680,24 @@ export default {
   flex-wrap: wrap;
   gap: 12rpx;
   align-items: center;
+}
+
+.zone-filter-items {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12rpx;
+  
+  .zone-selector {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 250rpx); // 为时间筛选器预留空间
+  }
+  
+  .time-filter {
+    flex-shrink: 0;
+  }
 }
 
 .filter-item {
@@ -1760,6 +1777,11 @@ export default {
   .zone-text {
     font-weight: 500;
     color: #2492F2;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8rpx;
   }
 
   .zone-arrow {
@@ -1768,7 +1790,7 @@ export default {
     border-left: 6rpx solid transparent;
     border-right: 6rpx solid transparent;
     border-top: 8rpx solid #999;
-    margin-left: 12rpx;
+    flex-shrink: 0;
     transition: transform 0.3s ease;
   }
 }
