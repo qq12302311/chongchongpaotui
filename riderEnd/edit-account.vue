@@ -27,21 +27,21 @@
       <!-- Alipay表单 -->
       <view v-if="currentTab === 'alipay'" class="form-content">
         <view class="form-item">
-          <text class="form-label">Alipay</text>
-          <input
-            class="form-input"
-            type="text"
-            v-model="alipayForm.account"
-            placeholder="请输入Alipay账号"
-          />
-        </view>
-        <view class="form-item">
-          <text class="form-label">真实姓名</text>
+          <text class="form-label">姓名全称</text>
           <input
             class="form-input"
             type="text"
             v-model="alipayForm.realName"
             placeholder="请输入账号真实姓名"
+          />
+        </view>
+        <view class="form-item">
+          <text class="form-label">Alipay账号</text>
+          <input
+            class="form-input"
+            type="text"
+            v-model="alipayForm.account"
+            placeholder="请输入Alipay账号（手机号或邮箱）"
           />
         </view>
         <view class="form-item">

@@ -248,7 +248,10 @@
 				</view>
 				<view class="info-row">
 				  <text class="info-label">服务距离：</text>
-				  <text class="info-value">{{ currentOrderInfo.distance || 0 }}km</text>
+				  <view class="distance-info-modal">
+					<text class="navigation-btn" @click="navigateToOrder">导航</text>
+					<text class="info-value">{{ currentOrderInfo.distance || 0 }}km</text>
+				  </view>
 				</view>
 				<view class="info-row">
 				  <text class="info-label">订单金额：</text>
@@ -2865,6 +2868,7 @@ export default {
         border: 2rpx solid #ff6b00;
         border-left: none;
         margin: 0;
+        margin-left: -2rpx;
         box-sizing: border-box;
       }
 
@@ -3192,6 +3196,7 @@ export default {
 	border-radius: 8px;
   .info-row {
     display: flex;
+	justify-content: space-between;
     margin-bottom: 20rpx;
     font-size: 26rpx;
 
@@ -3251,6 +3256,37 @@ export default {
     .service-item-modal {
       &::after {
         color: #F04141;
+      }
+    }
+
+    .distance-info-modal {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      // flex: 1;
+
+      .navigation-btn {
+        color: #fff;
+        background: linear-gradient(135deg, #2492F2 0%, #1E7FD8 100%);
+        font-size: 22rpx;
+        font-weight: 500;
+        padding: 6rpx 16rpx;
+        border-radius: 20rpx;
+        cursor: pointer;
+        box-shadow: 0 2rpx 8rpx rgba(36, 146, 242, 0.3);
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        margin-right: 6rpx;
+
+        &:active {
+          transform: scale(0.95);
+          box-shadow: 0 1rpx 4rpx rgba(36, 146, 242, 0.4);
+        }
+      }
+
+      .info-value {
+        color: #333;
+        font-weight: 500;
       }
     }
   }

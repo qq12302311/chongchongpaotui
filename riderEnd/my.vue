@@ -141,7 +141,7 @@
         </view>
         <view class="menu-right">
           <view class="reward-info">
-            <text class="reward-text">💰 推荐赚奖金</text>
+            <text class="reward-text">💰 推荐新骑手返点奖拿100天</text>
           </view>
           <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>

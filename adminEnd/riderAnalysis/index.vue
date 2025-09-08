@@ -72,6 +72,67 @@
           </view>
         </view>
       </view>
+
+      <!-- 行政区骑手数量排名 -->
+      <view class="ranking-section">
+        <view class="ranking-header">
+          <view class="ranking-title">行政区域骑手数量排名</view>
+          <view class="region-filter">
+            <view 
+              class="filter-item" 
+              :class="{ active: regionType === 'province' }"
+              @click="changeRegionType('province')"
+            >省份</view>
+            <view 
+              class="filter-item" 
+              :class="{ active: regionType === 'city' }"
+              @click="changeRegionType('city')"
+            >城市</view>
+            <view 
+              class="filter-item" 
+              :class="{ active: regionType === 'district' }"
+              @click="changeRegionType('district')"
+            >区县</view>
+          </view>
+        </view>
+        <view class="ranking-container">
+          <view v-if="regionRankingLoading" class="ranking-loading">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="regionRankingData && regionRankingData.length > 0" class="ranking-list">
+            <view class="ranking-table">
+              <view class="table-header">
+                <view class="header-cell rank">排名</view>
+                <view class="header-cell region-name">地区</view>
+                <view class="header-cell rider-count">骑手数</view>
+                <view class="header-cell percentage">占比(%)</view>
+              </view>
+              <view class="table-body">
+                <view 
+                  v-for="(item, index) in regionRankingData" 
+                  :key="index" 
+                  class="table-row"
+                  :class="{ 'top-three': index < 3 }"
+                >
+                  <view class="table-cell rank">
+                    <view class="rank-number" :class="index === 0 ? 'rank-first' : index === 1 ? 'rank-second' : index === 2 ? 'rank-third' : 'rank-normal'">
+                      {{ index + 1 }}
+                    </view>
+                  </view>
+                  <view class="table-cell region-name">{{ item.region_name || '--' }}</view>
+                  <view class="table-cell rider-count">{{ item.rider_count || 0 }}</view>
+                  <view class="table-cell percentage">{{ formatPercentage(item.percentage) }}%</view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view v-else class="ranking-empty">
+            <text>暂无排名数据</text>
+          </view>
+        </view>
+      </view>
+
     </view>
 
     <view style="height: env(safe-area-inset-bottom, 0px);"></view>
@@ -118,6 +179,11 @@ export default {
       registerChartData: null,
       // 时间类型选择
       registerTimeType: 1, // 骑手注册图表时间类型：1-日, 2-周, 3-月，默认选中日
+      // 行政区骑手数量排名相关
+      regionRankingData: null,
+      regionRankingLoading: false,
+      regionType: 'city', // 默认城市类型
+      currentParentRegionId: 5 // 当前父级地区ID，默认为5
     }
   },
 
@@ -133,6 +199,9 @@ export default {
 
     // 加载数据
     this.loadAnalysisData();
+    
+    // 加载行政区骑手排名数据
+    this.loadRegionRiderRankingData();
   },
 
   methods: {
@@ -514,6 +583,139 @@ export default {
           console.log(`${series.name} 系列已${series.show ? '显示' : '隐藏'}`);
         }
       }
+    },
+
+    // 加载行政区骑手排名数据
+    async loadRegionRiderRankingData() {
+      if (this.regionRankingLoading) return;
+
+      this.regionRankingLoading = true;
+
+      try {
+        // 获取用户信息
+        if (!this.riderUserInfo || !this.riderUserInfo.id) {
+          console.log('用户信息不存在，无法加载排名数据');
+          return;
+        }
+
+        // 构建请求参数
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          type: this.regionType,
+          // parent_region_id: this.currentParentRegionId,
+          timestamp: Math.floor(Date.now() / 1000),
+          sign: "chongchong"
+        };
+
+        console.log('行政区骑手排名请求参数:', params);
+
+        // 发送请求
+        const res = await this.$request('data/region/member', params, 'POST');
+
+        console.log('🔍 行政区骑手排名数据响应:', res);
+
+        if (res.status === 'success' && res.data) {
+          // 处理数据，接口返回的是图表格式数据
+          this.processRegionRankingData(res.data);
+        } else {
+          console.log('❌ 行政区骑手排名数据加载失败:', res.msg);
+          this.regionRankingData = [];
+          if (res.msg) {
+            uni.showToast({
+              title: res.msg,
+              icon: 'none'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('获取行政区骑手排名数据失败:', error);
+        this.regionRankingData = [];
+        uni.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        });
+      } finally {
+        this.regionRankingLoading = false;
+      }
+    },
+
+    // 处理行政区骑手排名数据
+    processRegionRankingData(data) {
+      console.log('🔄 处理行政区骑手排名数据:', data);
+
+      // 检查数据格式：可能是嵌套的 {data: {categories, series}} 或直接的 {categories, series}
+      let chartData = data;
+      if (data.data && data.data.categories && data.data.series) {
+        console.log('📋 发现嵌套数据格式，提取内层数据');
+        chartData = data.data;
+      }
+
+      if (!chartData.categories || !chartData.series || !Array.isArray(chartData.categories) || !Array.isArray(chartData.series)) {
+        console.log('❌ 数据格式错误，缺少categories或series');
+        this.regionRankingData = [];
+        return;
+      }
+
+      // 获取地区名称和骑手数量
+      const categories = chartData.categories;
+      const seriesData = chartData.series[0]?.data || [];
+
+      console.log('📋 categories:', categories);
+      console.log('📋 seriesData:', seriesData);
+
+      // 验证数据长度是否一致
+      if (categories.length !== seriesData.length) {
+        console.warn('⚠️ categories和series数据长度不一致');
+        console.log('categories长度:', categories.length, 'series长度:', seriesData.length);
+      }
+
+      // 组合数据并排序
+      const regionArray = categories.map((regionName, index) => ({
+        region_name: regionName,
+        rider_count: Number(seriesData[index]) || 0
+      }));
+
+      // 按骑手数量排序（从高到低）
+      regionArray.sort((a, b) => b.rider_count - a.rider_count);
+
+      // 计算总骑手数用于占比计算
+      const totalRiders = regionArray.reduce((sum, item) => sum + item.rider_count, 0);
+
+      // 添加占比字段，并限制显示前50条
+      this.regionRankingData = regionArray.slice(0, 50).map(item => ({
+        ...item,
+        percentage: totalRiders > 0 ? (item.rider_count / totalRiders * 100).toFixed(1) : 0
+      }));
+
+      console.log('✅ 处理后的行政区骑手排名数据:', this.regionRankingData);
+      console.log('📊 数据条数:', this.regionRankingData.length);
+      console.log('📋 前三名数据:', this.regionRankingData.slice(0, 3));
+      console.log('📊 总骑手数:', totalRiders);
+
+      // 验证数据映射关系
+      console.log('🔍 验证数据映射关系:');
+      this.regionRankingData.slice(0, 5).forEach((item, index) => {
+        console.log(`${index + 1}. ${item.region_name}: ${item.rider_count}人 (${item.percentage}%)`);
+      });
+    },
+
+    // 切换地区类型
+    changeRegionType(type) {
+      if (this.regionType === type) return;
+
+      this.regionType = type;
+      console.log('🔄 切换地区类型:', type);
+
+      // 重新加载数据
+      this.loadRegionRiderRankingData();
+    },
+
+    // 格式化百分比显示
+    formatPercentage(percentage) {
+      if (!percentage && percentage !== 0) {
+        return '0.0';
+      }
+      return Number(percentage).toFixed(1);
     }
   }
 }
@@ -679,5 +881,204 @@ export default {
   height: 100%;
   color: #999;
   font-size: 24rpx;
+}
+
+// 排行榜区域
+.ranking-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  border: 1rpx solid #f0f0f0;
+  margin-bottom: 30rpx;
+}
+
+.ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.ranking-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.region-filter {
+  display: flex;
+  background-color: #f8f9fa;
+  border-radius: 20rpx;
+  padding: 4rpx;
+  border: 1rpx solid #e8e8e8;
+}
+
+.filter-item {
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  color: #666;
+  border-radius: 16rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 60rpx;
+  text-align: center;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.active {
+    background-color: #6c5ce7;
+    color: #fff;
+    font-weight: 500;
+  }
+}
+
+.ranking-container {
+  width: 100%;
+  min-height: 400rpx;
+}
+
+.ranking-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  color: #999;
+}
+
+.ranking-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.ranking-table {
+  width: 100%;
+  border-radius: 8rpx;
+  overflow: hidden;
+  border: 1rpx solid #f0f0f0;
+}
+
+.table-header {
+  display: flex;
+  background-color: #f8f9fa;
+  border-bottom: 1rpx solid #e8e8e8;
+}
+
+.header-cell {
+  padding: 24rpx 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+  
+  &.rank {
+    flex: 0 0 120rpx;
+  }
+  
+  &.region-name {
+    flex: 1;
+  }
+  
+  &.rider-count {
+    flex: 0 0 120rpx;
+  }
+  
+  &.percentage {
+    flex: 0 0 140rpx;
+  }
+}
+
+.table-body {
+  background-color: #fff;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
+  
+  &.top-three {
+    background-color: #fff7e6;
+  }
+}
+
+.table-cell {
+  padding: 24rpx 16rpx;
+  font-size: 26rpx;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &.rank {
+    flex: 0 0 120rpx;
+  }
+  
+  &.region-name {
+    flex: 1;
+    font-weight: 500;
+  }
+  
+  &.rider-count {
+    flex: 0 0 120rpx;
+    font-weight: 500;
+    color: #6c5ce7;
+  }
+  
+  &.percentage {
+    flex: 0 0 140rpx;
+    font-weight: 500;
+    color: #52c41a;
+  }
+}
+
+.rank-number {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  
+  &.rank-first {
+    background-color: #FFD700;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(255, 215, 0, 0.4);
+  }
+  
+  &.rank-second {
+    background-color: #C0C0C0;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(192, 192, 192, 0.4);
+  }
+  
+  &.rank-third {
+    background-color: #CD7F32;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(205, 127, 50, 0.4);
+  }
+  
+  &.rank-normal {
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1rpx solid #e8e8e8;
+  }
 }
 </style>

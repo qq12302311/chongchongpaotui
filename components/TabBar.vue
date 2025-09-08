@@ -6,7 +6,7 @@
       @click="switchTab('home')"
     >
       <view class="tab-icon home-icon" :class="{ 'active-icon': currentPage === 'home' }"></view>
-      <text class="tab-text" :class="{ 'active-text': currentPage === 'home' }">首页</text>
+      <text class="tab-text" :class="{ 'active-text': currentPage === 'home' }">账本</text>
     </view>
     <view
       class="tab-item"
@@ -79,7 +79,7 @@ export default {
   justify-content: space-around;
   align-items: center;
   box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
-  z-index: 100;
+  z-index: 1001;
   border-top: 1rpx solid rgba(0, 0, 0, 0.03);
   padding-bottom: env(safe-area-inset-bottom);
   /* 添加安全区域的背景色 */

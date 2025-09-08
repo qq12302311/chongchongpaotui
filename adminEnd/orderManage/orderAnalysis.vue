@@ -35,7 +35,29 @@
         </view>
       </view>
 
-      <!-- 订单数量折线图 -->
+      <!-- 分段器 -->
+      <view class="segmented-control">
+        <view class="segmented-container">
+          <view 
+            class="segment-item"
+            :class="{ active: currentTab === 'trend' }"
+            @click="switchTab('trend')"
+          >
+            订单趋势
+          </view>
+          <view 
+            class="segment-item"
+            :class="{ active: currentTab === 'ranking' }"
+            @click="switchTab('ranking')"
+          >
+            订单排行榜
+          </view>
+        </view>
+      </view>
+
+      <!-- 订单趋势内容 -->
+      <view v-if="currentTab === 'trend'" class="trend-content">
+        <!-- 订单数量折线图 -->
       <view class="chart-section">
         <view class="chart-header">
           <view class="chart-title">订单数量趋势</view>
@@ -164,6 +186,73 @@
           </scroll-view>
         </view> -->
       </view>
+
+      </view> <!-- 结束订单趋势内容 -->
+
+      <!-- 订单排行榜内容 -->
+      <view v-if="currentTab === 'ranking'" class="ranking-content">
+        <!-- 行政区域任务数量排名 -->
+      <view class="ranking-section">
+        <view class="ranking-header">
+          <view class="ranking-title">行政区域任务数量排名</view>
+          <view class="region-filter">
+            <view 
+              class="filter-item" 
+              :class="{ active: regionType === 'province' }"
+              @click="changeRegionType('province')"
+            >省份</view>
+            <view 
+              class="filter-item" 
+              :class="{ active: regionType === 'city' }"
+              @click="changeRegionType('city')"
+            >城市</view>
+            <view 
+              class="filter-item" 
+              :class="{ active: regionType === 'district' }"
+              @click="changeRegionType('district')"
+            >区县</view>
+          </view>
+        </view>
+        <view class="ranking-container">
+          <view v-if="regionRankingLoading" class="ranking-loading">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="regionRankingData && regionRankingData.length > 0" class="ranking-list">
+            <view class="ranking-table">
+              <view class="table-header">
+                <view class="header-cell rank">排名</view>
+                <view class="header-cell region-name">地区</view>
+                <view class="header-cell task-count">任务数</view>
+                <view class="header-cell percentage">占比(%)</view>
+              </view>
+              <view class="table-body">
+                <view 
+                  v-for="(item, index) in regionRankingData" 
+                  :key="index" 
+                  class="table-row"
+                  :class="{ 'top-three': index < 3 }"
+                >
+                  <view class="table-cell rank">
+                    <view class="rank-number" :class="index === 0 ? 'rank-first' : index === 1 ? 'rank-second' : index === 2 ? 'rank-third' : 'rank-normal'">
+                      {{ index + 1 }}
+                    </view>
+                  </view>
+                  <view class="table-cell region-name">{{ item.region_name || '--' }}</view>
+                  <view class="table-cell task-count">{{ item.task_count || 0 }}</view>
+                  <view class="table-cell percentage">{{ formatPercentage(item.percentage) }}%</view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view v-else class="ranking-empty">
+            <text>暂无排名数据</text>
+          </view>
+        </view>
+      </view>
+
+      </view> <!-- 结束订单排行榜内容 -->
+
     </view>
 
     <view style="height: env(safe-area-inset-bottom, 0px);"></view>
@@ -279,6 +368,13 @@ export default {
       // 时间类型选择
       countTimeType: 1, // 订单数量图表时间类型：1-日, 2-周, 3-月，默认选中日
       amountTimeType: 1, // 订单金额图表时间类型：1-日, 2-周, 3-月，默认选中日
+      // 行政区域任务数量排名相关
+      regionRankingData: null,
+      regionRankingLoading: false,
+      regionType: 'city', // 默认城市类型
+      currentParentRegionId: 5, // 当前父级地区ID，默认为5
+      // 分段器控制
+      currentTab: 'trend' // 默认显示订单趋势
 
     }
   },
@@ -299,6 +395,8 @@ export default {
     this.$nextTick(() => {
       setTimeout(() => {
         this.loadAnalysisData();
+        // 加载行政区域任务排名数据
+        this.loadRegionTaskRankingData();
       }, 300);
     });
   },
@@ -1054,8 +1152,8 @@ export default {
     initializeLegendState() {
       if (this.countChartData && this.countChartData.series) {
         this.countChartData.series.forEach((series, index) => {
-          if (series.name === "补宝订单" || series.name === "异常订单" || series.name === "完单") {
-            // 模拟点击图例来隐藏补宝订单、异常订单和完单，只显示总订单
+          if (series.name === "补宝订单" || series.name === "异常订单") {
+            // 模拟点击图例来隐藏补宝订单和异常订单，保持总订单和完单显示
             this.getCountLegendIndex({ currentIndex: index });
           }
         });
@@ -1232,6 +1330,144 @@ export default {
           this.amountChartData = { ...this.amountChartData };
         }
       }, 100);
+    },
+
+    // 加载行政区域任务排名数据
+    async loadRegionTaskRankingData() {
+      if (this.regionRankingLoading) return;
+
+      this.regionRankingLoading = true;
+
+      try {
+        // 获取用户信息
+        if (!this.riderUserInfo || !this.riderUserInfo.id) {
+          console.log('用户信息不存在，无法加载排名数据');
+          return;
+        }
+
+        // 构建请求参数
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          type: this.regionType,
+          timestamp: Math.floor(Date.now() / 1000),
+          sign: "chongchong"
+        };
+
+        console.log('行政区域任务排名请求参数:', params);
+
+        // 发送请求
+        const res = await this.$request('data/region/task', params, 'POST');
+
+        console.log('🔍 行政区域任务排名数据响应:', res);
+
+        if (res.status === 'success' && res.data) {
+          // 处理数据，接口返回的是图表格式数据
+          this.processRegionTaskRankingData(res.data);
+        } else {
+          console.log('❌ 行政区域任务排名数据加载失败:', res.msg);
+          this.regionRankingData = [];
+          if (res.msg) {
+            uni.showToast({
+              title: res.msg,
+              icon: 'none'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('获取行政区域任务排名数据失败:', error);
+        this.regionRankingData = [];
+        uni.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        });
+      } finally {
+        this.regionRankingLoading = false;
+      }
+    },
+
+    // 处理行政区域任务排名数据
+    processRegionTaskRankingData(data) {
+      console.log('🔄 处理行政区域任务排名数据:', data);
+
+      // 检查数据格式：可能是嵌套的 {data: {categories, series}} 或直接的 {categories, series}
+      let chartData = data;
+      if (data.data && data.data.categories && data.data.series) {
+        console.log('📋 发现嵌套数据格式，提取内层数据');
+        chartData = data.data;
+      }
+
+      if (!chartData.categories || !chartData.series || !Array.isArray(chartData.categories) || !Array.isArray(chartData.series)) {
+        console.log('❌ 数据格式错误，缺少categories或series');
+        this.regionRankingData = [];
+        return;
+      }
+
+      // 获取地区名称和任务数量
+      const categories = chartData.categories;
+      const seriesData = chartData.series[0]?.data || [];
+
+      console.log('📋 categories:', categories);
+      console.log('📋 seriesData:', seriesData);
+
+      // 验证数据长度是否一致
+      if (categories.length !== seriesData.length) {
+        console.warn('⚠️ categories和series数据长度不一致');
+        console.log('categories长度:', categories.length, 'series长度:', seriesData.length);
+      }
+
+      // 组合数据并排序
+      const regionArray = categories.map((regionName, index) => ({
+        region_name: regionName,
+        task_count: Number(seriesData[index]) || 0
+      }));
+
+      // 按任务数量排序（从高到低）
+      regionArray.sort((a, b) => b.task_count - a.task_count);
+
+      // 计算总任务数用于占比计算
+      const totalTasks = regionArray.reduce((sum, item) => sum + item.task_count, 0);
+
+      // 添加占比字段，并限制显示前50条
+      this.regionRankingData = regionArray.slice(0, 50).map(item => ({
+        ...item,
+        percentage: totalTasks > 0 ? (item.task_count / totalTasks * 100).toFixed(1) : 0
+      }));
+
+      console.log('✅ 处理后的行政区域任务排名数据:', this.regionRankingData);
+      console.log('📊 数据条数:', this.regionRankingData.length);
+      console.log('📋 前三名数据:', this.regionRankingData.slice(0, 3));
+      console.log('📊 总任务数:', totalTasks);
+
+      // 验证数据映射关系
+      console.log('🔍 验证数据映射关系:');
+      this.regionRankingData.slice(0, 5).forEach((item, index) => {
+        console.log(`${index + 1}. ${item.region_name}: ${item.task_count}个任务 (${item.percentage}%)`);
+      });
+    },
+
+    // 切换地区类型
+    changeRegionType(type) {
+      if (this.regionType === type) return;
+
+      this.regionType = type;
+      console.log('🔄 切换地区类型:', type);
+
+      // 重新加载数据
+      this.loadRegionTaskRankingData();
+    },
+
+    // 格式化百分比显示
+    formatPercentage(percentage) {
+      if (!percentage && percentage !== 0) {
+        return '0.0';
+      }
+      return Number(percentage).toFixed(1);
+    },
+
+    // 切换分段器选项卡
+    switchTab(tab) {
+      this.currentTab = tab;
+      console.log('切换到选项卡:', tab === 'trend' ? '订单趋势' : '订单排行榜');
     }
 
 
@@ -1486,6 +1722,260 @@ export default {
     color: #fff;
     border-color: #2492F2;
     font-weight: 500;
+  }
+}
+
+// 排行榜区域
+.ranking-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  border: 1rpx solid #f0f0f0;
+  margin-bottom: 30rpx;
+}
+
+.ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.ranking-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.region-filter {
+  display: flex;
+  background-color: #f8f9fa;
+  border-radius: 20rpx;
+  padding: 4rpx;
+  border: 1rpx solid #e8e8e8;
+}
+
+.region-filter .filter-item {
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  color: #666;
+  border-radius: 16rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 60rpx;
+  text-align: center;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.active {
+    background-color: #2492F2;
+    color: #fff;
+    font-weight: 500;
+  }
+}
+
+.ranking-container {
+  width: 100%;
+  min-height: 400rpx;
+}
+
+.ranking-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  color: #999;
+}
+
+.ranking-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.ranking-table {
+  width: 100%;
+  border-radius: 8rpx;
+  overflow: hidden;
+  border: 1rpx solid #f0f0f0;
+}
+
+.table-header {
+  display: flex;
+  background-color: #f8f9fa;
+  border-bottom: 1rpx solid #e8e8e8;
+}
+
+.header-cell {
+  padding: 24rpx 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+  
+  &.rank {
+    flex: 0 0 120rpx;
+  }
+  
+  &.region-name {
+    flex: 1;
+  }
+  
+  &.task-count {
+    flex: 0 0 120rpx;
+  }
+  
+  &.percentage {
+    flex: 0 0 140rpx;
+  }
+}
+
+.table-body {
+  background-color: #fff;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
+  
+  &.top-three {
+    background-color: #fff7e6;
+  }
+}
+
+.table-cell {
+  padding: 24rpx 16rpx;
+  font-size: 26rpx;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &.rank {
+    flex: 0 0 120rpx;
+  }
+  
+  &.region-name {
+    flex: 1;
+    font-weight: 500;
+  }
+  
+  &.task-count {
+    flex: 0 0 120rpx;
+    font-weight: 500;
+    color: #2492F2;
+  }
+  
+  &.percentage {
+    flex: 0 0 140rpx;
+    font-weight: 500;
+    color: #52c41a;
+  }
+}
+
+.rank-number {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  
+  &.rank-first {
+    background-color: #FFD700;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(255, 215, 0, 0.4);
+  }
+  
+  &.rank-second {
+    background-color: #C0C0C0;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(192, 192, 192, 0.4);
+  }
+  
+  &.rank-third {
+    background-color: #CD7F32;
+    color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(205, 127, 50, 0.4);
+  }
+  
+  &.rank-normal {
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1rpx solid #e8e8e8;
+  }
+}
+
+// 分段器样式
+.segmented-control {
+  padding: 0 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.segmented-container {
+  display: flex;
+  background-color: #f8f9fa;
+  border-radius: 24rpx;
+  padding: 6rpx;
+  border: 1rpx solid #e8e8e8;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.segment-item {
+  flex: 1;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+  border-radius: 18rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.active {
+    background-color: #2492F2;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.3);
+  }
+}
+
+// 内容区域样式
+.trend-content,
+.ranking-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

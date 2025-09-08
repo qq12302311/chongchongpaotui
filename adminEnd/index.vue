@@ -11,113 +11,88 @@
       <text>返回启动页</text>
     </view>
 
-    <!-- 首页内容 -->
+    <!-- 账本内容 -->
     <view v-if="pageVisible.home" class="page-content">
-      <!-- 欢迎区域 -->
-      <view class="welcome-section">
-        <view class="welcome-content">
-          <view class="welcome-text">
-            <text class="welcome-title">充充跑腿运维管理系统</text>
-            <text class="welcome-subtitle">管理用户端和骑手端的功能设置和数据统计</text>
+      <!-- 账本头部 -->
+      <view class="ledger-header">
+        <view class="header-content">
+          <view class="header-text">
+            <text class="header-title">账本管理</text>
+            <text class="header-subtitle">查看收支明细和账户余额</text>
           </view>
-          <view class="welcome-decoration">
+          <view class="header-decoration">
             <view class="decoration-circle"></view>
             <view class="decoration-circle"></view>
           </view>
         </view>
-        <view class="welcome-stats">
-          <view class="quick-stat">
-            <text class="stat-value">0</text>
-            <text class="stat-label">今日订单</text>
+        <view class="balance-info">
+          <view class="balance-item">
+            <text class="balance-value">¥{{ ledgerData.balance || '0.00' }}</text>
+            <text class="balance-label">总利润</text>
           </view>
-          <view class="quick-stat">
-            <text class="stat-value">0</text>
-            <text class="stat-label">活跃用户</text>
+          <view class="balance-item">
+            <text class="balance-value">¥{{ ledgerData.total_income || '0.00' }}</text>
+            <text class="balance-label">总收入</text>
           </view>
-          <view class="quick-stat">
-            <text class="stat-value">0</text>
-            <text class="stat-label">总收入(元)</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 快捷功能卡片区域 -->
-      <view class="card-section">
-        <view class="section-header">
-          <view class="section-title">快捷功能</view>
-          <view class="section-subtitle">常用功能快速访问</view>
-        </view>
-        <view class="quick-grid">
-          <view class="quick-card" @click="navigateTo('orderSearch')">
-            <view class="quick-icon search-icon"></view>
-            <text class="quick-text">订单查询</text>
-          </view>
-          <view class="quick-card" @click="navigateTo('userVerify')">
-            <view class="quick-icon verify-icon"></view>
-            <text class="quick-text">用户审核</text>
-          </view>
-          <view class="quick-card" @click="navigateTo('riderVerify')">
-            <view class="quick-icon rider-verify-icon"></view>
-            <text class="quick-text">骑手审核</text>
-          </view>
-          <view class="quick-card" @click="navigateTo('dataAnalysis')">
-            <view class="quick-icon analysis-icon"></view>
-            <text class="quick-text">数据分析</text>
+          <view class="balance-item">
+            <text class="balance-value">¥{{ ledgerData.total_expense || '0.00' }}</text>
+            <text class="balance-label">总支出</text>
           </view>
         </view>
       </view>
 
-      <!-- 数据统计区域 -->
-      <view class="stats-section">
-        <view class="section-header">
-          <view class="section-title">数据统计</view>
-          <view class="section-subtitle">平台运营数据分析</view>
-        </view>
-        <view class="stats-cards">
-          <view class="stats-card">
-            <view class="stats-icon order-stats-icon"></view>
-            <view class="stats-info">
-              <view class="stats-label">本周订单</view>
-              <view class="stats-value">0</view>
-            </view>
-            <view class="stats-trend up">
-              <text class="trend-value">0%</text>
-            </view>
-          </view>
-          <view class="stats-card">
-            <view class="stats-icon user-stats-icon"></view>
-            <view class="stats-info">
-              <view class="stats-label">新增用户</view>
-              <view class="stats-value">0</view>
-            </view>
-            <view class="stats-trend up">
-              <text class="trend-value">0%</text>
-            </view>
-          </view>
-          <view class="stats-card">
-            <view class="stats-icon rider-stats-icon"></view>
-            <view class="stats-info">
-              <view class="stats-label">活跃骑手</view>
-              <view class="stats-value">0</view>
-            </view>
-            <view class="stats-trend up">
-              <text class="trend-value">0%</text>
-            </view>
-          </view>
-          <view class="stats-card">
-            <view class="stats-icon income-stats-icon"></view>
-            <view class="stats-info">
-              <view class="stats-label">本月收入</view>
-              <view class="stats-value">¥0.00</view>
-            </view>
-            <view class="stats-trend up">
-              <text class="trend-value">0%</text>
-            </view>
+      <!-- 筛选区域 -->
+      <view class="filter-section">
+        <view class="filter-tabs">
+          <view
+            v-for="filter in filterOptions"
+            :key="filter.value"
+            class="filter-tab"
+            :class="{ active: currentFilter === filter.value }"
+            @click="switchFilter(filter.value)"
+          >
+            {{ filter.label }}
           </view>
         </view>
       </view>
 
-      <!-- 页脚区域已移除 -->
+      <!-- 账本记录列表 -->
+      <view class="ledger-list">
+        <view v-if="loading" class="loading-container">
+          <view class="loading-spinner"></view>
+          <text class="loading-text">加载中...</text>
+        </view>
+
+        <view v-else-if="ledgerRecords.length === 0" class="empty-state">
+          <view class="empty-icon"></view>
+          <text class="empty-text">暂无账本记录</text>
+        </view>
+
+        <view v-else>
+          <view
+            v-for="(record, index) in filteredRecords"
+            :key="record ? (record.id || `record_${index}`) : `empty_${index}`"
+            class="ledger-item"
+            v-if="record"
+          >
+            <view class="item-left">
+              <view class="item-icon" :class="(record.type === 'income') ? 'income-icon' : 'expense-icon'">
+                <text class="icon-text">{{ (record.type === 'income') ? '+' : '-' }}</text>
+              </view>
+              <view class="item-info">
+                <text class="item-title">{{ record.description || getCategoryName(record.category) || '账本记录' }}</text>
+                <text class="item-time">{{ formatTime(record.created_at) }}</text>
+                <text v-if="record.category" class="item-category">{{ getCategoryName(record.category) }}</text>
+              </view>
+            </view>
+            <view class="item-right">
+              <text class="item-amount" :class="(record.type === 'income') ? 'income-amount' : 'expense-amount'">
+                {{ (record.type === 'income') ? '+' : '-' }}¥{{ record.amount || '0.00' }}
+              </text>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- 用户端管理内容 -->
@@ -271,30 +246,59 @@ export default {
   data() {
     return {
       navBarHeight: 0,
-      currentPage: 'user', // 当前页面：home, user, rider, order, chat
+      currentPage: 'home', // 当前页面：home, user, rider, order, chat - 默认显示账本页面
       // 各页面的内容显示状态
       pageVisible: {
-        home: false,
-        user: true,
+        home: true, // 默认显示账本页面
+        user: false,
         rider: false,
         order: false,
         chat: false
       },
       riderUserInfo: null,
       userLevel: 0,
+      // 账本相关数据
+      ledgerData: {
+        balance: '0.00',
+        total_income: '0.00',
+        total_expense: '0.00'
+      },
+      ledgerRecords: [],
+      loading: false,
+      currentFilter: 'all', // 筛选条件：all, income, expense
+      // 筛选选项
+      filterOptions: [
+        { label: '全部', value: 'all' },
+        { label: '收入', value: 'income' },
+        { label: '支出', value: 'expense' }
+      ]
     }
   },
   computed: {
     // 根据当前页面返回对应的标题
     pageTitle() {
       const titles = {
-        'home': '充充跑腿运维端',
+        'home': '账本管理',
         'user': '用户端管理',
         'rider': '骑手端管理',
         'order': '订单管理',
         'chat': '对话管理'
       }
-      return titles[this.currentPage] || '充充跑腿运维端'
+      return titles[this.currentPage] || '账本管理'
+    },
+    // 根据筛选条件过滤账本记录
+    filteredRecords() {
+      if (!Array.isArray(this.ledgerRecords)) {
+        return []
+      }
+
+      // 过滤掉null或undefined的记录
+      const validRecords = this.ledgerRecords.filter(record => record != null)
+
+      if (this.currentFilter === 'all') {
+        return validRecords
+      }
+      return validRecords.filter(record => record.type === this.currentFilter)
     }
   },
   onShow() {
@@ -317,6 +321,11 @@ export default {
     } else {
       console.log('未获取到用户等级信息');
     }
+
+    // 如果当前页面是账本页面，加载账本数据
+    if (this.currentPage === 'home') {
+      this.loadLedgerData();
+    }
   },
   methods: {
     // 切换页面
@@ -331,9 +340,121 @@ export default {
         this.pageVisible[key] = key === page;
       }
 
+      // 如果切换到账本页面，加载账本数据
+      if (page === 'home') {
+        this.loadLedgerData();
+      }
+    },
 
+    // 加载账本数据
+    async loadLedgerData() {
+      this.loading = true;
+      try {
+        const timestamp = Date.now();
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          owner_type: "member",
+          owner_id: this.riderUserInfo.id,
+          timestamp: timestamp,
+          sign: "chongchong"
+        };
 
+        const response = await uni.request({
+          url: 'https://ccpt.0871.cn/api/service/ledger',
+          method: 'POST',
+          data: params,
+          header: {
+            'Content-Type': 'application/json'
+          }
+        });
+		
+		
 
+        if (response.statusCode === 200 && response.data) {
+          const resData = response.data.data;
+
+		console.log(resData,"asdasd")
+          // 更新账本记录列表 - 使用 res.data.data，确保是数组
+          this.ledgerRecords = Array.isArray(resData.data) ? resData.data : [];
+
+          // 使用接口返回的汇总数据
+          this.updateSummaryData(response.data);
+
+          console.log('账本数据加载成功:', resData);
+          console.log('账本记录数量:', this.ledgerRecords.length);
+        } else {
+          console.error('账本数据加载失败:', response);
+          uni.showToast({
+            title: '加载失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        console.error('账本数据请求错误:', error);
+        uni.showToast({
+          title: '网络错误',
+          icon: 'none'
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 更新汇总数据 - 使用接口返回的total_income和total_expense
+    updateSummaryData(resData) {
+      // 使用接口返回的total_income和total_expense
+      const totalIncome = parseFloat(resData.total_income) || 0;
+      const totalExpense = parseFloat(resData.total_expense) || 0;
+      const balance = totalIncome - totalExpense;
+
+      this.ledgerData = {
+        balance: balance.toFixed(2),
+        total_income: totalIncome.toFixed(2),
+        total_expense: totalExpense.toFixed(2)
+      };
+    },
+
+    // 切换筛选条件
+    switchFilter(filter) {
+      this.currentFilter = filter;
+    },
+
+    // 格式化时间
+    formatTime(timeStr) {
+      if (!timeStr) return '';
+      const date = new Date(timeStr);
+      const now = new Date();
+      const diff = now - date;
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      if (diff < oneDay) {
+        return date.toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } else if (diff < 7 * oneDay) {
+        const days = Math.floor(diff / oneDay);
+        return `${days}天前`;
+      } else {
+        return date.toLocaleDateString('zh-CN', {
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+    },
+
+    // 获取分类名称
+    getCategoryName(category) {
+      const categoryMap = {
+        'referral_commission': '推荐佣金',
+        'task_payment': '任务收入',
+        'withdrawal': '提现',
+        'refund': '退款',
+        'bonus': '奖励',
+        'penalty': '扣款',
+        'recharge': '充值'
+      };
+      return categoryMap[category] || category;
     },
 
     // 功能导航
@@ -410,6 +531,7 @@ export default {
   color: #333;
   font-size: 28rpx;
   line-height: 1.5;
+  position: relative;
 
   // 全局文字样式
   text {
@@ -423,8 +545,8 @@ export default {
   text-align: center; // 确保标题居中
 }
 
-// 欢迎区域样式
-.welcome-section {
+// 账本头部样式
+.ledger-header {
   background: linear-gradient(135deg, #4481eb 0%, #04befe 100%);
   padding: 40rpx;
   color: #fff;
@@ -434,7 +556,7 @@ export default {
   position: relative;
   overflow: hidden;
 
-  .welcome-content {
+  .header-content {
     display: flex;
     justify-content: space-between;
     position: relative;
@@ -442,11 +564,11 @@ export default {
     margin-bottom: 30rpx;
   }
 
-  .welcome-text {
+  .header-text {
     flex: 1;
   }
 
-  .welcome-title {
+  .header-title {
     font-size: 40rpx;
     font-weight: bold;
     margin-bottom: 16rpx;
@@ -454,13 +576,13 @@ export default {
     letter-spacing: 1rpx;
   }
 
-  .welcome-subtitle {
+  .header-subtitle {
     font-size: 28rpx;
     opacity: 0.9;
     line-height: 1.4;
   }
 
-  .welcome-decoration {
+  .header-decoration {
     position: absolute;
     right: 0;
     top: 0;
@@ -487,7 +609,7 @@ export default {
     }
   }
 
-  .welcome-stats {
+  .balance-info {
     display: flex;
     justify-content: space-between;
     background-color: rgba(255, 255, 255, 0.15);
@@ -496,7 +618,7 @@ export default {
     backdrop-filter: blur(10rpx);
     -webkit-backdrop-filter: blur(10rpx);
 
-    .quick-stat {
+    .balance-item {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -508,13 +630,13 @@ export default {
         border-right: 1rpx solid rgba(255, 255, 255, 0.2);
       }
 
-      .stat-value {
+      .balance-value {
         font-size: 36rpx;
         font-weight: bold;
         margin-bottom: 8rpx;
       }
 
-      .stat-label {
+      .balance-label {
         font-size: 24rpx;
         opacity: 0.8;
       }
@@ -2283,6 +2405,144 @@ export default {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+// 账本筛选区域样式
+.filter-section {
+  padding: 0 30rpx 20rpx;
+}
+
+.filter-tabs {
+  display: flex;
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 8rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+}
+
+.filter-tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: #666;
+  border-radius: 8rpx;
+  transition: all 0.3s ease;
+
+  &.active {
+    background: linear-gradient(135deg, #4481eb 0%, #04befe 100%);
+    color: #fff;
+    font-weight: 500;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+// 账本列表样式
+.ledger-list {
+  padding: 0 30rpx 30rpx;
+}
+
+.ledger-item {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.item-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.item-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+
+  &.income-icon {
+    background: linear-gradient(135deg, rgba(82, 196, 26, 0.1) 0%, rgba(82, 196, 26, 0.2) 100%);
+
+    .icon-text {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #52c41a;
+    }
+  }
+
+  &.expense-icon {
+    background: linear-gradient(135deg, rgba(255, 77, 79, 0.1) 0%, rgba(255, 77, 79, 0.2) 100%);
+
+    .icon-text {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #ff4d4f;
+    }
+  }
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.item-title {
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.item-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.item-category {
+  font-size: 22rpx;
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  margin-top: 4rpx;
+  display: inline-block;
+}
+
+.item-right {
+  display: flex;
+  align-items: center;
+}
+
+.item-amount {
+  font-size: 32rpx;
+  font-weight: bold;
+
+  &.income-amount {
+    color: #52c41a;
+  }
+
+  &.expense-amount {
+    color: #ff4d4f;
   }
 }
 </style>
