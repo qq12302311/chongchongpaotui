@@ -216,6 +216,7 @@
             <view class="info-row">
               <text class="info-label">订单地址：</text>
               <text class="info-value">{{ order.province_name || '' }}{{ order.city_name || '' }}{{ order.district_name || '' }}{{ order.task_detail && order.task_detail.address ? order.task_detail.address : '' }}</text>
+              <text class="order-amount" style="color: #ff4d4f;" v-if="order.refund_request == 1">申请退单中</text>
             </view>
             <view class="info-row order-time-row">
               <text class="info-label">下单时间：</text>
