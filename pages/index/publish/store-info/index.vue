@@ -318,6 +318,17 @@
 
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
+
+		<!-- 门店地址弹窗 -->
+		<auth-modal
+			:show="showAddressPopup"
+			title="提示！"
+			:content="'当前选择了' + selectedCity + '与下单地址不符，请核对是否有误'"
+			cancel-text="取消"
+			confirm-text="知道了"
+			@confirm="showAddressPopup=false; formData.address = ''"
+			@cancel="showAddressPopup=false; formData.address = ''"
+		/>
 	</view>
 </template>
 
@@ -330,8 +341,23 @@
 			AuthModal,
 			FloatingChatIconUser
 		},
+		watch: {
+			'formData.address'(newValue) {
+				if(newValue == '' || newValue == undefined){
+					return
+				}
+				let selectedCity = uni.getStorageSync('selectedCity') || ''
+				selectedCity = selectedCity.replace(/·/g, '').replace(/ /g, '')
+				console.log('selectedCity', selectedCity)
+				if (!newValue.includes(selectedCity) && selectedCity != '') {
+					this.showAddressPopup = true
+				}
+			}
+		},
 		data() {
 			return {
+				showAddressPopup: false,
+				selectedCity: uni.getStorageSync('selectedCity'),
 				formData: {
 					address: '',
 					detailAddress: '',
