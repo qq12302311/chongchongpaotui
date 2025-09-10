@@ -1009,7 +1009,40 @@
 					// 如果设备数量超过基础数量，计算额外费用
 					if (quantity > info.bubao_base_device) {
 						const extraDevices = Math.ceil((quantity - info.bubao_base_device) / info.bubao_extra_device);
+						
+						// bubao_extra_device_fee: "2.00"
+						// bubao_extra_device_fee_2: "0.50"
+						// bubao_extra_device_fee_3: "0.30"
+						// bubao_extra_device_fee_4: "0.20"
+						// bubao_extra_device_upper_number: 8
+						// bubao_extra_device_upper_number_2: 30
+						// bubao_extra_device_upper_number_3: 50
+						// bubao_extra_device_upper_number_4: 100
 						extraDeviceFee = extraDevices * (parseFloat(info.bubao_extra_device_fee) || 0);
+						// 超出金额累加
+						if(quantity > info.bubao_extra_device_upper_number_4) {
+							extraDeviceFee = extraDeviceFee + 
+							(
+								(info.bubao_extra_device_fee_4*100)
+								+ (info.bubao_extra_device_fee_3*100)
+								+ (info.bubao_extra_device_fee_2*100)
+							) * (quantity - info.bubao_extra_device_upper_number_4) / 100;
+						}
+						
+						if(quantity > info.bubao_extra_device_upper_number_3) {
+							extraDeviceFee = extraDeviceFee + 
+							(
+								(info.bubao_extra_device_fee_3*100)
+								+ (info.bubao_extra_device_fee_2*100)
+							) * (quantity - info.bubao_extra_device_upper_number_3) / 100;
+						}
+						
+						if(quantity > info.bubao_extra_device_upper_number_2) {
+							extraDeviceFee = extraDeviceFee + 
+							(
+								(info.bubao_extra_device_fee_2*100)
+							) * (quantity - info.bubao_extra_device_upper_number_2) / 100;
+						}
 					}
 				}
 
