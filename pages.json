@@ -179,6 +179,15 @@
 				"navigationBarTextStyle": "white",
 				"navigationBarBackgroundColor": "#2492F2"
 			}
+		},
+		{
+			"path": "pages/cart/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "购物车"
+			}
 		}
 	],
 	"subPackages": [

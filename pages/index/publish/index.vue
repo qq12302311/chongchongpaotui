@@ -528,13 +528,14 @@
 				</view>
 				<view class="confirm-footer">
 					<button class="cancel-btn" @click="closeOrderConfirmPopup">返回修改</button>
-					<button class="confirm-btn" @click="confirmSubmitOrder">确认并支付</button>
+					<button class="cart-btn" @click="addToCart">加入购物车</button>
+					<button class="confirm-btn" @click="confirmSubmitOrder">确认支付</button>
 				</view>
 			</view>
 		</uni-popup>
 
 		<!-- 门店地址弹窗 -->
-		<auth-modal
+		<!-- <auth-modal
 			:show="showAddressPopup"
 			title="提示！"
 			:content="'当前选择了' + selectedCity + '与下单地址不符，请核对是否有误'"
@@ -542,7 +543,7 @@
 			confirm-text="知道了"
 			@confirm="showAddressPopup=false; formData.address = ''"
 			@cancel="showAddressPopup=false; formData.address = ''"
-		/>
+		/> -->
 	</view>
 </template>
 
@@ -561,19 +562,19 @@
 			AuthModal,
 			FloatingChatIconUser
 		},
-		watch: {
-			'formData.address'(newValue) {
-				if(newValue == '' || newValue == undefined){
-					return
-				}
-				let selectedCity = uni.getStorageSync('selectedCity') || ''
-				selectedCity = selectedCity.replace(/·/g, '').replace(/ /g, '')
-				console.log('selectedCity', selectedCity)
-				if (!newValue.includes(selectedCity) && selectedCity != '') {
-					this.showAddressPopup = true
-				}
-			}
-		},
+		// watch: {
+		// 	'formData.address'(newValue) {
+		// 		if(newValue == '' || newValue == undefined){
+		// 			return
+		// 		}
+		// 		let selectedCity = uni.getStorageSync('selectedCity') || ''
+		// 		selectedCity = selectedCity.replace(/·/g, '').replace(/ /g, '')
+		// 		console.log('selectedCity', selectedCity)
+		// 		if (!newValue.includes(selectedCity) && selectedCity != '') {
+		// 			this.showAddressPopup = true
+		// 		}
+		// 	}
+		// },
 		data() {
 			return {
 				showAddressPopup: false,
@@ -1342,6 +1343,135 @@
 				// 显示订单确认弹窗
 				this.showOrderConfirmPopup = true;
 				this.$refs.orderConfirmPopup.open();
+			},
+
+			// 加入购物车
+			async addToCart() {
+				// 验证表单
+				if (!this.validateForm()) {
+					return;
+				}
+
+				// 关闭确认弹窗
+				this.closeOrderConfirmPopup();
+
+				// 显示加载提示
+				uni.showLoading({
+					title: '加入购物车中...',
+					mask: true
+				});
+
+				try {
+					// 获取用户信息
+					const userInfo = uni.getStorageSync('userInfo');
+					if (!userInfo || !userInfo.openid) {
+						uni.hideLoading();
+						uni.showToast({
+							title: '请先登录',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 构建请求数据
+					const submitData = {
+						openid: userInfo.openid,
+						user_id: userInfo.user_id,
+						task_type_id: this.taskTypeId,
+						service_provider_id: this.providerInfo.service_provider_id,
+						phone_number: this.formData.phone,
+						name: this.formData.contact,
+						brand: this.selectedBrand,
+						province: this.formData.province,
+						city: this.formData.city,
+						district: this.formData.district,
+						shop_address: this.formData.address,
+						address: this.formData.detailAddress,
+						longitude: this.formData.longitude,
+						latitude: this.formData.latitude,
+						base_service_fee: this.priceDetails.baseServiceFee + this.priceDetails.extraDeviceFee + this.priceDetails.distanceFee + this.priceDetails.extraDistanceFee + this.priceDetails.timeLimitFee,
+						additional_service_fee: this.priceDetails.wireFee + this.priceDetails.extraWireFee + this.priceDetails.powerFee,
+						order_amount: this.formData.estimatedPrice,
+						service_time_type: this.formData.timeType,
+						time_limit: this.formData.timeType === 'before_deadline' ? parseInt(this.formData.appointmentTime) : null,
+						range_start_date: this.formData.timeType === 'time_range' && this.formData.timeInterval ? this.formData.timeInterval.substring(0, 19) : null,
+						range_end_date: this.formData.timeType === 'time_range' && this.formData.timeInterval ? this.formData.timeInterval.substring(20) : null,
+						recommended_service_time_start: this.formData.recommended_service_time_start || '',
+						recommended_service_time_end: this.formData.recommended_service_time_end || '',
+						distance: this.formData.distance,
+						store_name: this.formData.storeName,
+						sn_mac_code: this.formData.snMacList,
+						detail: this.selectedService,
+						item_number: this.formData.quantity,
+						device_outside: this.formData.device_outside ? 1 : 0,
+						extra_task_1: this.selectedAdditionalServices.includes('power') ? '通电' : null,
+						extra_task_1_item_number: this.selectedAdditionalServices.includes('power') ? this.formData.powerQuantity : 0,
+						extra_task_2: this.selectedAdditionalServices.includes('powerCable') ? '换根电源线' : null,
+						extra_task_2_item_number: this.selectedAdditionalServices.includes('powerCable') ? this.formData.cableQuantity : 0,
+						description: this.formData.locationDesc,
+						additional_notes: this.formData.additional_notes || '',
+						pic_url: this.formData.doorImages,
+						shop_poi: this.formData.shop_poi,
+						ticket_id: this.formData.couponId || null,
+						timestamp: Math.floor(Date.now() / 1000),
+						sign: 'chongchong'
+					};
+
+					// 调用加入购物车接口
+					const res = await this.$request('cart/add', submitData, 'POST');
+					
+					// 隐藏加载提示
+					uni.hideLoading();
+
+					if (res.code === 200) {
+						// 加入购物车成功
+						uni.showToast({
+							title: '已加入购物车',
+							icon: 'success',
+							duration: 2000
+						});
+
+						// 触发购物车更新事件
+						uni.$emit('cartUpdated');
+
+						// 询问是否查看购物车
+						setTimeout(() => {
+							uni.showModal({
+								title: '提示',
+								content: '是否立即查看购物车？',
+								success: (modalRes) => {
+									if (modalRes.confirm) {
+										// 跳转到购物车页面
+										uni.navigateTo({
+											url: '/pages/cart/index',
+											fail: () => {
+												uni.showToast({
+													title: '购物车页面暂未开发',
+													icon: 'none'
+												});
+											}
+										});
+									}
+								}
+							});
+						}, 1500);
+					} else {
+						// 加入购物车失败
+						uni.showToast({
+							title: res.message || '加入购物车失败',
+							icon: 'none'
+						});
+					}
+				} catch (error) {
+					// 隐藏加载提示
+					uni.hideLoading();
+
+					console.error('加入购物车失败:', error);
+					uni.showToast({
+						title: '网络错误，请重试',
+						icon: 'none'
+					});
+				}
 			},
 
 			// 确认提交订单
@@ -3924,6 +4054,24 @@
 
 	.cancel-btn:active {
 		background: linear-gradient(135deg, #FF6B2B 0%, #FF5722 100%);
+		opacity: 0.9;
+	}
+
+	.cart-btn {
+		flex: 1;
+		height: 70rpx;
+		line-height: 70rpx;
+		background: linear-gradient(135deg, #52C41A 0%, #389E0D 100%);
+		color: #ffffff;
+		border: none;
+		border-radius: 35rpx;
+		font-size: 28rpx;
+		text-align: center;
+		font-weight: bold;
+	}
+
+	.cart-btn:active {
+		background: linear-gradient(135deg, #389E0D 0%, #237804 100%);
 		opacity: 0.9;
 	}
 

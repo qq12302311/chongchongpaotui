@@ -88,6 +88,9 @@
 			@posterClick="handlePosterClick"
 		/>
 
+		<!-- 悬浮图标组件 -->
+		<FloatingIcons ref="floatingIcons" />
+
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
 	</view>
@@ -99,6 +102,7 @@ import TabBar from '@/components/tab-bar/tab-bar.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
+import FloatingIcons from '@/components/FloatingIcons/index.vue'
 import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 import userMixin from '@/mixins/userMixin.js'
 
@@ -109,6 +113,7 @@ export default {
 		AuthModal,
 		PosterModal,
 		FloatingImage,
+		FloatingIcons,
 		FloatingChatIconUser
 	},
 	mixins: [userMixin],
@@ -218,6 +223,13 @@ export default {
 
 		// 检查是否需要显示海报弹窗
 		this.checkPosterModal();
+
+		// 刷新购物车数量
+		this.$nextTick(() => {
+			if (this.$refs.floatingIcons && this.$refs.floatingIcons.getCartCount) {
+				this.$refs.floatingIcons.getCartCount();
+			}
+		});
 	},
 	methods: {
 		// 注释掉强制城市选择检查

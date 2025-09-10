@@ -326,7 +326,7 @@
 			:content="'当前选择了' + selectedCity + '与下单地址不符，请核对是否有误'"
 			cancel-text="取消"
 			confirm-text="知道了"
-			@confirm="showAddressPopup=false; formData.address = ''"
+			@confirm="showAddressPopup=false; "
 			@cancel="showAddressPopup=false; formData.address = ''"
 		/>
 	</view>

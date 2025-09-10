@@ -206,6 +206,11 @@
 					<view class="blur-mask" v-if="!isFullyExpanded"></view>
 				</view>
 
+				<!-- 取消订单按钮只在展开状态时显示 -->
+				<view v-if="isFullyExpanded && (orderInfo.status === 'waiting' || orderInfo.status === 'assigned')" class="cancel-button-above-expand">
+					<button class="btn cancel-btn" @click="cancelOrder">取消订单</button>
+				</view>
+
 				<!-- 展开/收起按钮 -->
 				<view class="expand-btn" @click="toggleFullExpand">
 					<view class="expand-btn-content">
@@ -311,10 +316,7 @@
 			</view>
 
 			<!-- 底部按钮 -->
-			<view v-if="orderInfo.status === 'waiting' || orderInfo.status === 'assigned'" class="bottom-button">
-				<button class="btn cancel-btn" @click="cancelOrder">取消订单</button>
-			</view>
-			<view v-else-if="orderInfo.task_assignment && orderInfo.task_assignment.status === 'finished'" class="bottom-button">
+			<view v-if="orderInfo.task_assignment && orderInfo.task_assignment.status === 'finished'" class="bottom-button">
 				<button class="btn confirm-btn" v-if="orderInfo.status === 'finished'" @click="confirmOrder">确认完成</button>
 			</view>
 
@@ -1500,6 +1502,27 @@
 
 		.expand-icon.expanded {
 			transform: rotate(180deg);
+		}
+
+		/* 取消订单按钮显示在展开/收起按钮上方 */
+		.cancel-button-above-expand {
+			padding: 20rpx 30rpx 10rpx;
+			background: #fff;
+			border-top: 1rpx solid #f0f0f0;
+
+			.btn {
+				width: 100%;
+				height: 80rpx;
+				line-height: 80rpx;
+				font-size: 32rpx;
+				border-radius: 40rpx;
+				border: none;
+
+				&.cancel-btn {
+					background: #ff4d4f;
+					color: #fff;
+				}
+			}
 		}
 
 		.detail-item {

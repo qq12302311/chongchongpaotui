@@ -270,25 +270,42 @@ export default {
     // 检查并显示弹窗
     checkAndShowPopup() {
       const currentTime = Date.now();
+      const firstPopupTime = uni.getStorageSync('withdrawPopupFirstShown') || 0;
       const lastPopupTime = uni.getStorageSync('withdrawPopupLastShown') || 0;
+      const oneDayInMs = 24 * 60 * 60 * 1000; // 1天的毫秒数
       const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000; // 30天的毫秒数
       
       console.log('检查弹窗条件：', {
         currentTime,
+        firstPopupTime,
         lastPopupTime,
-        timeDiff: currentTime - lastPopupTime,
-        thirtyDaysInMs,
-        shouldShow: (currentTime - lastPopupTime > thirtyDaysInMs)
+        timeSinceFirst: currentTime - firstPopupTime,
+        timeSinceLast: currentTime - lastPopupTime
       });
       
-      // 如果距离上次显示超过30天，则显示弹窗
-      if (currentTime - lastPopupTime > thirtyDaysInMs) {
-        console.log('显示弹窗');
+      // 如果是第一次访问，记录首次时间并显示弹窗
+      if (!firstPopupTime) {
+        console.log('首次显示弹窗');
+        this.showPopup = true;
+        uni.setStorageSync('withdrawPopupFirstShown', currentTime);
+        uni.setStorageSync('withdrawPopupLastShown', currentTime);
+        return;
+      }
+      
+      // 如果距离首次显示已超过30天，则不再显示弹窗
+      if (currentTime - firstPopupTime > thirtyDaysInMs) {
+        console.log('已过30天，不再显示弹窗');
+        return;
+      }
+      
+      // 在30天内，如果距离上次显示超过1天，则显示弹窗
+      if (currentTime - lastPopupTime > oneDayInMs) {
+        console.log('距离上次显示超过1天，显示弹窗');
         this.showPopup = true;
         // 记录本次显示时间
         uni.setStorageSync('withdrawPopupLastShown', currentTime);
       } else {
-        console.log('不显示弹窗，距离上次显示还没到30天');
+        console.log('不显示弹窗，距离上次显示还没到1天');
       }
     },
 
