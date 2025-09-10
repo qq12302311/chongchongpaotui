@@ -173,3 +173,4 @@ Built files are generated in `unpackage/` directory:
 - `unpackage/dist/build/mp-weixin/`: WeChat Mini Program build  
 - `unpackage/dist/build/app-plus/`: Native app build
 - `unpackage/release/apk/`: Android APK files
+- 把我的细节记录到记忆文件里

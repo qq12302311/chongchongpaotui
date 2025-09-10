@@ -1,0 +1,28 @@
+{
+    "recommendations": [
+        // UniApp 开发必需扩展
+        "uni-helper.uni-app-schemas",
+        "uni-helper.uni-cloud-schemas",
+        "vue.volar",
+        "vue.vscode-typescript-vue-plugin",
+        
+        // 代码质量和格式化
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        
+        // 开发效率工具
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-ceintl.vscode-language-pack-zh-hans",
+        
+        // Git 工具
+        "mhutchie.git-graph",
+        "eamodio.gitlens",
+        
+        // 其他实用工具
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-typescript-next"
+    ]
+}

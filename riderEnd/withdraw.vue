@@ -54,16 +54,39 @@
       <!-- 提现说明 -->
       <view class="withdraw-notice">
         <view class="notice-title">提现说明</view>
-        <view class="notice-item">• 独立骑手每月5号、15号、25号，“逢5”均可提现</view>
+        <view class="notice-item">• 独立骑手每月6号、16号、26号，"逢6"均可提现</view>
         <view class="notice-item">• 提现申请提交后，将在1-3个工作日内到账</view>
         <view class="notice-item">• 请确保提现账户信息准确无误</view>
         <view class="notice-item">• 提现手续费3%（当前暂行0%）</view>
         <view class="notice-item" v-if="!isWithdrawDay">• 当前不在提现日期内，下次可提现日期：{{ nextWithdrawDate }}</view>
+        <!-- 临时测试按钮 -->
+       <!-- <view class="test-button" @click="forceShowPopup" style="margin-top: 20rpx; padding: 10rpx; background-color: #ff6b6b; color: white; text-align: center; border-radius: 8rpx; font-size: 24rpx;">
+          测试弹窗（点击强制显示）
+        </view> -->
       </view>
     </view>
 
     <!-- 悬浮聊天图标 -->
     <FloatingChatIcon />
+    
+    <!-- 提现弹窗 -->
+    <view v-if="showPopup" class="popup-overlay" @click="closePopup">
+      <view class="popup-container" @click.stop="">
+        <view class="popup-close" @click="closePopup">×</view>
+        <image 
+          class="popup-image" 
+          src="https://ccpt.qiniu.0871.cn/tixian666.png" 
+          mode="widthFix"
+          :show-loading="true"
+          @load="handleImageLoad"
+          @error="handleImageError"
+        ></image>
+        <!-- 图片加载失败时显示的占位内容 -->
+        <view v-if="imageLoadError" class="image-error-placeholder">
+          <text class="error-text">图片加载失败</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -82,7 +105,9 @@ export default {
       availableBalance: '0.00',
       withdrawInfo: null,
       userInfo: {},
-      selectedAccountType: null // 用户选择的账户类型
+      selectedAccountType: null, // 用户选择的账户类型
+      showPopup: false, // 控制弹窗显示
+      imageLoadError: false // 控制图片加载错误状态
     }
   },
   computed: {
@@ -212,6 +237,7 @@ export default {
   },
   onLoad() {
     this.loadUserInfo();
+    this.checkAndShowPopup();
   },
   methods: {
     // 加载用户信息
@@ -239,6 +265,56 @@ export default {
           this.selectedAccountType = 'bank';
         }
       }
+    },
+
+    // 检查并显示弹窗
+    checkAndShowPopup() {
+      const currentTime = Date.now();
+      const lastPopupTime = uni.getStorageSync('withdrawPopupLastShown') || 0;
+      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000; // 30天的毫秒数
+      
+      console.log('检查弹窗条件：', {
+        currentTime,
+        lastPopupTime,
+        timeDiff: currentTime - lastPopupTime,
+        thirtyDaysInMs,
+        shouldShow: (currentTime - lastPopupTime > thirtyDaysInMs)
+      });
+      
+      // 如果距离上次显示超过30天，则显示弹窗
+      if (currentTime - lastPopupTime > thirtyDaysInMs) {
+        console.log('显示弹窗');
+        this.showPopup = true;
+        // 记录本次显示时间
+        uni.setStorageSync('withdrawPopupLastShown', currentTime);
+      } else {
+        console.log('不显示弹窗，距离上次显示还没到30天');
+      }
+    },
+
+    // 临时测试方法：强制显示弹窗（用于调试）
+    // forceShowPopup() {
+    //   console.log('强制显示弹窗');
+    //   this.imageLoadError = false;
+    //   this.showPopup = true;
+    // },
+
+    // 关闭弹窗
+    closePopup() {
+      this.showPopup = false;
+      this.imageLoadError = false;
+    },
+
+    // 处理图片加载成功
+    handleImageLoad() {
+      console.log('弹窗图片加载成功');
+      this.imageLoadError = false;
+    },
+
+    // 处理图片加载错误
+    handleImageError() {
+      console.log('弹窗图片加载失败');
+      this.imageLoadError = true;
     },
 
 
@@ -559,5 +635,71 @@ export default {
       margin-bottom: 0;
     }
   }
+}
+
+/* 弹窗样式 */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.popup-container {
+  position: relative;
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin: 40rpx;
+  width: 464rpx; /* 424rpx + 20rpx*2 */
+  height: 820rpx; /* 780rpx + 20rpx*2 */
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.popup-close {
+  position: absolute;
+  top: 10rpx;
+  right: 15rpx;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #999;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  z-index: 1000;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.popup-image {
+  width: 470rpx;
+  height: 300rpx;
+  display: block;
+  border-radius: 12rpx;
+  background-color: #f5f5f5;
+}
+
+.image-error-placeholder {
+  width: 470rpx;
+  height: 300rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-radius: 12rpx;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: #999;
 }
 </style>

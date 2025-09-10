@@ -73,62 +73,204 @@
         </view>
       </view>
 
-      <!-- 行政区骑手数量排名 -->
+      <!-- 骑手数量排名 -->
       <view class="ranking-section">
         <view class="ranking-header">
-          <view class="ranking-title">行政区域骑手数量排名</view>
-          <view class="region-filter">
+          <view class="ranking-title">骑手数量排名</view>
+          <!-- 排名类型选择器 -->
+          <view class="ranking-type-filter">
             <view 
-              class="filter-item" 
-              :class="{ active: regionType === 'province' }"
-              @click="changeRegionType('province')"
-            >省份</view>
+              class="filter-item"
+              :class="{ active: rankingType === 'admin' }"
+              @click="changeRankingType('admin')"
+            >行政区域排名</view>
             <view 
-              class="filter-item" 
-              :class="{ active: regionType === 'city' }"
-              @click="changeRegionType('city')"
-            >城市</view>
-            <view 
-              class="filter-item" 
-              :class="{ active: regionType === 'district' }"
-              @click="changeRegionType('district')"
-            >区县</view>
+              class="filter-item"
+              :class="{ active: rankingType === 'zone' }"
+              @click="changeRankingType('zone')"
+            >独立区域骑手数量</view>
           </view>
         </view>
-        <view class="ranking-container">
-          <view v-if="regionRankingLoading" class="ranking-loading">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">加载中...</text>
+        
+        <!-- 行政区域排名 -->
+        <view v-if="rankingType === 'admin'">
+          <view class="ranking-sub-header">
+            <view class="ranking-sub-title">行政区域排名</view>
+            <view class="region-filter">
+              <view 
+                class="filter-item" 
+                :class="{ active: regionType === 'province' }"
+                @click="changeRegionType('province')"
+              >省份</view>
+              <view 
+                class="filter-item" 
+                :class="{ active: regionType === 'city' }"
+                @click="changeRegionType('city')"
+              >城市</view>
+              <view 
+                class="filter-item" 
+                :class="{ active: regionType === 'district' }"
+                @click="changeRegionType('district')"
+              >区县</view>
+            </view>
           </view>
-          <view v-else-if="regionRankingData && regionRankingData.length > 0" class="ranking-list">
-            <view class="ranking-table">
-              <view class="table-header">
-                <view class="header-cell rank">排名</view>
-                <view class="header-cell region-name">地区</view>
-                <view class="header-cell rider-count">骑手数</view>
-                <view class="header-cell percentage">占比(%)</view>
+        </view>
+        
+        <!-- 独立区域骑手数量 -->
+        <view v-if="rankingType === 'zone'">
+          <view class="ranking-sub-header">
+            <view class="ranking-sub-title">独立区域骑手数量</view>
+            <view v-if="selectedZoneName" class="selected-zone-display">
+              <text class="selected-zone-text">已选择：{{ selectedZoneName }}</text>
+            </view>
+          </view>
+          
+          <!-- 区域选择器直接展示在页面上 -->
+          <view class="zone-picker-inline">
+            <view class="zone-picker-header">
+              <text class="zone-picker-title">选择城市/区县</text>
+            </view>
+            <view class="zone-picker-content-inline">
+              <view v-if="zoneDataLoading" class="zone-loading">
+                <view class="loading-spinner"></view>
+                <text class="loading-text">加载中...</text>
               </view>
-              <view class="table-body">
+              <view v-else-if="zoneTreeData && zoneTreeData.length > 0" class="zone-tree-list">
+                <!-- 省份级别 -->
                 <view 
-                  v-for="(item, index) in regionRankingData" 
-                  :key="index" 
-                  class="table-row"
-                  :class="{ 'top-three': index < 3 }"
+                  v-for="(province, pIndex) in zoneTreeData" 
+                  :key="`province-${province.id || pIndex}`"
+                  class="zone-tree-item"
                 >
-                  <view class="table-cell rank">
-                    <view class="rank-number" :class="index === 0 ? 'rank-first' : index === 1 ? 'rank-second' : index === 2 ? 'rank-third' : 'rank-normal'">
-                      {{ index + 1 }}
+                  <!-- 省份名称（可点击展开） -->
+                  <view 
+                    class="zone-province-item"
+                    @click="toggleProvince(province.id || pIndex)"
+                  >
+                    <text class="zone-expand-icon">{{ expandedProvinces[province.id || pIndex] ? '▼' : '▶' }}</text>
+                    <text class="zone-province-name">{{ province.name || '未知省份' }}</text>
+                    <text class="zone-province-count">{{ (province.cities && province.cities.length) || 0 }}个城市</text>
+                  </view>
+                  
+                  <!-- 城市列表（展开时显示） -->
+                  <view 
+                    v-if="expandedProvinces[province.id || pIndex]" 
+                    class="zone-city-list"
+                  >
+                    <view 
+                      v-for="(city, cIndex) in (province.cities || [])" 
+                      :key="`city-${city.id || cIndex}`"
+                      class="zone-city-item"
+                    >
+                      <!-- 城市名称（可选择） -->
+                      <view 
+                        class="zone-city-name-item"
+                        @click="selectZone(city)"
+                      >
+                        <text class="zone-city-name">{{ city.name || '未知城市' }}</text>
+                        <text class="zone-type-tag city-tag">城市</text>
+                      </view>
+                      
+                      <!-- 区县列表 -->
+                      <view class="zone-district-list">
+                        <view 
+                          v-for="(district, dIndex) in (city.districts || [])" 
+                          :key="`district-${district.id || dIndex}`"
+                          class="zone-district-item"
+                          @click="selectZone(district)"
+                        >
+                          <text class="zone-district-name">{{ district.name || '未知区县' }}</text>
+                          <text class="zone-type-tag district-tag">区县</text>
+                        </view>
+                      </view>
                     </view>
                   </view>
-                  <view class="table-cell region-name">{{ item.region_name || '--' }}</view>
-                  <view class="table-cell rider-count">{{ item.rider_count || 0 }}</view>
-                  <view class="table-cell percentage">{{ formatPercentage(item.percentage) }}%</view>
                 </view>
+              </view>
+              <view v-else class="zone-empty">
+                <text>暂无数据</text>
               </view>
             </view>
           </view>
-          <view v-else class="ranking-empty">
-            <text>暂无排名数据</text>
+        </view>
+        <view class="ranking-container">
+          <!-- 行政区域排名数据 -->
+          <view v-if="rankingType === 'admin'">
+            <view v-if="regionRankingLoading" class="ranking-loading">
+              <view class="loading-spinner"></view>
+              <text class="loading-text">加载中...</text>
+            </view>
+            <view v-else-if="regionRankingData && regionRankingData.length > 0" class="ranking-list">
+              <view class="ranking-table">
+                <view class="table-header">
+                  <view class="header-cell rank">排名</view>
+                  <view class="header-cell region-name">地区</view>
+                  <view class="header-cell rider-count">骑手数</view>
+                  <view class="header-cell percentage">占比(%)</view>
+                </view>
+                <view class="table-body">
+                  <view 
+                    v-for="(item, index) in regionRankingData" 
+                    :key="index" 
+                    class="table-row"
+                    :class="{ 'top-three': index < 3 }"
+                  >
+                    <view class="table-cell rank">
+                      <view class="rank-number" :class="index === 0 ? 'rank-first' : index === 1 ? 'rank-second' : index === 2 ? 'rank-third' : 'rank-normal'">
+                        {{ index + 1 }}
+                      </view>
+                    </view>
+                    <view class="table-cell region-name">{{ item.region_name || '--' }}</view>
+                    <view class="table-cell rider-count">{{ item.rider_count || 0 }}</view>
+                    <view class="table-cell percentage">{{ formatPercentage(item.percentage) }}%</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view v-else class="ranking-empty">
+              <text>暂无排名数据</text>
+            </view>
+          </view>
+          
+          <!-- 独立区域骑手数量数据 -->
+          <view v-if="rankingType === 'zone'">
+            <view v-if="!selectedZoneId" class="ranking-empty">
+              <text>请先选择城市/区县</text>
+            </view>
+            <view v-else-if="zoneRankingLoading" class="ranking-loading">
+              <view class="loading-spinner"></view>
+              <text class="loading-text">加载中...</text>
+            </view>
+            <view v-else-if="zoneRankingData && zoneRankingData.length > 0" class="ranking-list">
+              <view class="ranking-table">
+                <view class="table-header">
+                  <view class="header-cell rank">排名</view>
+                  <view class="header-cell region-name">区域</view>
+                  <view class="header-cell rider-count">骑手数</view>
+                  <view class="header-cell percentage">占比(%)</view>
+                </view>
+                <view class="table-body">
+                  <view 
+                    v-for="(item, index) in zoneRankingData" 
+                    :key="index" 
+                    class="table-row"
+                    :class="{ 'top-three': index < 3 }"
+                  >
+                    <view class="table-cell rank">
+                      <view class="rank-number" :class="index === 0 ? 'rank-first' : index === 1 ? 'rank-second' : index === 2 ? 'rank-third' : 'rank-normal'">
+                        {{ index + 1 }}
+                      </view>
+                    </view>
+                    <view class="table-cell region-name">{{ item.region_name || '--' }}</view>
+                    <view class="table-cell rider-count">{{ item.rider_count || 0 }}</view>
+                    <view class="table-cell percentage">{{ formatPercentage(item.percentage) }}%</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view v-else class="ranking-empty">
+              <text>暂无数据</text>
+            </view>
           </view>
         </view>
       </view>
@@ -179,11 +321,27 @@ export default {
       registerChartData: null,
       // 时间类型选择
       registerTimeType: 1, // 骑手注册图表时间类型：1-日, 2-周, 3-月，默认选中日
+      // 骑手数量排名相关
+      rankingType: 'admin', // 排名类型：admin-行政区域排名，zone-独立区域骑手数量
       // 行政区骑手数量排名相关
       regionRankingData: null,
       regionRankingLoading: false,
       regionType: 'city', // 默认城市类型
-      currentParentRegionId: 5 // 当前父级地区ID，默认为5
+      currentParentRegionId: 5, // 当前父级地区ID，默认为5
+      // 独立区域相关
+      zoneData: [], // 服务商区域数据
+      zoneDataLoading: false, // 区域数据加载状态
+      zoneTreeData: [], // 树形结构区域数据
+      expandedProvinces: {}, // 展开的省份状态
+      selectedZoneId: null, // 选中的区域ID
+      selectedZoneName: '', // 选中的区域名称
+      selectedZoneType: '', // 选中的区域类型
+      zoneRankingData: null, // 独立区域骑手数量数据
+      zoneRankingLoading: false, // 独立区域数据加载状态
+      // 缓存相关
+      zoneCacheKey: 'rider_analysis_zone_cache',
+      zoneCacheExpiry: 'rider_analysis_zone_cache_expiry',
+      cacheValidDuration: 30 * 60 * 1000 // 缓存30分钟
     }
   },
 
@@ -200,8 +358,14 @@ export default {
     // 加载数据
     this.loadAnalysisData();
     
-    // 加载行政区骑手排名数据
-    this.loadRegionRiderRankingData();
+    // 根据排名类型加载对应数据
+    if (this.rankingType === 'admin') {
+      // 加载行政区骑手排名数据
+      this.loadRegionRiderRankingData();
+    } else if (this.rankingType === 'zone') {
+      // 加载服务商区域数据
+      this.loadZoneData();
+    }
   },
 
   methods: {
@@ -587,6 +751,9 @@ export default {
 
     // 加载行政区骑手排名数据
     async loadRegionRiderRankingData() {
+      // 只有在行政区域排名模式下才加载数据
+      if (this.rankingType !== 'admin') return;
+      
       if (this.regionRankingLoading) return;
 
       this.regionRankingLoading = true;
@@ -699,6 +866,26 @@ export default {
       });
     },
 
+    // 切换排名类型
+    changeRankingType(type) {
+      if (this.rankingType === type) return;
+      
+      this.rankingType = type;
+      console.log('🔄 切换排名类型:', type);
+      
+      // 清空数据
+      this.regionRankingData = null;
+      this.zoneRankingData = null;
+      
+      if (type === 'admin') {
+        // 切换到行政区域排名
+        this.loadRegionRiderRankingData();
+      } else if (type === 'zone') {
+        // 切换到独立区域，先加载区域数据
+        this.loadZoneData();
+      }
+    },
+
     // 切换地区类型
     changeRegionType(type) {
       if (this.regionType === type) return;
@@ -708,6 +895,345 @@ export default {
 
       // 重新加载数据
       this.loadRegionRiderRankingData();
+    },
+
+    // 加载服务商区域数据
+    async loadZoneData() {
+      if (this.zoneDataLoading) return;
+      
+      // 先检查缓存
+      const cachedData = this.getCachedZoneData();
+      if (cachedData) {
+        this.zoneTreeData = cachedData;
+        console.log('✅ 使用缓存的服务商区域数据:', this.zoneTreeData.length, '个省份');
+        return;
+      }
+      
+      this.zoneDataLoading = true;
+      
+      try {
+        // 获取用户信息
+        if (!this.riderUserInfo || !this.riderUserInfo.id) {
+          uni.showToast({
+            title: '请先登录',
+            icon: 'none'
+          });
+          return;
+        }
+
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          service_provider_id: 1,
+          sign: "chongchong"
+        };
+        
+        console.log('服务商区域请求参数:', params);
+        
+        const res = await this.$request('service/group/zones', params, 'POST');
+        
+        console.log('🔍 服务商区域数据响应:', res);
+        
+        if (res.status === 'success' && res.data && res.data.service_zones) {
+          // 处理区域数据，生成树形结构
+          const zones = res.data.service_zones;
+          const treeData = this.processZoneTreeData(zones);
+          this.zoneTreeData = treeData;
+          
+          // 缓存数据
+          this.setCachedZoneData(treeData);
+          
+          console.log('✅ 服务商区域数据加载成功:', this.zoneTreeData.length, '个省份');
+        } else {
+          this.zoneTreeData = [];
+          console.log('❌ 服务商区域数据加载失败:', res.msg || '数据格式错误');
+        }
+      } catch (error) {
+        console.error('获取服务商区域数据失败:', error);
+        this.zoneTreeData = [];
+        uni.showToast({
+          title: '获取区域数据失败',
+          icon: 'none'
+        });
+      } finally {
+        this.zoneDataLoading = false;
+      }
+    },
+
+    // 获取缓存的区域数据
+    getCachedZoneData() {
+      try {
+        const expiry = uni.getStorageSync(this.zoneCacheExpiry);
+        const now = Date.now();
+        
+        if (!expiry || now > expiry) {
+          console.log('🗑️ 区域数据缓存已过期');
+          // 清除过期缓存
+          uni.removeStorageSync(this.zoneCacheKey);
+          uni.removeStorageSync(this.zoneCacheExpiry);
+          return null;
+        }
+        
+        const cachedData = uni.getStorageSync(this.zoneCacheKey);
+        if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
+          console.log('📦 使用缓存的区域数据');
+          return cachedData;
+        }
+      } catch (error) {
+        console.error('读取区域数据缓存失败:', error);
+      }
+      return null;
+    },
+
+    // 设置缓存的区域数据
+    setCachedZoneData(data) {
+      try {
+        const expiry = Date.now() + this.cacheValidDuration;
+        uni.setStorageSync(this.zoneCacheKey, data);
+        uni.setStorageSync(this.zoneCacheExpiry, expiry);
+        console.log('💾 区域数据已缓存，有效期至:', new Date(expiry).toLocaleString());
+      } catch (error) {
+        console.error('设置区域数据缓存失败:', error);
+      }
+    },
+
+    // 处理区域数据为树形结构
+    processZoneTreeData(zones) {
+      console.log('🔄 处理区域数据为树形结构:', zones.length, '条原始数据');
+      
+      if (!Array.isArray(zones) || zones.length === 0) {
+        console.warn('区域数据为空或格式错误');
+        return [];
+      }
+      
+      // 按省份分组数据
+      const provinceMap = new Map();
+      
+      zones.forEach((zone, index) => {
+        // 验证必要的字段
+        if (!zone || typeof zone !== 'object') {
+          console.warn(`第${index}条区域数据格式错误:`, zone);
+          return;
+        }
+        
+        if (!zone.province_id || !zone.city_id || !zone.district_id) {
+          console.warn(`第${index}条区域数据缺少必要ID:`, zone);
+          return;
+        }
+        
+        const provinceKey = zone.province_id;
+        
+        if (!provinceMap.has(provinceKey)) {
+          provinceMap.set(provinceKey, {
+            id: zone.province_id,
+            name: zone.province_name || '未知省份',
+            type: 'province',
+            cities: new Map()
+          });
+        }
+        
+        const province = provinceMap.get(provinceKey);
+        const cityKey = zone.city_id;
+        
+        if (!province.cities.has(cityKey)) {
+          province.cities.set(cityKey, {
+            id: zone.city_id,
+            name: zone.city_name || '未知城市',
+            type: 'city',
+            full_name: `${zone.province_name || '未知省份'} ${zone.city_name || '未知城市'}`,
+            province_id: zone.province_id,
+            districts: []
+          });
+        }
+        
+        const city = province.cities.get(cityKey);
+        city.districts.push({
+          id: zone.district_id,
+          name: zone.district_name || '未知区县',
+          type: 'district',
+          full_name: `${zone.province_name || '未知省份'} ${zone.city_name || '未知城市'} ${zone.district_name || '未知区县'}`,
+          province_id: zone.province_id,
+          city_id: zone.city_id
+        });
+      });
+      
+      // 转换为数组格式并排序
+      const treeData = Array.from(provinceMap.values()).map(province => {
+        const cities = Array.from(province.cities.values()).map(city => ({
+          ...city,
+          districts: city.districts.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
+        })).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
+        
+        return {
+          ...province,
+          cities: cities
+        };
+      }).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
+      
+      console.log('✅ 处理后的树形区域数据:', {
+        provinces: treeData.length,
+        totalCities: treeData.reduce((sum, p) => sum + (p.cities ? p.cities.length : 0), 0),
+        totalDistricts: treeData.reduce((sum, p) => sum + (p.cities ? p.cities.reduce((citySum, c) => citySum + (c.districts ? c.districts.length : 0), 0) : 0), 0)
+      });
+      
+      // 验证处理后的数据
+      treeData.forEach((province, pIndex) => {
+        if (!province.id) {
+          console.warn(`省份${pIndex}缺少ID:`, province);
+        }
+        if (province.cities) {
+          province.cities.forEach((city, cIndex) => {
+            if (!city.id) {
+              console.warn(`城市${cIndex}缺少ID:`, city);
+            }
+            if (city.districts) {
+              city.districts.forEach((district, dIndex) => {
+                if (!district.id) {
+                  console.warn(`区县${dIndex}缺少ID:`, district);
+                }
+              });
+            }
+          });
+        }
+      });
+      
+      return treeData;
+    },
+
+    // 切换省份展开状态
+    toggleProvince(provinceId) {
+      if (provinceId === undefined || provinceId === null) {
+        console.warn('省份ID为空，无法切换展开状态');
+        return;
+      }
+      this.$set(this.expandedProvinces, provinceId, !this.expandedProvinces[provinceId]);
+    },
+
+    // 选择区域（城市或区县）
+    selectZone(zone) {
+      if (!zone || !zone.id) {
+        console.warn('选择的区域数据无效:', zone);
+        uni.showToast({
+          title: '区域数据无效',
+          icon: 'none'
+        });
+        return;
+      }
+
+      this.selectedZoneId = zone.id;
+      this.selectedZoneName = zone.full_name || zone.name || '未知区域';
+      this.selectedZoneType = zone.type;
+      // 不再隐藏选择器，保持展示状态
+      
+      console.log('🌍 选择区域:', zone);
+      
+      // 根据区域类型调用不同的接口
+      if (zone.type === 'city') {
+        this.loadZoneRiderData(zone.id, 'city');
+      } else if (zone.type === 'district') {
+        this.loadZoneRiderData(zone.id, 'district');
+      } else {
+        console.warn('未知的区域类型:', zone.type);
+      }
+    },
+
+    // 获取区域类型文本
+    getZoneTypeText(type) {
+      const typeMap = {
+        'city': '城市',
+        'district': '区县',
+        'province': '省份'
+      };
+      return typeMap[type] || '未知';
+    },
+
+    // 加载独立区域骑手数量数据
+    async loadZoneRiderData(zoneId, zoneType = 'city') {
+      if (this.zoneRankingLoading) return;
+      
+      this.zoneRankingLoading = true;
+      
+      try {
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          type: zoneType, // 传入实际的区域类型
+          parent_region_id: zoneId,
+          timestamp: Math.floor(Date.now() / 1000),
+          sign: "chongchong"
+        };
+        
+        console.log('独立区域骑手数量请求参数:', params);
+        
+        const res = await this.$request('data/region/member', params, 'POST');
+        
+        console.log('🔍 独立区域骑手数量数据响应:', res);
+        
+        if (res.status === 'success' && res.data) {
+          this.processZoneRankingData(res.data);
+        } else {
+          this.zoneRankingData = [];
+          console.log('❌ 独立区域骑手数量数据加载失败:', res.msg);
+          if (res.msg) {
+            uni.showToast({
+              title: res.msg,
+              icon: 'none'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('获取独立区域骑手数量数据失败:', error);
+        this.zoneRankingData = [];
+        uni.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        });
+      } finally {
+        this.zoneRankingLoading = false;
+      }
+    },
+
+    // 处理独立区域骑手数量数据
+    processZoneRankingData(data) {
+      console.log('🔄 处理独立区域骑手数量数据:', data);
+      
+      // 检查数据格式：可能是嵌套的 {data: {categories, series}} 或直接的 {categories, series}
+      let chartData = data;
+      if (data.data && data.data.categories && data.data.series) {
+        console.log('📋 发现嵌套数据格式，提取内层数据');
+        chartData = data.data;
+      }
+      
+      if (!chartData.categories || !chartData.series || !Array.isArray(chartData.categories) || !Array.isArray(chartData.series)) {
+        console.log('❌ 数据格式错误，缺少categories或series');
+        this.zoneRankingData = [];
+        return;
+      }
+      
+      // 获取地区名称和骑手数量
+      const categories = chartData.categories;
+      const seriesData = chartData.series[0]?.data || [];
+      
+      console.log('📋 categories:', categories);
+      console.log('📋 seriesData:', seriesData);
+      
+      // 组合数据并排序
+      const regionArray = categories.map((regionName, index) => ({
+        region_name: regionName,
+        rider_count: Number(seriesData[index]) || 0
+      }));
+      
+      // 按骑手数量排序（从高到低）
+      regionArray.sort((a, b) => b.rider_count - a.rider_count);
+      
+      // 计算总骑手数用于占比计算
+      const totalRiders = regionArray.reduce((sum, item) => sum + item.rider_count, 0);
+      
+      // 添加占比字段，并限制显示前50条
+      this.zoneRankingData = regionArray.slice(0, 50).map(item => ({
+        ...item,
+        percentage: totalRiders > 0 ? (item.rider_count / totalRiders * 100).toFixed(1) : 0
+      }));
+      
+      console.log('✅ 处理后的独立区域骑手数量数据:', this.zoneRankingData);
     },
 
     // 格式化百分比显示
@@ -906,12 +1432,75 @@ export default {
   color: #333;
 }
 
+// 排名类型过滤器
+.ranking-type-filter {
+  display: flex;
+  background-color: #f8f9fa;
+  border-radius: 20rpx;
+  padding: 4rpx;
+  border: 1rpx solid #e8e8e8;
+
+  .filter-item {
+    padding: 8rpx 16rpx;
+    font-size: 24rpx;
+    color: #666;
+    border-radius: 16rpx;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80rpx;
+    text-align: center;
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &.active {
+      background-color: #6c5ce7;
+      color: #fff;
+      font-weight: 500;
+    }
+  }
+}
+
+// 子级标题和过滤器
+.ranking-sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.ranking-sub-title {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #666;
+}
+
 .region-filter {
   display: flex;
   background-color: #f8f9fa;
   border-radius: 20rpx;
   padding: 4rpx;
   border: 1rpx solid #e8e8e8;
+}
+
+// 已选区域显示
+.selected-zone-display {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.selected-zone-text {
+  font-size: 24rpx;
+  color: #6c5ce7;
+  background-color: #f0f0ff;
+  padding: 8rpx 12rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid #e0e0ff;
 }
 
 .filter-item {
@@ -932,6 +1521,45 @@ export default {
     background-color: #6c5ce7;
     color: #fff;
     font-weight: 500;
+  }
+}
+
+// 区域选择器
+.zone-selector {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.zone-select-btn {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  background-color: #f8f9fa;
+  border: 1rpx solid #e8e8e8;
+  border-radius: 16rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:active {
+    transform: scale(0.95);
+    background-color: #e8e8e8;
+  }
+}
+
+.zone-select-text {
+  font-size: 24rpx;
+  color: #666;
+  margin-right: 8rpx;
+}
+
+.zone-select-arrow {
+  font-size: 20rpx;
+  color: #999;
+  transition: transform 0.3s ease;
+
+  &.expanded {
+    transform: rotate(180deg);
   }
 }
 
@@ -1080,5 +1708,195 @@ export default {
     color: #666;
     border: 1rpx solid #e8e8e8;
   }
+}
+
+// 内联区域选择器
+.zone-picker-inline {
+  background-color: #fff;
+  border-radius: 12rpx;
+  margin-top: 20rpx;
+  border: 1rpx solid #e8e8e8;
+  overflow: hidden;
+}
+
+.zone-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 30rpx;
+  background-color: #f8f9fa;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.zone-picker-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.zone-picker-close {
+  font-size: 24rpx;
+  color: #6c5ce7;
+  cursor: pointer;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  transition: all 0.3s ease;
+
+  &:active {
+    background-color: #f0f0ff;
+    transform: scale(0.95);
+  }
+}
+
+.zone-picker-content-inline {
+  max-height: 500rpx;
+  overflow-y: auto;
+}
+
+.zone-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300rpx;
+  color: #999;
+}
+
+// 树形结构样式
+.zone-tree-list {
+  padding: 0;
+}
+
+.zone-tree-item {
+  border-bottom: 1rpx solid #f0f0f0;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// 省份级别
+.zone-province-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 30rpx;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:active {
+    background-color: #e8e8e8;
+  }
+}
+
+.zone-expand-icon {
+  font-size: 20rpx;
+  color: #666;
+  margin-right: 12rpx;
+  width: 20rpx;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.zone-province-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 600;
+  flex: 1;
+}
+
+.zone-province-count {
+  font-size: 22rpx;
+  color: #666;
+  background-color: #e8e8e8;
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+}
+
+// 城市级别
+.zone-city-list {
+  background-color: #fff;
+}
+
+.zone-city-item {
+  border-left: 4rpx solid #6c5ce7;
+  margin-left: 30rpx;
+}
+
+.zone-city-name-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx 16rpx 20rpx;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-bottom: 1rpx solid #f8f9fa;
+
+  &:active {
+    background-color: #f0f0f0;
+  }
+}
+
+.zone-city-name {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+// 区县级别
+.zone-district-list {
+  padding-left: 20rpx;
+  background-color: #fafbfc;
+}
+
+.zone-district-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 30rpx 16rpx 20rpx;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-bottom: 1rpx solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background-color: #e8e8e8;
+  }
+}
+
+.zone-district-name {
+  font-size: 24rpx;
+  color: #666;
+}
+
+// 类型标签
+.zone-type-tag {
+  font-size: 20rpx;
+  padding: 2rpx 6rpx;
+  border-radius: 6rpx;
+  
+  &.city-tag {
+    color: #6c5ce7;
+    background-color: #f0f0ff;
+    border: 1rpx solid #e0e0ff;
+  }
+  
+  &.district-tag {
+    color: #52c41a;
+    background-color: #f0fff0;
+    border: 1rpx solid #e0ffe0;
+  }
+}
+
+.zone-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300rpx;
+  color: #999;
+  font-size: 24rpx;
 }
 </style>

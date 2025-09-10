@@ -2,5 +2,29 @@
     "cline.preferredLanguage": "Simplified Chinese - 简体中文",
     "cline.vsCodeLmModelSelector": {
         
-    }
+    },
+    // Claude Code 相关配置
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    // UniApp 开发配置
+    "files.associations": {
+        "*.vue": "vue",
+        "*.nvue": "vue",
+        "*.json": "jsonc"
+    },
+    "emmet.includeLanguages": {
+        "vue-html": "html",
+        "vue": "html"
+    },
+    // 智能代码提示
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "javascript.preferences.includePackageJsonAutoImports": "on",
+    // 中文开发环境优化
+    "editor.wordWrap": "on",
+    "editor.fontFamily": "Consolas, 'Courier New', monospace, '微软雅黑'",
+    // Git 配置
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false
 }

@@ -584,7 +584,7 @@
 					// 情况②：骑手已接单
 					this.cancelModalData = {
 						title: '特别提醒！',
-						content: '您的订单已被骑手接单，小哥正在处理的路上。取消将扣取50%订单款补贴给骑手，不合算哦！',
+						content: '您的订单已被骑手接单，小哥正在处理的路上。取消可能扣取一定比例费用补贴给骑手，不合算哦！',
 						leftButton: '仍要取消',
 						rightButton: '我已知晓',
 						leftSubText: '确认扣款！',
