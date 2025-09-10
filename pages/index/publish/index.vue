@@ -1024,8 +1024,6 @@
 							extraDeviceFee = extraDeviceFee + 
 							(
 								(info.bubao_extra_device_fee_4*100)
-								+ (info.bubao_extra_device_fee_3*100)
-								+ (info.bubao_extra_device_fee_2*100)
 							) * (quantity - info.bubao_extra_device_upper_number_4) / 100;
 						}
 						
@@ -1033,7 +1031,6 @@
 							extraDeviceFee = extraDeviceFee + 
 							(
 								(info.bubao_extra_device_fee_3*100)
-								+ (info.bubao_extra_device_fee_2*100)
 							) * (quantity - info.bubao_extra_device_upper_number_3) / 100;
 						}
 						
