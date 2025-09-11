@@ -132,10 +132,11 @@ export default {
         }
 
         // 调用获取购物车接口
+        const timestamp = Date.now();
         const res = await this.$request('cart/list', {
-          openid: userInfo.openid,
           user_id: userInfo.user_id,
-          sign: 'chongchong'
+          sign: 'chongchong',
+          timestamp: timestamp
         }, 'POST');
 
         if (res.code === 200 && res.data) {
@@ -174,11 +175,12 @@ export default {
               });
 
               // 调用删除接口
+              const timestamp = Date.now();
               const deleteRes = await this.$request('cart/delete', {
                 cart_id: cartId,
-                openid: userInfo.openid,
                 user_id: userInfo.user_id,
-                sign: 'chongchong'
+                sign: 'chongchong',
+                timestamp: timestamp
               }, 'POST');
 
               uni.hideLoading();
