@@ -132,7 +132,7 @@ export default {
         }
 
         // 调用获取购物车接口
-        const timestamp = Date.now();
+        const timestamp = Math.floor(Date.now() / 1000);
         const res = await this.$request('cart/list', {
           user_id: userInfo.user_id,
           sign: 'chongchong',
@@ -175,7 +175,7 @@ export default {
               });
 
               // 调用删除接口
-              const timestamp = Date.now();
+              const timestamp = Math.floor(Date.now() / 1000);
               const deleteRes = await this.$request('cart/delete', {
                 cart_id: cartId,
                 user_id: userInfo.user_id,
