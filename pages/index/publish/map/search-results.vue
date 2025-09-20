@@ -684,109 +684,87 @@ export default {
 				console.log('省份:', addressComponent.province);
 				console.log('城市:', addressComponent.city);
 				console.log('区县:', addressComponent.district);
-							if (this.addressType === 'start') {
-								publishPage.$vm.formData.address = item.address;
-								publishPage.$vm.formData.latitude = item.latitude;
-								publishPage.$vm.formData.longitude = item.longitude;
-								publishPage.$vm.formData.distance = item.distance; // 距离km
-								publishPage.$vm.formData.province = addressComponent.province;
-								// 针对重庆市这种特殊区域
-								if(Array.isArray(addressComponent.city)&&addressComponent.city.length==0) {
-									publishPage.$vm.formData.city = addressComponent.province;
-								} else {
-									publishPage.$vm.formData.city = addressComponent.city;
-								}
-								if(Array.isArray(addressComponent.district)&&addressComponent.district.length==0) {
-									publishPage.$vm.formData.district = addressComponent.township;
-								} else {
-									publishPage.$vm.formData.district = addressComponent.district;
-								}
-								
-								// 修复 万宁市属于行政区，导致无法识别系统区域的问题
-								if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
-									publishPage.$vm.formData.city = addressComponent.district;
-									publishPage.$vm.formData.district = addressComponent.township;
-								}
-							} else if (this.addressType === 'end') {
-								publishPage.$vm.endAddress = item.address;
-								publishPage.$vm.endLocation = {
-									latitude: item.latitude,
-									longitude: item.longitude
-								};
-							} else if (this.addressType === 'address') {
-								// 确保省市区信息存在
-								const province = addressComponent.province || '';
-								const city = addressComponent.city || '';
-								const district = addressComponent.district || '';
-								
-								console.log('省市区信息:', { province, city, district });
-								
-								// 更新 formData
-								const updatedFormData = {
-									...publishPage.$vm.formData,
-									address: item.address,
-									latitude: item.latitude,
-									longitude: item.longitude,
-									province: province,
-									city: city,
-									district: district
-								};
-								
-								// 打印更新后的 formData
-								console.log('更新后的 formData:', updatedFormData);
-								
-								// 输出到 AppData
-								const appData = {
-									formData: updatedFormData,
-									addressComponent: addressComponent,
-									selectedAddress: item.address,
-									location: {
-										latitude: item.latitude,
-										longitude: item.longitude
-									}
-								};
-								console.log('AppData:', appData);
-								
-								// 使用 uni.setStorageSync 存储到本地，方便在开发者工具中查看
-								uni.setStorageSync('debug_formData', appData);
-								
-								// 更新父组件的 formData
-								publishPage.$vm.formData = updatedFormData;
-								
-								// 触发父组件的更新
-								publishPage.$vm.$forceUpdate();
-							}
-							
-							// 直接返回发布订单页
-							uni.navigateBack({
-								delta: 2
-							});
-						}
+
+				if (this.addressType === 'start') {
+					publishPage.$vm.formData.address = item.address;
+					publishPage.$vm.formData.latitude = item.latitude;
+					publishPage.$vm.formData.longitude = item.longitude;
+					publishPage.$vm.formData.distance = item.distance; // 距离km
+					publishPage.$vm.formData.province = addressComponent.province;
+
+					// 针对重庆市这种特殊区域
+					if(Array.isArray(addressComponent.city)&&addressComponent.city.length==0) {
+						publishPage.$vm.formData.city = addressComponent.province;
 					} else {
-						console.log('高德地图逆地理编码无结果或状态异常，切换到腾讯地图:', res.data);
-						if (res.data.info === 'USER_DAILY_QUERY_OVER_LIMIT') {
-							console.log('高德地图配额已达上限，切换到腾讯地图逆地理编码');
-							uni.showToast({
-								title: '切换到腾讯地图',
-								icon: 'none',
-								duration: 1500
-							});
-						}
-						// 切换到腾讯地图逆地理编码
-						this.reverseGeocodeWithTencent(item);
+						publishPage.$vm.formData.city = addressComponent.city;
 					}
-				},
-				fail: (err) => {
-					console.error('高德地图逆地理编码请求失败，切换到腾讯地图:', err);
-					uni.showToast({
-						title: '切换到腾讯地图',
-						icon: 'none',
-						duration: 1500
-					});
-					// 高德地图逆地理编码请求失败时，切换到腾讯地图
-					this.reverseGeocodeWithTencent(item);
+
+					if(Array.isArray(addressComponent.district)&&addressComponent.district.length==0) {
+						publishPage.$vm.formData.district = addressComponent.township;
+					} else {
+						publishPage.$vm.formData.district = addressComponent.district;
+					}
+
+					// 修复 万宁市属于行政区，导致无法识别系统区域的问题
+					if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
+						publishPage.$vm.formData.city = addressComponent.district;
+						publishPage.$vm.formData.district = addressComponent.township;
+					}
+				} else if (this.addressType === 'end') {
+					publishPage.$vm.endAddress = item.address;
+					publishPage.$vm.endLocation = {
+						latitude: item.latitude,
+						longitude: item.longitude
+					};
+				} else if (this.addressType === 'address') {
+					// 确保省市区信息存在
+					const province = addressComponent.province || '';
+					const city = addressComponent.city || '';
+					const district = addressComponent.district || '';
+
+					console.log('省市区信息:', { province, city, district });
+
+					// 更新 formData
+					const updatedFormData = {
+						...publishPage.$vm.formData,
+						address: item.address,
+						latitude: item.latitude,
+						longitude: item.longitude,
+						province: province,
+						city: city,
+						district: district
+					};
+
+					// 打印更新后的 formData
+					console.log('更新后的 formData:', updatedFormData);
+
+					// 输出到 AppData
+					const appData = {
+						formData: updatedFormData,
+						addressComponent: addressComponent,
+						selectedAddress: item.address,
+						location: {
+							latitude: item.latitude,
+							longitude: item.longitude
+						}
+					};
+					console.log('AppData:', appData);
+
+					// 使用 uni.setStorageSync 存储到本地，方便在开发者工具中查看
+					uni.setStorageSync('debug_formData', appData);
+
+					// 更新父组件的 formData
+					publishPage.$vm.formData = updatedFormData;
+
+					// 触发父组件的更新
+					publishPage.$vm.$forceUpdate();
 				}
-			});
+
+				// 直接返回发布订单页
+				uni.navigateBack({
+					delta: 2
+				});
+			}
 		},
 		// 腾讯地图逆地理编码方法
 		reverseGeocodeWithTencent(item) {

@@ -281,3 +281,20 @@ Built files are generated in `unpackage/` directory:
 **修改文件**:
 - `pages/index/publish/map/index.vue` (第984-1048行搜索优化逻辑)
 - `pages/index/publish/map/search-results.vue` (第537-730行按需加载和缓存机制)
+
+### 2025-09-20: 修复语法错误和代码结构问题
+
+**问题描述**:
+Module build failed: 语法错误 "Unexpected token, expected ',' (765:7)"
+
+**根本原因**:
+在优化API消耗的过程中，代码缩进和结构出现问题，导致JavaScript语法错误。
+
+**修复内容**:
+1. 修复 `processSelectedAddress` 方法的缩进结构
+2. 清理重复和错误的代码片段
+3. 统一if-else分支的缩进格式
+4. 移除孤立的console.log和方法调用
+
+**修改文件**:
+- `pages/index/publish/map/search-results.vue` (第687-792行代码结构修复)
