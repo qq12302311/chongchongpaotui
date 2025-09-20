@@ -477,10 +477,22 @@
 						city: this.formData.city,
 						district: this.formData.district
 					});
+					console.log('用户选择的城市 selectedCity:', uni.getStorageSync('selectedCity'));
 					console.log('服务区域列表:', parsedCityList);
 
 					// 检查选择的地址是否在服务范围内
 					let district_id;
+
+					// 获取用户实际选择的城市信息，作为备用匹配数据
+					const selectedCity = uni.getStorageSync('selectedCity') || '';
+					let alternativeDistrict = '';
+					if (selectedCity && selectedCity.includes(' · ')) {
+						const parts = selectedCity.split(' · ');
+						if (parts.length >= 2) {
+							alternativeDistrict = parts[1]; // 如"大岭山镇"
+						}
+					}
+					console.log('备用区县匹配数据:', alternativeDistrict);
 
 					// 创建地址匹配函数，支持镇名匹配
 					const isAddressMatch = (districtName, targetDistrict) => {
@@ -531,9 +543,17 @@
 										// 检查区县级
 										if (cityItem.children && Array.isArray(cityItem.children)) {
 											// 先查找精确匹配或镇名匹配的项目
-											const matchedDistrictItem = cityItem.children.find(districtItem =>
+											let matchedDistrictItem = cityItem.children.find(districtItem =>
 												isAddressMatch(districtItem.name, this.formData.district)
 											);
+
+											// 如果没有匹配到，尝试使用备用区县数据匹配
+											if (!matchedDistrictItem && alternativeDistrict) {
+												console.log('尝试使用备用区县数据匹配:', alternativeDistrict);
+												matchedDistrictItem = cityItem.children.find(districtItem =>
+													isAddressMatch(districtItem.name, alternativeDistrict)
+												);
+											}
 
 											if (matchedDistrictItem) {
 												console.log('匹配到的区县项:', matchedDistrictItem);
@@ -542,6 +562,8 @@
 												return true;
 											}
 
+											console.log('未找到匹配的区县项，当前检查的城市:', cityItem.name);
+											console.log('可用的区县列表:', cityItem.children.map(d => d.name));
 											return false;
 										}
 									}

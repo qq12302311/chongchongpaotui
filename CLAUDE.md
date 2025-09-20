@@ -238,3 +238,14 @@ Built files are generated in `unpackage/` directory:
 - 实现双向地址匹配算法
 - 改用`find`方法替代`some`方法，确保能获取到匹配的区县ID
 - 增强错误日志和调试信息
+
+**深度修复更新**:
+发现根本问题在于地址数据来源的不一致性：
+1. **数据来源分析**: `selectedCity`来自用户首页选择 = "东莞市 · 大岭山镇"，`formData.district`来自地图API返回 = "东莞市"
+2. **地图页面修复**: 优化地址组件解析逻辑，优先使用用户选择的城市信息设置district值
+3. **店铺页面增强**: 增加备用匹配机制，当主要district匹配失败时使用selectedCity的区县信息
+4. **双重保障**: 确保两个页面的地址数据保持一致性，提供多层级匹配机制
+
+修改文件：
+- `pages/index/publish/map/index.vue` (第1317-1373行地址数据设置逻辑)
+- `pages/index/publish/store-info/index.vue` (第486-567行备用匹配逻辑)

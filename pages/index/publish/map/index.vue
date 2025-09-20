@@ -1320,18 +1320,52 @@
 										publishPage.$vm.formData.longitude = selectedLocation.longitude;
 										publishPage.$vm.formData.distance = selectedLocation.distance; // 距离km
 										publishPage.$vm.formData.province = selectedLocation.addressComponent.province;
+
+										// 获取用户选择的城市信息
+										const selectedCity = uni.getStorageSync('selectedCity') || '';
+										console.log('用户选择的城市:', selectedCity);
+										console.log('地址组件信息:', selectedLocation.addressComponent);
+
 										// 针对重庆市这种特殊区域
 										if(Array.isArray(selectedLocation.addressComponent.city)&&selectedLocation.addressComponent.city.length==0) {
 											publishPage.$vm.formData.city = selectedLocation.addressComponent.province;
 										} else {
 											publishPage.$vm.formData.city = selectedLocation.addressComponent.city;
 										}
-										if(Array.isArray(selectedLocation.addressComponent.district)&&selectedLocation.addressComponent.district.length==0) {
-											publishPage.$vm.formData.district = selectedLocation.addressComponent.township;
-										} else {
-											publishPage.$vm.formData.district = selectedLocation.addressComponent.district;
+
+										// 修复地址组件解析逻辑，确保district与用户选择的城市一致
+										let districtValue = '';
+
+										// 优先使用用户在首页选择的城市信息
+										if (selectedCity && selectedCity.includes(' · ')) {
+											// 如果selectedCity包含区县信息，提取区县部分
+											const parts = selectedCity.split(' · ');
+											if (parts.length >= 2) {
+												districtValue = parts[1]; // 取区县/镇名部分，如"大岭山镇"
+												console.log('从selectedCity提取的区县名:', districtValue);
+											}
 										}
-								
+
+										// 如果没有从selectedCity获取到有效信息，使用地址组件的信息
+										if (!districtValue) {
+											if(Array.isArray(selectedLocation.addressComponent.district)&&selectedLocation.addressComponent.district.length==0) {
+												districtValue = selectedLocation.addressComponent.township;
+											} else {
+												districtValue = selectedLocation.addressComponent.district;
+											}
+										}
+
+										// 特殊处理：如果地址组件中有镇名信息，优先使用镇名
+										if (selectedLocation.addressComponent.township &&
+											selectedLocation.addressComponent.township !== selectedLocation.addressComponent.district) {
+											// 如果township不同于district，说明有更具体的行政区划信息
+											districtValue = selectedLocation.addressComponent.township;
+											console.log('使用township作为区县名:', districtValue);
+										}
+
+										publishPage.$vm.formData.district = districtValue;
+										console.log('最终设置的district值:', districtValue);
+
 										// 修复 万宁市属于行政区，导致无法识别系统区域的问题
 										if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
 											publishPage.$vm.formData.city = selectedLocation.addressComponent.district;
