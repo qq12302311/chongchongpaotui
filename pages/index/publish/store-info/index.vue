@@ -481,6 +481,45 @@
 
 					// 检查选择的地址是否在服务范围内
 					let district_id;
+
+					// 创建地址匹配函数，支持镇名匹配
+					const isAddressMatch = (districtName, targetDistrict) => {
+						// 精确匹配
+						if (districtName === targetDistrict) {
+							return true;
+						}
+
+						// 处理包含镇名的情况
+						// 例如: targetDistrict = "大岭山镇", districtName = "东莞市" 或 "大岭山"
+						if (targetDistrict.includes('镇') || targetDistrict.includes('街道') || targetDistrict.includes('乡')) {
+							// 提取镇名（去掉"镇"、"街道"、"乡"等后缀）
+							const townName = targetDistrict.replace(/[镇街道乡]/g, '');
+
+							// 检查区县名是否包含镇名
+							if (districtName.includes(townName)) {
+								return true;
+							}
+
+							// 检查是否是同一个行政区域的不同表述
+							// 比如"大岭山镇"属于"东莞市"
+							if (districtName.includes('市') && targetDistrict.includes('镇')) {
+								// 这种情况下需要根据实际的行政区划关系判断
+								// 这里可以扩展更复杂的匹配逻辑
+								return true;
+							}
+						}
+
+						// 反向匹配：如果districtName包含镇名，targetDistrict是区县名
+						if (districtName.includes('镇') || districtName.includes('街道') || districtName.includes('乡')) {
+							const townNameFromDistrict = districtName.replace(/[镇街道乡]/g, '');
+							if (targetDistrict.includes(townNameFromDistrict)) {
+								return true;
+							}
+						}
+
+						return false;
+					};
+
 					const isServiceAvailable = parsedCityList.some(provinceItem => {
 						// 检查省级
 						if (provinceItem.name === this.formData.province) {
@@ -491,16 +530,19 @@
 									if (cityItem.name === this.formData.city) {
 										// 检查区县级
 										if (cityItem.children && Array.isArray(cityItem.children)) {
-											cityItem.children.some(districtItem => {
-												if(districtItem.name === this.formData.district) {
-													console.log(districtItem,"我检查")
-													uni.setStorageSync('selectedDistrictId_new',districtItem.district_id);
-												}
-											});
-											
-											return cityItem.children.some(districtItem => 
-												districtItem.name === this.formData.district
+											// 先查找精确匹配或镇名匹配的项目
+											const matchedDistrictItem = cityItem.children.find(districtItem =>
+												isAddressMatch(districtItem.name, this.formData.district)
 											);
+
+											if (matchedDistrictItem) {
+												console.log('匹配到的区县项:', matchedDistrictItem);
+												uni.setStorageSync('selectedDistrictId_new', matchedDistrictItem.district_id);
+												district_id = matchedDistrictItem.district_id;
+												return true;
+											}
+
+											return false;
 										}
 									}
 									return false;
