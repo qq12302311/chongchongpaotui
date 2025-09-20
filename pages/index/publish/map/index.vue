@@ -981,138 +981,71 @@
 
 						// 检查返回状态和数据
 						if (res.status === 0 && res.data && res.data.length > 0) {
-							// 使用Promise.all来并行处理逆地理编码，获取完整地址信息
-							const geocodePromises = res.data.map(item => {
-								return new Promise((resolve) => {
-									// 腾讯地图返回的经纬度格式为 {lat: xx, lng: xx}
-									const lat2 = parseFloat(item.location.lat);
-									const lon2 = parseFloat(item.location.lng);
+							// 优化：不在搜索阶段进行逆地理编码，减少API消耗
+							// 直接使用搜索返回的地址信息，在用户选择时再进行详细解析
+							const searchResults = res.data.map(item => {
+								// 腾讯地图返回的经纬度格式为 {lat: xx, lng: xx}
+								const lat2 = parseFloat(item.location.lat);
+								const lon2 = parseFloat(item.location.lng);
 
-									// 验证经纬度是否有效
-									if (!this.isValidLatLng(lat2, lon2)) {
-										console.warn('搜索结果中的经纬度无效:', lat2, lon2, item.title);
-										resolve(null); // 跳过无效的结果
-										return;
-									}
-
-									// 计算与当前位置的距离
-									let distance = '0.0';
-									if (this.latitude && this.longitude) {
-										distance = this.calculateDistance(
-											this.latitude,
-											this.longitude,
-											lat2,
-											lon2
-										);
-									}
-
-									// 使用腾讯地图逆地理编码获取详细地址信息
-									qqmapsdk.reverseGeocoder({
-										location: {
-											latitude: lat2,
-											longitude: lon2
-										},
-										success: (geoRes) => {
-											console.log('腾讯地图逆地理编码返回:', geoRes);
-
-											let address_new = item.title;
-											if (geoRes.status === 0 && geoRes.result) {
-												// 优先使用 formatted_addresses 中的 standard_address，包含最完整的地址信息
-												if (geoRes.result.formatted_addresses && geoRes.result.formatted_addresses.standard_address) {
-													address_new = geoRes.result.formatted_addresses.standard_address;
-												}
-												// 其次尝试拼接完整地址（包含镇名信息）
-												else if (geoRes.result.address_component && geoRes.result.address_reference) {
-													const addressComp = geoRes.result.address_component;
-													const addressRef = geoRes.result.address_reference;
-
-													// 构建完整地址：省 + 市 + 区 + 镇 + 街道
-													let fullAddress = '';
-													if (addressComp.province) fullAddress += addressComp.province;
-													if (addressComp.city && addressComp.city !== addressComp.province) fullAddress += addressComp.city;
-													if (addressComp.district && addressComp.district !== addressComp.city) fullAddress += addressComp.district;
-
-													// 添加镇名信息（如果存在）
-													if (addressRef.town && addressRef.town.title) {
-														fullAddress += addressRef.town.title;
-													}
-
-													// 添加街道信息
-													if (addressComp.street) fullAddress += addressComp.street;
-													if (addressComp.street_number) fullAddress += addressComp.street_number;
-
-													if (fullAddress) {
-														address_new = fullAddress;
-													} else {
-														// 最后使用基础地址
-														address_new = geoRes.result.address || item.title;
-													}
-												}
-												// 使用基础地址
-												else if (geoRes.result.address) {
-													address_new = geoRes.result.address;
-												}
-											} else if (item.address && item.address !== '') {
-												// 使用搜索返回的地址
-												address_new = item.address;
-											}
-
-											resolve({
-												name: item.title,
-												address: address_new,
-												latitude: lat2,
-												longitude: lon2,
-												distance: distance
-											});
-										},
-										fail: () => {
-											// 逆地理编码失败时，使用原有逻辑
-											let address_new = item.title;
-											if (item.address && item.address !== '') {
-												address_new = item.address;
-											}
-
-											resolve({
-												name: item.title,
-												address: address_new,
-												latitude: lat2,
-												longitude: lon2,
-												distance: distance
-											});
-										}
-									});
-								});
-							});
-
-							// 等待所有逆地理编码完成
-							Promise.all(geocodePromises).then(searchResults => {
-								const validResults = searchResults.filter(item => item !== null);
-
-								if (validResults.length > 0) {
-									// 合并搜索结果到地址列表
-									this.addressList = [...this.addressList, ...validResults];
-
-									// 将地址列表和当前城市保存到本地存储
-									uni.setStorageSync('addressList', JSON.stringify(this.addressList));
-									uni.setStorageSync('currentCity', this.currentCity);
-									// 保存搜索关键词到本地存储
-									uni.setStorageSync('searchKeyword', this.searchKeyword);
-
-									// 跳转到搜索结果页面
-									uni.navigateTo({
-										url: '/pages/index/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.latitude + '&longitude=' + this.longitude
-									});
-								} else {
-									console.log('腾讯地图搜索结果处理后无有效数据，切换到百度地图');
-									// 显示加载提示
-									uni.showLoading({
-										title: '加倍努力搜索中...',
-										mask: true
-									});
-									// 切换到百度地图搜索
-									this.bmapsearch(searchCity);
+								// 验证经纬度是否有效
+								if (!this.isValidLatLng(lat2, lon2)) {
+									console.warn('搜索结果中的经纬度无效:', lat2, lon2, item.title);
+									return null; // 跳过无效的结果
 								}
-							});
+
+								// 计算与当前位置的距离
+								let distance = '0.0';
+								if (this.latitude && this.longitude) {
+									distance = this.calculateDistance(
+										this.latitude,
+										this.longitude,
+										lat2,
+										lon2
+									);
+								}
+
+								// 处理地址信息，优先使用address，如果没有则使用title
+								let address_new = item.title;
+								if (item.address && item.address !== '') {
+									address_new = item.address;
+								}
+
+								return {
+									name: item.title,
+									address: address_new,
+									latitude: lat2,
+									longitude: lon2,
+									distance: distance,
+									// 保存原始数据以便后续详细解析
+									rawData: item
+								};
+							}).filter(item => item !== null); // 过滤掉无效的结果
+
+							if (searchResults.length > 0) {
+								// 合并搜索结果到地址列表
+								this.addressList = [...this.addressList, ...searchResults];
+
+								// 将地址列表和当前城市保存到本地存储
+								uni.setStorageSync('addressList', JSON.stringify(this.addressList));
+								uni.setStorageSync('currentCity', this.currentCity);
+								// 保存搜索关键词到本地存储
+								uni.setStorageSync('searchKeyword', this.searchKeyword);
+
+								// 跳转到搜索结果页面
+								uni.navigateTo({
+									url: '/pages/index/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.latitude + '&longitude=' + this.longitude
+								});
+							} else {
+								console.log('腾讯地图搜索结果处理后无有效数据，切换到百度地图');
+								// 显示加载提示
+								uni.showLoading({
+									title: '加倍努力搜索中...',
+									mask: true
+								});
+								// 切换到百度地图搜索
+								this.bmapsearch(searchCity);
+							}
 						} else {
 							console.log('腾讯地图搜索无结果或状态异常，切换到百度地图:', res);
 							// uni.showToast({

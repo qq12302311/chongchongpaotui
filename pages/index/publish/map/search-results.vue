@@ -535,7 +535,77 @@ export default {
 		},
 		// 处理选择地址
 		handleSelectAddress(item) {
-			// 获取地址的详细信息
+			// 显示加载提示
+			uni.showLoading({
+				title: '获取详细地址...',
+				mask: true
+			});
+
+			// 优化：优先使用腾讯地图逆地理编码获取详细地址，减少API消耗
+			this.getDetailedAddress(item);
+		},
+
+		// 获取详细地址信息的优化方法
+		getDetailedAddress(item) {
+			// 生成缓存key
+			const cacheKey = `address_${item.latitude}_${item.longitude}`;
+
+			// 检查本地缓存
+			const cachedAddress = uni.getStorageSync(cacheKey);
+			if (cachedAddress) {
+				console.log('使用缓存的地址信息:', cachedAddress);
+				this.processSelectedAddress(item, cachedAddress);
+				return;
+			}
+
+			// 优先使用腾讯地图逆地理编码
+			qqmapsdk.reverseGeocoder({
+				location: {
+					latitude: item.latitude,
+					longitude: item.longitude
+				},
+				success: (geoRes) => {
+					console.log('腾讯地图逆地理编码返回:', geoRes);
+
+					if (geoRes.status === 0 && geoRes.result) {
+						// 构建详细地址信息
+						const addressInfo = {
+							formatted_address: geoRes.result.address,
+							address_component: geoRes.result.address_component || {},
+							address_reference: geoRes.result.address_reference || {},
+							api_source: 'tencent'
+						};
+
+						// 优化地址信息
+						if (geoRes.result.formatted_addresses && geoRes.result.formatted_addresses.standard_address) {
+							addressInfo.formatted_address = geoRes.result.formatted_addresses.standard_address;
+						}
+
+						// 缓存地址信息（缓存1小时）
+						const cacheData = {
+							data: addressInfo,
+							timestamp: Date.now(),
+							expires: 3600000 // 1小时
+						};
+						uni.setStorageSync(cacheKey, cacheData);
+
+						this.processSelectedAddress(item, cacheData);
+					} else {
+						// 腾讯地图失败，降级到高德地图
+						console.log('腾讯地图逆地理编码失败，降级到高德地图');
+						this.fallbackToAmapGeocode(item, cacheKey);
+					}
+				},
+				fail: () => {
+					// 降级到高德地图
+					console.log('腾讯地图逆地理编码请求失败，降级到高德地图');
+					this.fallbackToAmapGeocode(item, cacheKey);
+				}
+			});
+		},
+
+		// 降级到高德地图逆地理编码
+		fallbackToAmapGeocode(item, cacheKey) {
 			uni.request({
 				url: 'https://restapi.amap.com/v3/geocode/regeo',
 				data: {
@@ -545,25 +615,75 @@ export default {
 					output: 'json'
 				},
 				success: (res) => {
-					console.log('逆地理编码返回数据:', res.data);
+					console.log('高德地图逆地理编码返回数据:', res.data);
 					if ((res.data.status === '1' || res.data.status === 'OK') && res.data.regeocode) {
 						const addressComponent = res.data.regeocode.addressComponent;
-						console.log('地址组件:', addressComponent);
-						
-						// 详细输出地址组件的各个属性
-						console.log('省份:', addressComponent.province);
-						console.log('城市:', addressComponent.city);
-						console.log('区县:', addressComponent.district);
-						
-						// 保存选择的地址到本地存储
-						// uni.setStorageSync('selectedAddress', item.address);
-						
-						// 获取所有页面
-						const pages = getCurrentPages();
-						// 获取发布订单页实例 (倒数第三个页面)
-						const publishPage = pages[pages.length - 3];
-						
-						if (publishPage) {
+
+						// 构建地址信息
+						const addressInfo = {
+							formatted_address: res.data.regeocode.formatted_address,
+							address_component: addressComponent,
+							api_source: 'amap'
+						};
+
+						// 缓存地址信息（缓存1小时）
+						const cacheData = {
+							data: addressInfo,
+							timestamp: Date.now(),
+							expires: 3600000 // 1小时
+						};
+						uni.setStorageSync(cacheKey, cacheData);
+
+						this.processSelectedAddress(item, cacheData);
+					} else {
+						uni.hideLoading();
+						uni.showToast({
+							title: '获取地址信息失败',
+							icon: 'none'
+						});
+					}
+				},
+				fail: (err) => {
+					console.error('高德地图逆地理编码请求失败:', err);
+					uni.hideLoading();
+					uni.showToast({
+						title: '获取地址信息失败',
+						icon: 'none'
+					});
+				}
+			});
+		},
+
+		// 统一处理选择的地址
+		processSelectedAddress(item, cacheData) {
+			// 检查缓存是否过期
+			if (cacheData.timestamp && (Date.now() - cacheData.timestamp > cacheData.expires)) {
+				console.log('缓存已过期，重新获取');
+				uni.removeStorageSync(`address_${item.latitude}_${item.longitude}`);
+				this.getDetailedAddress(item);
+				return;
+			}
+
+			const addressInfo = cacheData.data;
+			console.log('处理地址信息:', addressInfo);
+
+			// 隐藏加载提示
+			uni.hideLoading();
+
+			// 获取所有页面
+			const pages = getCurrentPages();
+			// 获取发布订单页实例 (倒数第三个页面)
+			const publishPage = pages[pages.length - 3];
+
+			if (publishPage) {
+				// 统一处理不同API来源的地址组件
+				const addressComponent = addressInfo.address_component;
+				console.log('地址组件:', addressComponent);
+
+				// 详细输出地址组件的各个属性
+				console.log('省份:', addressComponent.province);
+				console.log('城市:', addressComponent.city);
+				console.log('区县:', addressComponent.district);
 							if (this.addressType === 'start') {
 								publishPage.$vm.formData.address = item.address;
 								publishPage.$vm.formData.latitude = item.latitude;
