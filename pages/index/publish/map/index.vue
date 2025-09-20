@@ -1016,11 +1016,44 @@
 											console.log('腾讯地图逆地理编码返回:', geoRes);
 
 											let address_new = item.title;
-											if (geoRes.status === 0 && geoRes.result && geoRes.result.address) {
-												// 优先使用逆地理编码返回的完整地址
-												address_new = geoRes.result.address;
+											if (geoRes.status === 0 && geoRes.result) {
+												// 优先使用 formatted_addresses 中的 standard_address，包含最完整的地址信息
+												if (geoRes.result.formatted_addresses && geoRes.result.formatted_addresses.standard_address) {
+													address_new = geoRes.result.formatted_addresses.standard_address;
+												}
+												// 其次尝试拼接完整地址（包含镇名信息）
+												else if (geoRes.result.address_component && geoRes.result.address_reference) {
+													const addressComp = geoRes.result.address_component;
+													const addressRef = geoRes.result.address_reference;
+
+													// 构建完整地址：省 + 市 + 区 + 镇 + 街道
+													let fullAddress = '';
+													if (addressComp.province) fullAddress += addressComp.province;
+													if (addressComp.city && addressComp.city !== addressComp.province) fullAddress += addressComp.city;
+													if (addressComp.district && addressComp.district !== addressComp.city) fullAddress += addressComp.district;
+
+													// 添加镇名信息（如果存在）
+													if (addressRef.town && addressRef.town.title) {
+														fullAddress += addressRef.town.title;
+													}
+
+													// 添加街道信息
+													if (addressComp.street) fullAddress += addressComp.street;
+													if (addressComp.street_number) fullAddress += addressComp.street_number;
+
+													if (fullAddress) {
+														address_new = fullAddress;
+													} else {
+														// 最后使用基础地址
+														address_new = geoRes.result.address || item.title;
+													}
+												}
+												// 使用基础地址
+												else if (geoRes.result.address) {
+													address_new = geoRes.result.address;
+												}
 											} else if (item.address && item.address !== '') {
-												// 其次使用搜索返回的地址
+												// 使用搜索返回的地址
 												address_new = item.address;
 											}
 

@@ -207,3 +207,10 @@ Built files are generated in `unpackage/` directory:
 - 使用Promise.all并行处理逆地理编码请求
 - 增加错误处理，逆地理编码失败时使用原有逻辑
 - 保持与原有代码风格和错误处理机制的一致性
+
+**优化更新**:
+基于腾讯地图逆地理编码返回的详细数据结构，进一步优化地址信息提取：
+1. 优先使用`formatted_addresses.standard_address`字段，包含最完整的地址信息
+2. 其次从`address_reference.town`中提取镇名信息，构建完整地址
+3. 地址拼接顺序：省 + 市 + 区 + 镇 + 街道 + 门牌号
+4. 确保镇名信息不丢失，解决"大岭山镇"等镇级行政区划缺失问题
