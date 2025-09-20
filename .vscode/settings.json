@@ -1,12 +1,10 @@
 {
     "cline.preferredLanguage": "Simplified Chinese - 简体中文",
-    "cline.vsCodeLmModelSelector": {
-        
-    },
+    "cline.vsCodeLmModelSelector": {},
     // Claude Code 相关配置
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": true
+        "source.fixAll.eslint": "explicit"
     },
     // UniApp 开发配置
     "files.associations": {
@@ -26,5 +24,6 @@
     "editor.fontFamily": "Consolas, 'Courier New', monospace, '微软雅黑'",
     // Git 配置
     "git.enableSmartCommit": true,
-    "git.confirmSync": false
+    "git.confirmSync": false,
+    "chatgpt.openOnStartup": true
 }

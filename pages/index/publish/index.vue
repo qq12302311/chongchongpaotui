@@ -291,6 +291,13 @@
 						</view>
 					</view>
 					<button
+						class="cart-btn"
+						:style="{
+							'background-color': isLoggedIn ? '#52C41A' : '#52C41A',
+							'color': '#2492F2'
+						}"
+						@click="isLoggedIn ? addToCart() : goToLogin()">{{ isLoggedIn ? '加入购物车' : '去登录' }}</button>
+					<button
 						class="submit-btn"
 						:style="{
 							'background-color': isLoggedIn ? '#2492F2' : '#2492F2',
@@ -460,7 +467,7 @@
 				</view>
 				<view class="confirm-content">
 					<!-- 服务信息块 -->
-					<view class="service-info-block">
+					<view class="service-info-block imgcc1">
 						<view class="confirm-item service-item">
 							<view class="confirm-value brand-value service-value">
 								<image v-if="selectedBrand === 'meituan'" src="https://ccpt.qiniu.0871.cn/publish/meituan.png" class="brand-icon" mode="aspectFit"></image>
@@ -481,7 +488,7 @@
 						</view>
 					</view>
 					<!-- 门店信息块 -->
-					<view class="service-info-block">
+					<view class="service-info-block imgcc2">
 						<view class="confirm-item service-item">
 							<text class="confirm-value store-value">{{ formData.storeName }}</text>
 							<text class="confirm-label service-label">门店名称</text>
@@ -500,25 +507,25 @@
 						</view>
 					</view>
 					<!-- 约定时效与作业时段信息块 -->
-					<view class="service-info-block">
+					<view class="service-info-block imgcc3">
 						<view class="confirm-item service-item">
-							<text class="confirm-value service-value">{{ beforeDeadlineTextShow || '未选择' }}</text>
+							<text class="confirm-value service-value" style="color: #5B5B5C !important;">{{ beforeDeadlineTextShow || '未选择' }}</text>
 							<text class="confirm-label service-label">约定时效</text>
 						</view>
 						<view class="confirm-item service-item">
-							<text class="confirm-value service-value">{{ getWorkTimeDisplay() }}</text>
+							<text class="confirm-value service-value" style="color: #5B5B5C !important;">{{ getWorkTimeDisplay() }}</text>
 							<text class="confirm-label service-label">作业时段</text>
 						</view>
 					</view>
 					<!-- 我的备注信息块 -->
-					<view class="service-info-block">
+					<view class="service-info-block imgcc4">
 						<view class="confirm-item service-item" v-if="formData.additional_notes">
 							<text class="confirm-value service-value">{{ formData.additional_notes }}</text>
 							<text class="confirm-label service-label">我的备注</text>
 						</view>
 						<view class="confirm-item service-item" v-if="formData.locationDesc">
-							<text class="confirm-value service-value">{{ formData.locationDesc }}</text>
-							<text class="confirm-label service-label">门店详情</text>
+							<text class="confirm-value service-value" style="color: #5B5B5C !important;">{{ formData.locationDesc }}</text>
+							<text class="confirm-label service-label">我的备注</text>
 						</view>
 						<view class="confirm-item service-item" v-if="!formData.additional_notes && !formData.locationDesc">
 							<text class="confirm-value service-value">未填写</text>
@@ -528,8 +535,7 @@
 				</view>
 				<view class="confirm-footer">
 					<button class="cancel-btn" @click="closeOrderConfirmPopup">返回修改</button>
-					<button class="cart-btn" @click="addToCart">加入购物车</button>
-					<button class="confirm-btn" @click="confirmSubmitOrder">确认支付</button>
+					<button class="confirm-btn" @click="confirmSubmitOrder">确认并支付</button>
 				</view>
 			</view>
 		</uni-popup>
@@ -2833,18 +2839,37 @@
 
 
 
-		.submit-btn {
-			width: 220rpx;
-			height: 70rpx;
-			line-height: 70rpx;
+		.cart-btn {
+			width: 190rpx;
+			height: 60rpx;
+			line-height: 60rpx;
 			text-align: center;
-			font-size: 30rpx;
-			border-radius: 35rpx;
+			font-size: 26rpx;
+			border-radius: 30rpx;
+			border: 2rpx solid #2492F2;
+			background: transparent;
+			color: #2492F2;
+			font-weight: 500;
+			transition: all 0.3s ease;
+			background-color: transparent !important;
+
+			&:active {
+				transform: translateY(2rpx);
+				opacity: 0.9;
+			}
+		}
+
+		.submit-btn {
+			width: 180rpx;
+			height: 60rpx;
+			line-height: 60rpx;
+			text-align: center;
+			font-size: 26rpx;
+			border-radius: 30rpx;
 			border: none;
 			font-weight: 500;
 			transition: all 0.3s ease;
-			margin-right: 20rpx;
-			background-color: #2492F2 !important; /* 添加 !important 确保颜色不被覆盖 */
+			background-color: #2492F2 !important;
 
 			&:active {
 				transform: translateY(2rpx);
@@ -3974,7 +3999,7 @@
 
 	.confirm-header {
 		position: relative;
-		height: 160rpx;
+		height: 180rpx;
 		overflow: hidden;
 	}
 
@@ -4043,42 +4068,6 @@
 		flex: 1;
 		height: 70rpx;
 		line-height: 70rpx;
-		background: linear-gradient(135deg, #FF7F47 0%, #FF6B2B 100%);
-		color: #ffffff;
-		border: none;
-		border-radius: 35rpx;
-		font-size: 28rpx;
-		text-align: center;
-		font-weight: bold;
-	}
-
-	.cancel-btn:active {
-		background: linear-gradient(135deg, #FF6B2B 0%, #FF5722 100%);
-		opacity: 0.9;
-	}
-
-	.cart-btn {
-		flex: 1;
-		height: 70rpx;
-		line-height: 70rpx;
-		background: linear-gradient(135deg, #52C41A 0%, #389E0D 100%);
-		color: #ffffff;
-		border: none;
-		border-radius: 35rpx;
-		font-size: 28rpx;
-		text-align: center;
-		font-weight: bold;
-	}
-
-	.cart-btn:active {
-		background: linear-gradient(135deg, #389E0D 0%, #237804 100%);
-		opacity: 0.9;
-	}
-
-	.confirm-btn {
-		flex: 1;
-		height: 70rpx;
-		line-height: 70rpx;
 		background: linear-gradient(135deg, #4A9FFF 0%, #2E86FF 100%);
 		color: #ffffff;
 		border: none;
@@ -4088,8 +4077,44 @@
 		font-weight: bold;
 	}
 
-	.confirm-btn:active {
+	.cancel-btn:active {
 		background: linear-gradient(135deg, #2E86FF 0%, #1976D2 100%);
+		opacity: 0.9;
+	}
+
+	.cart-btn {
+		width: 190rpx;
+		height: 60rpx;
+		line-height: 60rpx;
+		background: transparent;
+		color: #2492F2;
+		border: 2rpx solid #2492F2;
+		border-radius: 30rpx;
+		font-size: 26rpx;
+		text-align: center;
+		font-weight: bold;
+	}
+
+	.cart-btn:active {
+		background: rgba(36, 146, 242, 0.1);
+		opacity: 0.9;
+	}
+
+	.confirm-btn {
+		flex: 1;
+		height: 70rpx;
+		line-height: 70rpx;
+		background: linear-gradient(135deg, #FF7F47 0%, #FF6B2B 100%);
+		color: #ffffff;
+		border: none;
+		border-radius: 35rpx;
+		font-size: 28rpx;
+		text-align: center;
+		font-weight: bold;
+	}
+
+	.confirm-btn:active {
+		background: linear-gradient(135deg, #FF6B2B 0%, #FF5722 100%);
 		opacity: 0.9;
 	}
 
@@ -4103,7 +4128,63 @@
 		overflow: hidden;
 	}
 
-	.service-info-block::after {
+	/* .service-info-block::after {
+		content: '';
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 80rpx;
+		height: 80rpx;
+		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		opacity: 0.6;
+	} */
+	
+	.imgcc1::after{
+		content: '';
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 80rpx;
+		height: 80rpx;
+		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		opacity: 0.6;
+	}
+	
+	.imgcc2::after{
+		content: '';
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 80rpx;
+		height: 80rpx;
+		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		opacity: 0.6;
+	}
+	
+	.imgcc3::after{
+		content: '';
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 80rpx;
+		height: 80rpx;
+		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		opacity: 0.6;
+	}
+	
+	.imgcc4::after{
 		content: '';
 		position: absolute;
 		right: 0;

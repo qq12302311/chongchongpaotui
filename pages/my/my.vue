@@ -159,7 +159,7 @@
 		</view>
 
 		<!-- 悬浮聊天图标 -->
-		<FloatingChatIconUser />
+		<!-- <FloatingChatIconUser /> -->
 	</view>
 </template>
 
@@ -167,7 +167,7 @@
 	import NavBar from '@/components/NavBar.vue'
 	import TabBar from '@/components/tab-bar/tab-bar.vue'
 	import FloatingImage from '@/components/FloatingImage/index.vue'
-	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+	// import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import userMixin from '@/mixins/userMixin.js'
 
 	export default {
@@ -175,7 +175,7 @@
 			NavBar,
 			TabBar,
 			FloatingImage,
-			FloatingChatIconUser
+			// FloatingChatIconUser
 		},
 		mixins: [userMixin],
 		data() {

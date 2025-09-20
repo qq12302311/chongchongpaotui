@@ -120,7 +120,7 @@
 		<floating-image></floating-image>
 
 		<!-- 悬浮聊天图标 -->
-		<FloatingChatIconUser />
+		<!-- <FloatingChatIconUser /> -->
 
 		<!-- 底部占位，确保内容不被底部导航栏遮挡 -->
 		<view class="bottom-placeholder"></view>
@@ -131,7 +131,7 @@
 	import NavBar from '@/components/NavBar.vue'
 	import TabBar from '@/components/tab-bar/tab-bar.vue'
 	import FloatingImage from '@/components/FloatingImage/index.vue'
-	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+	// import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import md5 from 'md5'
 
 	export default {
@@ -139,7 +139,7 @@
 			TabBar,
 			NavBar,
 			FloatingImage,
-			FloatingChatIconUser
+			// FloatingChatIconUser
 		},
 		data() {
 			return {

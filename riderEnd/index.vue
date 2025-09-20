@@ -138,8 +138,9 @@
 
             <view class="service-time" :data-content="getDisplayAmount(order)"></view>
             <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons">
-              <button class="take-order-btn" @click.stop="goToOrderDetail(order)">去接单</button>
-              <button class="transfer-order-btn" @click.stop="goToOrderDetail(order)">转单</button>
+              <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="goToOrderDetail(order)">去接单</button>
+              <!-- 只有非转派订单才显示转单按钮 -->
+              <button v-if="!isTransferredOrder(order)" class="transfer-order-btn" open-type="share" @click.stop="transferOrder(order)">转单</button>
             </view>
             <view v-else-if="!order.isCompleted && !order.isAssigned && order.refundRequest" class="refund-label">订单退款中</view>
             <view v-else-if="order.isAssigned" class="assigned-label">
@@ -235,16 +236,30 @@
 				  <text class="info-value">{{ currentOrderInfo.orderTime }}</text>
 				</view> -->
 				<view class="info-row">
-				  <text class="info-label">服务地址：</text>
-				  <text class="info-value">{{ formatAddress(currentOrderInfo) }}</text>
+				  <text class="info-label">服务项目：</text>
+				  <text class="info-value service-item-value">{{ currentOrderInfo.serviceItem }}</text>
+				</view>
+				<view class="info-row">
+				  <text class="info-label">服务佣金：</text>
+				  <text class="info-value amount">{{ getDisplayAmount(currentOrderInfo) }}</text>
 				</view>
 			   <!-- <view class="info-row">
 				  <text class="info-label">时效：</text>
 				  <text class="info-value service-time-value">{{ currentOrderInfo.serviceTime }}</text>
 				</view> -->
+				<!-- <view class="info-row">
+				  <text class="info-label">打赏金额：</text>
+				  <text class="info-value service-amount">8.0元</text>
+				</view> -->
+			  </view>
+			</view>
+			
+			<view class="order-modal-content mar-top-10">
+			  <!-- 订单基本信息 -->
+			  <view class="order-modal-info">
 				<view class="info-row">
-				  <text class="info-label">项目：</text>
-				  <text class="info-value service-item-value">{{ currentOrderInfo.serviceItem }}</text>
+				  <text class="info-label">服务地址：</text>
+				  <text class="info-value">{{ formatAddress(currentOrderInfo) }}</text>
 				</view>
 				<view class="info-row">
 				  <text class="info-label">服务距离：</text>
@@ -253,14 +268,6 @@
 					<text class="info-value">{{ currentOrderInfo.distance || 0 }}km</text>
 				  </view>
 				</view>
-				<view class="info-row">
-				  <text class="info-label">订单金额：</text>
-				  <text class="info-value amount">{{ getDisplayAmount(currentOrderInfo) }}</text>
-				</view>
-				<!-- <view class="info-row">
-				  <text class="info-label">打赏金额：</text>
-				  <text class="info-value service-amount">8.0元</text>
-				</view> -->
 			  </view>
 			</view>
 
@@ -272,21 +279,28 @@
 			  <text class="reward-label">转单奖励</text>
 			  <text class="reward-amount">{{ getTransferReward(currentOrderInfo) }}</text>
 			  <view class="reward-condition">
-				<text class="reward-condition-text">派出且成功完单</text>
+				<text class="reward-condition-text">{{ countdownText || '派出且成功完单' }}</text>
 			  </view>
 			</view>
 
 			<view class="order-modal-footer">
-			  <view class="modal-btn cancel" @click="closeOrderModal">取消</view>
-			  <view v-if="!currentOrderInfo.isTransferOrder && !currentOrderInfo.isTransferMode" class="modal-btn transfer" @click="transferOrderInModal">订单转派</view>
-			  <view v-if="!currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isAcceptingOrder}" @click="acceptOrder">
+			  <button class="modal-btn cancel" @click="closeOrderModal">取消</button>
+			  <button v-if="!currentOrderInfo.isTransferOrder && !currentOrderInfo.isTransferMode && !isTransferredOrder(currentOrderInfo)"
+				  class="modal-btn transfer"
+				  :class="{disabled: !canTransfer}"
+				  :open-type="canTransfer ? 'share' : ''"
+				  @click="transferOrderInModal">
+				<text v-if="!canTransfer">订单转派</text>
+				<text v-else>订单转派</text>
+			  </button>
+			  <button v-if="!currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isAcceptingOrder}" @click="acceptOrder">
 				<text v-if="isAcceptingOrder">接单中...</text>
 				<text v-else>立即接单</text>
-			  </view>
-			  <view v-if="currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isTransferringOrder}" @click="confirmTransferOrder">
+			  </button>
+			  <button v-if="currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isTransferringOrder}" @click="confirmTransferOrder">
 				<text v-if="isTransferringOrder">转单中...</text>
 				<text v-else>确认转单</text>
-			  </view>
+			  </button>
 			</view>
 		</view>
       </view>
@@ -383,7 +397,7 @@
 import NavBar from '@/components/NavBar.vue'
 import TabBar from '@/components/rider/tab-bar/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
-import FloatingImage from '@/components/FloatingImage/index.vue'
+import FloatingImage from '@/components/FloatingImage/riderEnd_index.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
 import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 	import md5 from 'md5'
@@ -477,7 +491,14 @@ export default {
       // 分享参数
       shareParams: null,
       // 当前要转派的订单
-      currentTransferOrder: null
+      currentTransferOrder: null,
+      // 待处理的转派订单ID（从分享链接进入时使用）
+      pendingTransferOrderId: null,
+      // 倒计时相关
+      countdownTimer: null,
+      countdownText: '',
+      showTransferCondition: true,
+      canTransfer: true // 控制是否可以转单
     }
   },
   onLoad(options) {
@@ -497,10 +518,8 @@ export default {
         shared_order_id: options.shared_order_id
       };
 
-      // 延迟显示转派订单详情弹窗，等待订单列表加载完成
-      setTimeout(() => {
-        this.showTransferOrderModal(options.shared_order_id);
-      }, 1000);
+      // 保存分享订单ID，在订单列表加载完成后显示
+      this.pendingTransferOrderId = options.shared_order_id;
     }
   },
   onShow() {
@@ -561,6 +580,14 @@ export default {
     if (this.hasMore && !this.loading) {
       this.loadMore()
     }
+  },
+  onUnload() {
+    // 页面销毁时清除定时器
+    this.clearCountdownTimer();
+  },
+  beforeDestroy() {
+    // 组件销毁前清除定时器
+    this.clearCountdownTimer();
   },
   // 微信分享到好友
   async onShareAppMessage() {
@@ -893,6 +920,17 @@ export default {
         this.loading = false
         this.isRefreshing = false
         uni.stopPullDownRefresh()
+        
+        // 如果有待处理的转派订单ID，尝试显示转派订单
+        if (this.pendingTransferOrderId && this.page === 1) {
+          const orderId = this.pendingTransferOrderId
+          this.pendingTransferOrderId = null // 清除待处理的ID
+          
+          // 延迟500ms确保数据渲染完成
+          setTimeout(() => {
+            this.showTransferOrderModal(orderId)
+          }, 500)
+        }
       }
     },
     // 格式化订单数据的通用方法
@@ -1187,12 +1225,16 @@ export default {
       // 标记这是转单模式，用于在弹窗中显示转单按钮而不是接单按钮
       this.currentOrderInfo = { ...order, isTransferMode: true };
       this.showOrderModal = true;
+      // 启动倒计时定时器
+      this.startCountdownTimer();
     },
 
     // 显示订单详情弹窗
     showOrderDetailModal(order) {
       this.currentOrderInfo = order;
       this.showOrderModal = true;
+      // 启动倒计时定时器
+      this.startCountdownTimer();
     },
 
     // 显示转派订单详情弹窗
@@ -1200,17 +1242,55 @@ export default {
       // 在订单列表中查找对应的订单
       const order = this.orderList.find(o => o.id == orderId);
       if (order) {
-        // 标记这是转派订单，用于隐藏转派相关功能
-        this.currentOrderInfo = { ...order, isTransferOrder: true };
-        this.showOrderModal = true;
-      } else {
-        // 如果在当前列表中找不到，可能需要重新加载或显示提示
-        uni.showToast({
-          title: '转派订单加载中，请稍后',
-          icon: 'none'
+        // 创建转派订单副本，修改价格为转派后的价格
+        const transferOrder = { 
+          ...order, 
+          isTransferOrder: true,
+          // 将价格改为转派后的价格（原价减去转单奖励）
+          transferredPrice: this.getTransferDisplayAmount(order)
+        };
+        
+        // 跳转到接单详情页，传递转派相关参数
+        uni.navigateTo({
+          url: `/riderEnd/order-detail?id=${orderId}&isTransferred=true&transferredPrice=${encodeURIComponent(transferOrder.transferredPrice)}`
         });
-        // 重新加载订单列表
-        this.refreshData();
+      } else {
+        // 如果在当前列表中找不到，先重新加载订单列表
+        uni.showToast({
+          title: '正在加载订单信息...',
+          icon: 'loading',
+          mask: true
+        });
+        
+        // 重新加载订单列表，并在加载完成后重试
+        this.refreshList();
+        
+        // 延迟3秒后重试查找订单
+        setTimeout(() => {
+          const retryOrder = this.orderList.find(o => o.id == orderId);
+          uni.hideToast();
+          
+          if (retryOrder) {
+            // 找到订单，跳转到详情页
+            const transferOrder = { 
+              ...retryOrder, 
+              isTransferOrder: true,
+              transferredPrice: this.getTransferDisplayAmount(retryOrder)
+            };
+            
+            uni.navigateTo({
+              url: `/riderEnd/order-detail?id=${orderId}&isTransferred=true&transferredPrice=${encodeURIComponent(transferOrder.transferredPrice)}`
+            });
+          } else {
+            // 仍然找不到订单
+            uni.showModal({
+              title: '提示',
+              content: '未找到对应的转派订单，可能该订单已被其他骑手接单或状态发生变化。',
+              showCancel: false,
+              confirmText: '知道了'
+            });
+          }
+        }, 3000);
       }
     },
 
@@ -1218,6 +1298,11 @@ export default {
     closeOrderModal() {
       this.showOrderModal = false;
       this.currentOrderInfo = {};
+      // 清除倒计时定时器
+      this.clearCountdownTimer();
+      // 重置转单状态
+      this.canTransfer = true;
+      this.countdownText = '';
     },
 
     // 导航到订单地址
@@ -1410,6 +1495,15 @@ export default {
 
     // 弹窗中的转单操作（订单转派）
     transferOrderInModal() {
+      // 检查是否可以转单
+      if (!this.canTransfer) {
+        uni.showToast({
+          title: `${this.countdownText.replace('后可转单', '后才能转派')}`,
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
       this.transferOrder();
     },
 
@@ -1467,6 +1561,15 @@ export default {
     },
     getDisplayAmount(order) {
       if (!this.riderUserInfo || !this.riderUserInfo.rate) return order.price;
+      
+      // 检查是否是转派订单：如果当前订单ID与转派订单ID匹配，则显示转派后价格
+      if (this.shareParams && this.shareParams.shared_order_id && 
+          String(order.id) === String(this.shareParams.shared_order_id)) {
+        // 这是转派订单，显示转派后的价格（原价减去转单奖励）
+        return this.getTransferDisplayAmount(order);
+      }
+      
+      // 普通订单，显示原价乘以费率
       let amount = 0;
       if (typeof order.price === 'string') {
         amount = parseFloat(order.price.replace('¥', ''));
@@ -1536,6 +1639,14 @@ export default {
       const finalAmount = (amount * rate) - rewardAmount;
 
       return `¥${finalAmount.toFixed(2)}`;
+    },
+
+    // 判断是否是转派订单（被转派的骑手看到的订单）
+    isTransferredOrder(order) {
+      // 检查是否通过转派链接进入，且当前订单是转派的目标订单
+      return this.shareParams && 
+             this.shareParams.shared_order_id && 
+             String(order.id) === String(this.shareParams.shared_order_id);
     },
 
     // 检查是否需要显示海报弹窗
@@ -2059,6 +2170,118 @@ export default {
 			});
 		});
 	},
+
+    // 启动倒计时定时器
+    startCountdownTimer() {
+      // 先清除现有定时器
+      this.clearCountdownTimer();
+
+      // 立即更新一次倒计时
+      this.updateCountdown();
+
+      // 每秒更新倒计时
+      this.countdownTimer = setInterval(() => {
+        this.updateCountdown();
+      }, 1000);
+    },
+
+    // 清除倒计时定时器
+    clearCountdownTimer() {
+      if (this.countdownTimer) {
+        clearInterval(this.countdownTimer);
+        this.countdownTimer = null;
+      }
+    },
+
+    // 更新倒计时显示
+    updateCountdown() {
+      if (!this.currentOrderInfo) return;
+
+      const countdownResult = this.calculateTransferCountdown(this.currentOrderInfo);
+      this.countdownText = countdownResult.countdownText;
+      this.showTransferCondition = !countdownResult.canTransfer;
+      this.canTransfer = countdownResult.canTransfer; // 更新转单按钮状态
+
+      // 如果已经可以转单了，清除定时器
+      if (countdownResult.canTransfer) {
+        this.clearCountdownTimer();
+      }
+    },
+
+    // 计算转单倒计时
+    calculateTransferCountdown(order) {
+      if (!order || !order.orderTime) {
+        return {
+          canTransfer: true,
+          countdownText: '派出且成功完单'
+        };
+      }
+
+      try {
+        // 解析订单发布时间，支持多种时间格式
+        let publishTime;
+        if (typeof order.orderTime === 'string') {
+          // 处理可能的时间格式
+          publishTime = new Date(order.orderTime.replace(/-/g, '/'));
+        } else {
+          publishTime = new Date(order.orderTime);
+        }
+
+        // 检查时间是否有效
+        if (isNaN(publishTime.getTime())) {
+          console.warn('订单时间格式无效:', order.orderTime);
+          return {
+            canTransfer: true,
+            countdownText: '派出且成功完单'
+          };
+        }
+
+        const currentTime = new Date();
+        const timeDiff = currentTime - publishTime;
+
+        // 3小时 = 3 * 60 * 60 * 1000 毫秒
+        const threeHours = 3 * 60 * 60 * 1000;
+
+        if (timeDiff >= threeHours) {
+          // 超过3小时，可以转单
+          return {
+            canTransfer: true,
+            countdownText: '派出且成功完单'
+          };
+        } else if (timeDiff < 0) {
+          // 如果订单时间是未来时间，显示可以转单
+          return {
+            canTransfer: true,
+            countdownText: '派出且成功完单'
+          };
+        } else {
+          // 未满3小时，显示倒计时
+          const remainingTime = threeHours - timeDiff;
+          const hours = Math.floor(remainingTime / (60 * 60 * 1000));
+          const minutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
+          const seconds = Math.floor((remainingTime % (60 * 1000)) / 1000);
+
+          // 确保时间不会是负数
+          if (hours < 0 || minutes < 0 || seconds < 0) {
+            return {
+              canTransfer: true,
+              countdownText: '派出且成功完单'
+            };
+          }
+
+          return {
+            canTransfer: false,
+            countdownText: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}后可转单`
+          };
+        }
+      } catch (error) {
+        console.error('计算倒计时时发生错误:', error);
+        return {
+          canTransfer: true,
+          countdownText: '派出且成功完单'
+        };
+      }
+    },
 
     // 处理订单数据生成分享描述
     processOrderDataForShare(orderData) {
@@ -2852,6 +3075,12 @@ export default {
         border: none;
         margin: 0;
         position: relative;
+        
+        // 当只有单个按钮时的样式
+        &.single-btn {
+          width: 200rpx;
+          border-radius: 25rpx;
+        }
       }
 
       .transfer-order-btn {
@@ -3350,7 +3579,7 @@ export default {
 }
 
 .modal-btn {
-  padding: 16rpx 32rpx;
+  padding: 0rpx 32rpx;
   border-radius: 12rpx;
   font-size: 26rpx;
   font-weight: 500;
@@ -3358,11 +3587,13 @@ export default {
   transition: all 0.3s ease;
   text-align: center;
   min-width: 106rpx;
+  border: none;
+  outline: none;
+  background: none;
 
   &.cancel {
     background-color: #f8f9fa;
     color: #666;
-    border: 1rpx solid #e8e8e8;
     flex: 1;
 
     &:active {
@@ -3374,12 +3605,23 @@ export default {
   &.transfer {
     background: linear-gradient(135deg, #ff9500 0%, #ff7300 100%);
     color: #fff;
-    border: 1rpx solid #ff9500;
     flex: 1;
 
     &:active {
       opacity: 0.9;
       transform: scale(0.95);
+    }
+
+    &.disabled {
+      background: #ccc;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+
+      &:active {
+        transform: none;
+        opacity: 1;
+      }
     }
   }
 

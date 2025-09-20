@@ -213,7 +213,7 @@
 <script>
 import NavBar from '@/components/NavBar.vue'
 import TabBar from '@/components/rider/tab-bar/index.vue'
-import FloatingImage from '@/components/FloatingImage/index.vue'
+import FloatingImage from '@/components/FloatingImage/riderEnd_index.vue'
 import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 import md5 from 'md5'
 

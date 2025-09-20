@@ -269,7 +269,7 @@ export default {
   data() {
     return {
 		countOpts:{
-        color: ["#1890FF","#91CB74","#FAC858","#EE6666","#73C0DE","#3CA272","#FC8452","#9A60B4","#ea7ccc"],
+        color: ["#1890FF","#91CB74","#FAC858","#EE6666","#FF7F50","#73C0DE","#3CA272","#FC8452","#9A60B4","#ea7ccc"],
         padding: [15,10,0,15],
         enableScroll: true,
         legend: {
@@ -503,6 +503,16 @@ export default {
           s.name.includes('成功')
         );
 
+        // 查找退款系列（支持多种可能的名称）
+        let refundSeries = data.countData.series.find(s =>
+          s.name === '退款' ||
+          s.name === '退单' ||
+          s.name.includes('退款') ||
+          s.name.includes('退单') ||
+          s.name.includes('退回') ||
+          s.name.includes('撤销')
+        );
+
         // 如果找不到匹配的系列，尝试按顺序使用前几个系列
         if (!totalSeries && data.countData.series.length > 0) {
           totalSeries = data.countData.series[0];
@@ -519,6 +529,10 @@ export default {
         if (!completedSeries && data.countData.series.length > 3) {
           completedSeries = data.countData.series[3];
           console.log('⚠️ 未找到完单系列，使用第四个系列:', completedSeries.name);
+        }
+        if (!refundSeries && data.countData.series.length > 4) {
+          refundSeries = data.countData.series[4];
+          console.log('⚠️ 未找到退款系列，使用第五个系列:', refundSeries.name);
         }
 
         // 计算总数（今日数据，取第一个值）
@@ -674,6 +688,10 @@ export default {
             {
               name: "异常订单",
               data: [25, 30, 32, 35, 27, 40, 38]
+            },
+            {
+              name: "退款订单",
+              data: [10, 15, 8, 12, 5, 20, 15]
             }
           ]
         };
@@ -767,12 +785,30 @@ export default {
         console.log('✅ 找到异常订单系列:', exceptionSeries.name);
       }
 
+      // 查找退款系列（支持多种可能的名称）
+      let refundSeries = data.countData.series.find(s =>
+        s.name === '退款' ||
+        s.name === '退单' ||
+        s.name.includes('退款') ||
+        s.name.includes('退单') ||
+        s.name.includes('退回') ||
+        s.name.includes('撤销')
+      );
+
+      if (refundSeries && refundSeries.data) {
+        series.push({
+          name: "退款订单",
+          data: refundSeries.data.slice(0, 15)
+        });
+        console.log('✅ 找到退款订单系列:', refundSeries.name);
+      }
+
       // 如果没有找到任何匹配的系列，尝试使用前几个系列
       if (series.length === 0 && data.countData.series.length > 0) {
         console.log('⚠️ 未找到匹配的系列名称，使用前几个系列');
-        data.countData.series.slice(0, 4).forEach((s, index) => {
+        data.countData.series.slice(0, 5).forEach((s, index) => {
           if (s.data) {
-            const names = ["总订单", "补宝订单", "完单", "异常订单"];
+            const names = ["总订单", "补宝订单", "完单", "异常订单", "退款订单"];
             series.push({
               name: names[index] || `系列${index + 1}`,
               data: s.data.slice(0, 15)
@@ -803,6 +839,10 @@ export default {
             {
               name: "异常订单",
               data: [25, 30, 32, 35, 27, 40, 38]
+            },
+            {
+              name: "退款订单",
+              data: [10, 15, 8, 12, 5, 20, 15]
             }
           ]
         };
@@ -1152,8 +1192,8 @@ export default {
     initializeLegendState() {
       if (this.countChartData && this.countChartData.series) {
         this.countChartData.series.forEach((series, index) => {
-          if (series.name === "补宝订单" || series.name === "异常订单") {
-            // 模拟点击图例来隐藏补宝订单和异常订单，保持总订单和完单显示
+          if (series.name === "补宝订单" || series.name === "异常订单" || series.name === "退款订单") {
+            // 模拟点击图例来隐藏补宝订单、异常订单和退款订单，保持总订单和完单显示
             this.getCountLegendIndex({ currentIndex: index });
           }
         });

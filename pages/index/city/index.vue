@@ -305,27 +305,16 @@ export default {
 			return count * 1;
 		},
 
-		// 获取地级市总入驻人数（所有区县人数总和）
+		// 获取地级市总入驻人数（使用city自身的service_member_count）
 		getCityRiderCount(city) {
-			let totalCount = 0;
-			if (city.children && Array.isArray(city.children)) {
-				city.children.forEach(district => {
-					const count = district.service_member_count || 0;
-					totalCount += count * 1;
-				});
-			}
-			return totalCount;
+			const count = city.service_member_count || 0;
+			return count * 1;
 		},
 
-		// 获取省份总入驻人数（所有地级市人数总和）
+		// 获取省份总入驻人数（使用province自身的service_member_count）
 		getProvinceRiderCount(province) {
-			let totalCount = 0;
-			if (province.children && Array.isArray(province.children)) {
-				province.children.forEach(city => {
-					totalCount += this.getCityRiderCount(city);
-				});
-			}
-			return totalCount;
+			const count = province.service_member_count || 0;
+			return count * 1;
 		},
 
 		// 处理搜索结果选择

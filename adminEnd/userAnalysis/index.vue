@@ -103,21 +103,51 @@
         <view class="ranking-header">
           <view class="ranking-title">用户下单排行榜</view>
           <view class="sort-filter">
-            <view 
-              class="sort-item" 
+            <view
+              class="sort-item"
               :class="{ active: sortField === 'user_id' }"
               @click="changeSortField('user_id')"
             >用户ID</view>
-            <view 
-              class="sort-item" 
+            <view
+              class="sort-item"
               :class="{ active: sortField === 'task_count' }"
               @click="changeSortField('task_count')"
             >订单数</view>
-            <view 
-              class="sort-item" 
+            <view
+              class="sort-item"
               :class="{ active: sortField === 'total_amount' }"
               @click="changeSortField('total_amount')"
             >金额</view>
+          </view>
+        </view>
+        <!-- 时间选择器 -->
+        <view class="time-selector">
+          <view class="time-filter">
+            <view
+              class="filter-item"
+              :class="{ active: rankingTimeType === 'today' }"
+              @click="changeRankingTimeType('today')"
+            >今日</view>
+            <view
+              class="filter-item"
+              :class="{ active: rankingTimeType === 'yesterday' }"
+              @click="changeRankingTimeType('yesterday')"
+            >昨日</view>
+            <view
+              class="filter-item"
+              :class="{ active: rankingTimeType === 'last30days' }"
+              @click="changeRankingTimeType('last30days')"
+            >近30日</view>
+            <view
+              class="filter-item"
+              :class="{ active: rankingTimeType === 'lastmonth' }"
+              @click="changeRankingTimeType('lastmonth')"
+            >上月</view>
+            <view
+              class="filter-item"
+              :class="{ active: rankingTimeType === 'all' }"
+              @click="changeRankingTimeType('all')"
+            >全部</view>
           </view>
         </view>
         <view class="ranking-container">
@@ -239,6 +269,7 @@ export default {
       rankingLoading: false,
       sortField: 'task_count', // 默认按订单数排序
       sortOrder: 'desc',
+      rankingTimeType: 'yesterday', // 默认为昨日：today, yesterday, last30days, lastmonth, all
     }
   },
 
@@ -750,6 +781,9 @@ export default {
           return;
         }
 
+        // 计算时间范围
+        const dateRange = this.calculateDateRange(this.rankingTimeType);
+
         // 构建请求参数
         const params = {
           service_member_id: this.riderUserInfo.id,
@@ -759,7 +793,15 @@ export default {
           sign: "chongchong"
         };
 
+        // 根据时间类型添加时间参数
+        if (dateRange.startDate && dateRange.endDate) {
+          params.start_date = dateRange.startDate;
+          params.end_date = dateRange.endDate;
+        }
+
         console.log('排行榜请求参数:', params);
+        console.log('时间类型:', this.rankingTimeType);
+        console.log('时间范围:', dateRange);
 
         // 发送请求
         const res = await this.$request('data/user/rank', params, 'POST');
@@ -810,6 +852,82 @@ export default {
       
       // 重新加载数据
       this.loadRankingData();
+    },
+
+    // 切换排行榜时间类型
+    changeRankingTimeType(timeType) {
+      if (this.rankingTimeType === timeType) return;
+
+      this.rankingTimeType = timeType;
+      console.log('🔄 切换排行榜时间类型:', timeType);
+
+      // 重新加载排行榜数据
+      this.loadRankingData();
+    },
+
+    // 计算日期范围
+    calculateDateRange(timeType) {
+      const now = new Date();
+      let startDate = null;
+      let endDate = null;
+
+      switch (timeType) {
+        case 'today':
+          // 今日：当天00:00:00 到 23:59:59
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+          break;
+
+        case 'yesterday':
+          // 昨日：昨天00:00:00 到 23:59:59
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59);
+          break;
+
+        case 'last30days':
+          // 近30日：30天前00:00:00 到 今天23:59:59
+          const thirtyDaysAgo = new Date(now);
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          startDate = new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+          break;
+
+        case 'lastmonth':
+          // 上月：上个月第一天00:00:00 到 上个月最后一天23:59:59
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+          startDate = lastMonth;
+          endDate = lastMonthEnd;
+          break;
+
+        case 'all':
+          // 全部：不设置时间范围
+          return { startDate: null, endDate: null };
+
+        default:
+          return { startDate: null, endDate: null };
+      }
+
+      return {
+        startDate: this.formatDateForAPI(startDate),
+        endDate: this.formatDateForAPI(endDate)
+      };
+    },
+
+    // 格式化日期为API需要的格式 (YYYY-MM-DD HH:mm:ss)
+    formatDateForAPI(date) {
+      if (!date) return null;
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     },
 
     // 格式化金额显示
@@ -1178,7 +1296,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30rpx;
+  margin-bottom: 10rpx;
 }
 
 .ranking-title {
@@ -1360,5 +1478,14 @@ export default {
     color: #666;
     border: 1rpx solid #e8e8e8;
   }
+}
+
+// 时间选择器
+.time-selector {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20rpx;
+  // padding-top: 20rpx;
+  // border-top: 1rpx solid #f0f0f0;
 }
 </style>

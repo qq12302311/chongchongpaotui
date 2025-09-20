@@ -11,7 +11,10 @@
           <!-- 品牌图标 -->
           <view class="brand-icon-container">
             <view class="brand-icon" :class="'brand-' + item.brand">
-              <text class="brand-text">{{ getBrandDisplayName(item.brand) }}</text>
+              <view class="brand-text">
+                <text class="brand-name-text">{{ getBrandName(item.brand) }}</text>
+                <text class="service-type-text">补宝</text>
+              </view>
             </view>
           </view>
 
@@ -25,13 +28,13 @@
             
             <view class="item-details">
               <view class="detail-row">
-                <text class="detail-label">设备编号：</text>
-                <text class="detail-value">{{ getDeviceCode(item.sn_mac_code) }}</text>
+                <text class="detail-label">门店名称：</text>
+                <text class="detail-value">{{ item.store_name }}</text>
               </view>
               
               <view class="detail-row">
-                <text class="detail-label">门店名称：</text>
-                <text class="detail-value">{{ item.store_name }}</text>
+                <text class="detail-label">设备编号：</text>
+                <text class="detail-value">{{ getDeviceCode(item.sn_mac_code) }}</text>
               </view>
               
               <view class="detail-row">
@@ -47,8 +50,8 @@
               <text class="price-symbol">¥</text>
               <text class="price-amount">{{ item.order_amount }}</text>
             </view>
-            <view class="delete-btn" @click="deleteCartItem(item.id, index)">
-              <image src="https://ccpt.qiniu.0871.cn/cart/delete.png" class="delete-icon" mode="aspectFit"></image>
+            <view class="delete-btn" @click="deleteCartItem(index)">
+              <image src="https://ccpt.qiniu.0871.cn/delete-gwc.svg" class="delete-icon" mode="aspectFit"></image>
             </view>
           </view>
         </view>
@@ -56,10 +59,10 @@
 
       <!-- 空购物车状态 -->
       <view class="empty-cart" v-else>
-        <image src="https://ccpt.qiniu.0871.cn/cart/empty.png" class="empty-icon" mode="aspectFit"></image>
+        <!-- <image src="https://ccpt.qiniu.0871.cn/cart/empty.png" class="empty-icon" mode="aspectFit"></image> -->
         <text class="empty-text">购物车空空如也</text>
         <view class="go-shopping-btn" @click="goShopping">
-          <text class="btn-text">去购物</text>
+          <text class="btn-text">去加入购物车</text>
         </view>
       </view>
     </view>
@@ -120,6 +123,17 @@ export default {
     this.loadCartItems();
   },
   methods: {
+    // 安全获取消息字符串，处理可能为数组的情况
+    getSafeMessage(message, defaultMessage = '操作失败') {
+      if (typeof message === 'string') {
+        return message;
+      }
+      if (Array.isArray(message) && message.length > 0) {
+        return message[0];
+      }
+      return defaultMessage;
+    },
+    
     // 加载购物车数据
     async loadCartItems() {
       try {
@@ -140,7 +154,13 @@ export default {
         }, 'POST');
 
         if (res.code === 200 && res.data) {
-          this.cartItems = res.data;
+          // 过滤掉可能的null、undefined或无效项目
+          this.cartItems = (res.data || []).filter(item => item && typeof item === 'object');
+          console.log('购物车数据:', this.cartItems);
+          if (this.cartItems.length > 0) {
+            console.log('第一个项目的字段:', Object.keys(this.cartItems[0]));
+            console.log('第一个项目完整数据:', this.cartItems[0]);
+          }
         } else {
           console.error('获取购物车数据失败:', res.message);
           this.cartItems = [];
@@ -152,7 +172,46 @@ export default {
     },
 
     // 删除购物车项
-    async deleteCartItem(cartId, index) {
+    async deleteCartItem(index) {
+      console.log('deleteCartItem 被调用，index:', index);
+      console.log('当前购物车数据:', this.cartItems);
+      
+      // 检查索引有效性
+      if (typeof index !== 'number' || index < 0 || index >= this.cartItems.length) {
+        console.error('index 参数无效:', index);
+        uni.showToast({
+          title: '删除失败：索引无效',
+          icon: 'none'
+        });
+        return;
+      }
+      
+      // 通过索引获取item
+      const item = this.cartItems[index];
+      console.log('通过索引获取的item:', item);
+      
+      // 检查item有效性
+      if (!item) {
+        console.error('通过索引获取的item为空:', index);
+        uni.showToast({
+          title: '删除失败：项目信息无效',
+          icon: 'none'
+        });
+        return;
+      }
+      
+      // 获取正确的ID字段，可能是id、cart_id或其他字段
+      const cartId = item.id || item.cart_id || item._id || null;
+      console.log('删除项目信息:', item);
+      console.log('提取的cartId:', cartId);
+      
+      if (!cartId) {
+        uni.showToast({
+          title: '无法获取项目ID，删除失败',
+          icon: 'none'
+        });
+        return;
+      }
       uni.showModal({
         title: '确认删除',
         content: '确定要从购物车中删除此项吗？',
@@ -177,6 +236,7 @@ export default {
               // 调用删除接口
               const timestamp = Math.floor(Date.now() / 1000);
               const deleteRes = await this.$request('cart/delete', {
+                id: cartId,
                 cart_id: cartId,
                 user_id: userInfo.user_id,
                 sign: 'chongchong',
@@ -197,7 +257,7 @@ export default {
                 uni.$emit('cartUpdated');
               } else {
                 uni.showToast({
-                  title: deleteRes.message || '删除失败',
+                  title: this.getSafeMessage(deleteRes.message, '删除失败'),
                   icon: 'none'
                 });
               }
@@ -253,23 +313,20 @@ export default {
     // 获取工作时段显示
     getWorkTimeDisplay(item) {
       if (item.recommended_service_time_start && item.recommended_service_time_end) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
+        // 处理ISO 8601格式的时间数据，如：2025-09-10T10:00:00.000000Z
+        const parseTime = (timeStr) => {
+          const date = new Date(timeStr);
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
+        };
         
-        // 如果是24小时均可
-        if (item.recommended_service_time_start === '00:00:00' && item.recommended_service_time_end === '00:00:00') {
-          return `${year}-${month}-${day} 24小时均可`;
-        }
+        const startTime = parseTime(item.recommended_service_time_start);
+        const endTime = parseTime(item.recommended_service_time_end);
         
-        // 格式化时间（去掉秒）
-        const startTime = item.recommended_service_time_start.substring(0, 5);
-        const endTime = item.recommended_service_time_end.substring(0, 5);
-        
-        return `${year}-${month}-${day} ${startTime}-${endTime}`;
+        return `每天${startTime}-${endTime}`;
       }
-      return '未设置';
+      return '每天08:00-20:00';
     },
 
     // 去购物
@@ -280,7 +337,7 @@ export default {
     },
 
     // 去结算
-    goCheckout() {
+    async goCheckout() {
       if (!this.cartItems || this.cartItems.length === 0) {
         uni.showToast({
           title: '购物车为空',
@@ -289,11 +346,131 @@ export default {
         return;
       }
 
-      // 跳转到结算页面（暂时显示提示）
-      uni.showToast({
-        title: '结算功能开发中...',
-        icon: 'none'
-      });
+      try {
+        // 获取用户信息
+        const userInfo = uni.getStorageSync('userInfo');
+        if (!userInfo || !userInfo.user_id || !userInfo.openid) {
+          uni.showToast({
+            title: '请先登录',
+            icon: 'none'
+          });
+          return;
+        }
+
+        uni.showLoading({
+          title: '结算中...',
+          mask: true
+        });
+
+        // 调用结算接口
+        const timestamp = Math.floor(Date.now() / 1000);
+        const res = await this.$request('cart/checkout', {
+          user_id: userInfo.user_id,
+          openid: userInfo.openid,
+          sign: 'chongchong',
+          timestamp: timestamp
+        }, 'POST');
+
+        uni.hideLoading();
+
+        if (res.code === 200 && res.data) {
+          // 检查支付状态，如果需要支付则调用微信支付
+          if (res.data.pay_status === 1001 && res.data.pay_info) {
+            await this.handleWechatPay(res.data);
+          } else {
+            // 无需支付或已支付完成
+            uni.showToast({
+              title: this.getSafeMessage(res.message, '下单成功'),
+              icon: 'success'
+            });
+            
+            // 清空购物车并刷新页面
+            this.cartItems = [];
+            uni.$emit('cartUpdated');
+          }
+        } else {
+          uni.showToast({
+            title: this.getSafeMessage(res.message, '结算失败'),
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        uni.hideLoading();
+        console.error('结算失败:', error);
+        uni.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+      }
+    },
+
+    // 处理微信支付
+    async handleWechatPay(orderData) {
+      try {
+        const payInfo = orderData.pay_info;
+        
+        uni.showLoading({
+          title: '调起支付...',
+          mask: true
+        });
+
+        // 调用微信支付
+        const payResult = await new Promise((resolve, reject) => {
+          uni.requestPayment({
+            provider: 'wxpay',
+            timeStamp: payInfo.timestamp,
+            nonceStr: payInfo.nonceStr,
+            package: payInfo.package,
+            signType: payInfo.signType,
+            paySign: payInfo.paySign,
+            success: (res) => {
+              console.log('微信支付成功:', res);
+              resolve(res);
+            },
+            fail: (err) => {
+              console.error('微信支付失败:', err);
+              reject(err);
+            }
+          });
+        });
+
+        uni.hideLoading();
+
+        // 支付成功
+        uni.showToast({
+          title: '支付成功',
+          icon: 'success',
+          duration: 3000
+        });
+
+        // 清空购物车并刷新页面
+        this.cartItems = [];
+        uni.$emit('cartUpdated');
+
+        // 3秒后跳转到订单页面
+        setTimeout(() => {
+          uni.switchTab({
+            url: '/pages/order/order'
+          });
+        }, 3000);
+
+      } catch (error) {
+        uni.hideLoading();
+        console.error('支付处理失败:', error);
+        
+        // 判断是用户取消还是支付失败
+        if (error.errMsg && error.errMsg.includes('cancel')) {
+          uni.showToast({
+            title: '支付已取消',
+            icon: 'none'
+          });
+        } else {
+          uni.showToast({
+            title: '支付失败，请重试',
+            icon: 'none'
+          });
+        }
+      }
     }
   }
 }
@@ -329,37 +506,61 @@ export default {
 }
 
 .brand-icon {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 12rpx;
+  width: 100rpx;
+  height: 110rpx;
+  border-radius: 10rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   
   &.brand-meituan {
-    background: linear-gradient(135deg, #FFD100 0%, #FFC107 100%);
+    background-color: #FFC300;
   }
   
   &.brand-guaishou {
-    background: linear-gradient(135deg, #16C2C2 0%, #00BCD4 100%);
+    background-color: #27BFC0;
   }
   
   &.brand-jiedian {
-    background: linear-gradient(135deg, #61CA87 0%, #4CAF50 100%);
+    background-color: #2492F2;
   }
   
   &.brand-xiaodian {
-    background: linear-gradient(135deg, #0FB269 0%, #2E7D32 100%);
+    background-color: #2492F2;
   }
 }
 
 .brand-text {
-  color: #ffffff;
-  font-size: 24rpx;
-  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  line-height: 1.2;
-  white-space: pre-line;
+  
+  .brand-name-text {
+    color: #ffffff;
+    font-size: 33rpx;
+    font-weight: bold;
+    line-height: 1.2;
+    margin-bottom: 4rpx;
+    
+    // 美团品牌文字颜色调整
+    .brand-icon.brand-meituan & {
+      color: #333;
+    }
+  }
+  
+  .service-type-text {
+    color: #ffffff;
+    font-size: 33rpx;
+    font-weight: bold;
+    line-height: 1.2;
+    
+    // 美团品牌文字颜色调整
+    .brand-icon.brand-meituan & {
+      color: #333;
+    }
+  }
 }
 
 .item-info {
@@ -371,17 +572,21 @@ export default {
   display: flex;
   align-items: center;
   margin-bottom: 16rpx;
+  padding-bottom: 12rpx;
+  // border-bottom: 1rpx solid #e8e8e8;
+  // box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  position: relative;
   
   .brand-name {
     font-size: 32rpx;
-    font-weight: 500;
+    font-weight: bold;
     color: #333333;
     margin-right: 8rpx;
   }
   
   .service-name {
     font-size: 32rpx;
-    font-weight: 500;
+    font-weight: bold;
     color: #333333;
     margin-right: 8rpx;
   }
@@ -389,7 +594,19 @@ export default {
   .quantity {
     font-size: 28rpx;
     color: #FF4D4F;
-    font-weight: 500;
+    font-weight: bold;
+  }
+  
+  // 横线延伸到右侧价格区域
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: -140rpx; // 延伸到价格区域
+    height: 1rpx;
+    background-color: #e8e8e8;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
   }
 }
 

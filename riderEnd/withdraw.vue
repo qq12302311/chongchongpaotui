@@ -194,7 +194,7 @@ export default {
     isWithdrawDay() {
       const today = new Date();
       const day = today.getDate();
-      return day === 5 || day === 15 || day === 25;
+      return day === 6 || day === 16 || day === 26;
     },
 
     // 下次提现日期
@@ -206,21 +206,21 @@ export default {
 
       let nextDay, nextMonth, nextYear;
 
-      if (currentDay < 5) {
-        nextDay = 5;
+      if (currentDay < 6) {
+        nextDay = 6;
         nextMonth = currentMonth;
         nextYear = currentYear;
-      } else if (currentDay < 15) {
-        nextDay = 15;
+      } else if (currentDay < 16) {
+        nextDay = 16;
         nextMonth = currentMonth;
         nextYear = currentYear;
-      } else if (currentDay < 25) {
-        nextDay = 25;
+      } else if (currentDay < 26) {
+        nextDay = 26;
         nextMonth = currentMonth;
         nextYear = currentYear;
       } else {
         // 下个月的5号
-        nextDay = 5;
+        nextDay = 6;
         nextMonth = currentMonth + 1;
         nextYear = currentYear;
 
@@ -370,7 +370,7 @@ export default {
       if (!this.canWithdraw) {
         if (!this.isWithdrawDay) {
           uni.showToast({
-            title: `仅限每月5号、15号、25号提现，下次可提现：${this.nextWithdrawDate}`,
+            title: `仅限每月6号、16号、26号提现，下次可提现：${this.nextWithdrawDate}`,
             icon: 'none',
             duration: 3000
           });

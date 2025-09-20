@@ -41,6 +41,21 @@
         </view>
       </view>
 
+      <!-- 日期筛选区域 -->
+      <view class="date-filter-section">
+        <view class="date-filter-tabs">
+          <view
+            v-for="dateFilter in dateFilterOptions"
+            :key="dateFilter.value"
+            class="date-filter-tab"
+            :class="{ active: currentDateFilter === dateFilter.value }"
+            @click="switchDateFilter(dateFilter.value)"
+          >
+            {{ dateFilter.label }}
+          </view>
+        </view>
+      </view>
+
       <!-- 筛选区域 -->
       <view class="filter-section">
         <view class="filter-tabs">
@@ -271,6 +286,15 @@ export default {
         { label: '全部', value: 'all' },
         { label: '收入', value: 'income' },
         { label: '支出', value: 'expense' }
+      ],
+      // 日期筛选相关
+      currentDateFilter: 'yesterday', // 默认昨日
+      dateFilterOptions: [
+        { label: '今日', value: 'today' },
+        { label: '昨日', value: 'yesterday' },
+        { label: '近30日', value: 'last30days' },
+        { label: '上个月', value: 'lastmonth' },
+        { label: '全部', value: 'all' }
       ]
     }
   },
@@ -353,11 +377,18 @@ export default {
         const timestamp = Date.now();
         const params = {
           service_member_id: this.riderUserInfo.id,
-          owner_type: "member",
-          owner_id: this.riderUserInfo.id,
+          owner_type: "provider",
+          owner_id: 1,
           timestamp: timestamp,
           sign: "chongchong"
         };
+
+        // 添加日期筛选参数
+        const dateRange = this.getDateRange(this.currentDateFilter);
+        if (dateRange) {
+          params.start_date = dateRange.start_date;
+          params.end_date = dateRange.end_date;
+        }
 
         const response = await uni.request({
           url: 'https://ccpt.0871.cn/api/service/ledger',
@@ -419,6 +450,65 @@ export default {
       this.currentFilter = filter;
     },
 
+    // 切换日期筛选条件
+    switchDateFilter(dateFilter) {
+      this.currentDateFilter = dateFilter;
+      // 切换日期筛选后重新加载数据
+      this.loadLedgerData();
+    },
+
+    // 获取日期范围
+    getDateRange(dateFilter) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      switch (dateFilter) {
+        case 'today':
+          return {
+            start_date: this.formatDate(today),
+            end_date: this.formatDate(today)
+          };
+
+        case 'yesterday':
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          return {
+            start_date: this.formatDate(yesterday),
+            end_date: this.formatDate(yesterday)
+          };
+
+        case 'last30days':
+          const thirtyDaysAgo = new Date(today);
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return {
+            start_date: this.formatDate(thirtyDaysAgo),
+            end_date: this.formatDate(today)
+          };
+
+        case 'lastmonth':
+          const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const lastDayOfLastMonth = new Date(firstDayOfThisMonth);
+          lastDayOfLastMonth.setDate(lastDayOfLastMonth.getDate() - 1);
+          return {
+            start_date: this.formatDate(firstDayOfLastMonth),
+            end_date: this.formatDate(lastDayOfLastMonth)
+          };
+
+        case 'all':
+        default:
+          return null; // 不传日期参数
+      }
+    },
+
+    // 格式化日期为 YYYY-MM-DD
+    formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    },
+
     // 格式化时间
     formatTime(timeStr) {
       if (!timeStr) return '';
@@ -452,7 +542,10 @@ export default {
         'refund': '退款',
         'bonus': '奖励',
         'penalty': '扣款',
-        'recharge': '充值'
+        'recharge': '充值',
+        'task_refund': '任务退款',
+        'batch_settlement': '批量结算',
+        'task_reward': '任务奖励'
       };
       return categoryMap[category] || category;
     },
@@ -2405,6 +2498,55 @@ export default {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+// 日期筛选区域样式
+.date-filter-section {
+  padding: 0 30rpx 15rpx;
+  margin-bottom: 10rpx;
+}
+
+.date-filter-tabs {
+  display: flex;
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 8rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  overflow-x: auto; // 允许水平滚动
+  white-space: nowrap; // 防止换行
+
+  // 隐藏滚动条
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.date-filter-tab {
+  flex: 0 0 auto; // 防止压缩
+  text-align: center;
+  padding: 14rpx 24rpx;
+  font-size: 26rpx;
+  color: #666;
+  border-radius: 8rpx;
+  transition: all 0.3s ease;
+  margin-right: 8rpx;
+  min-width: 120rpx;
+
+  &:last-child {
+    margin-right: 0;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    color: #fff;
+    font-weight: 500;
+    box-shadow: 0 2rpx 8rpx rgba(82, 196, 26, 0.3);
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
   }
 }
 

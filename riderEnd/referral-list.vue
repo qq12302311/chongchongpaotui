@@ -14,7 +14,7 @@
       </view>
       <view class="stats-divider"></view>
       <view class="stats-item">
-        <text class="stats-number">¥0.00</text>
+        <text class="stats-number">¥{{ totalCommission }}</text>
         <text class="stats-label">累计佣金</text>
       </view>
     </view>
@@ -67,12 +67,14 @@ export default {
       loading: false,
       referralList: [],
       totalCount: 0,
+      totalCommission: '0.00',
       userInfo: {}
     }
   },
   onLoad() {
     this.loadUserInfo();
     this.getReferralList();
+    this.getLedgerData();
   },
   methods: {
     // 加载用户信息
@@ -123,6 +125,56 @@ export default {
       } finally {
 		  this.loading = false
 	  }
+    },
+
+    // 获取账本数据
+    async getLedgerData() {
+      try {
+        if (!this.userInfo || !this.userInfo.id) {
+          return;
+        }
+
+        const timestamp = Date.now();
+        const params = {
+          service_member_id: this.userInfo.id,
+          owner_type: "member",
+          timestamp: timestamp,
+          sign: "chongchong",
+		  owner_id: 1
+        };
+
+        const response = await uni.request({
+          url: 'https://ccpt.0871.cn/api/service/ledger',
+          method: 'POST',
+          data: params,
+          header: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.statusCode === 200 && response.data && response.data.code === 200) {
+          const resData = response.data;
+
+          // 计算累计佣金总额，累加所有收入记录
+          let commissionTotal = 0;
+          if (resData.data.data && Array.isArray(resData.data.data)) {
+            resData.data.data.forEach(record => {
+              if (record.type === 'income' && record.amount) {
+                commissionTotal += parseFloat(record.amount) || 0;
+              }
+            });
+          }
+
+          this.totalCommission = commissionTotal.toFixed(2);
+
+          console.log('账本数据获取成功, 累计佣金:', this.totalCommission);
+          console.log('账本原始数据:', resData);
+        } else {
+          console.error('账本数据获取失败:', response);
+        }
+      } catch (error) {
+        console.error('账本数据请求错误:', error);
+      }
     },
 
     // 获取头像文字

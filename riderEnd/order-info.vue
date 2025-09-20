@@ -218,7 +218,7 @@
 				<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.additional_notes"></view>
 				<view class="info-item" v-if="orderInfo.task_detail && orderInfo.task_detail.additional_notes">
 					<text class="label">订单备注：</text>
-					<text class="value order-notes">{{ orderInfo.task_detail.additional_notes }}</text>
+					<text class="value order-notes">{{ filteredOrderNotes }}</text>
 				</view>
 				<!-- <view class="divider"></view>
 				<view class="info-item">
@@ -529,6 +529,8 @@
 				countdown: '计算中...',
 				timer: null,
 				taskDuration: '', // 将taskDuration从计算属性改为数据属性
+				isTransferred: false, // 是否为转派订单
+				transferredPrice: '', // 转派后的价格
 				detailInfo: {
 					shopName: '',
 					detailAddress: '',
@@ -574,11 +576,24 @@
 				const codes = (this.orderInfo.task_detail && this.orderInfo.task_detail.sn_mac_code) || []
 				return codes.map(item => item.value).filter(value => value && value.trim())
 			},
+			
+			// 过滤订单备注中的所有数字
+			filteredOrderNotes() {
+				const notes = this.orderInfo.task_detail && this.orderInfo.task_detail.additional_notes
+				if (!notes) return ''
+				// 使用正则表达式过滤掉所有数字
+				return notes.replace(/\d/g, '')
+			},
 			// 已将taskDuration从计算属性改为数据属性
 		},
 		onLoad(options) {
 			// 确保taskId是字符串类型
 			this.taskId = String(options.id || '');
+			
+			// 检查是否是转派订单
+			this.isTransferred = options.isTransferred === 'true';
+			this.transferredPrice = options.transferredPrice ? decodeURIComponent(options.transferredPrice) : '';
+			
 			// 获取骑手信息
 			this.riderUserInfo = uni.getStorageSync('riderUserInfo');
 			// 获取订单详情
@@ -1157,6 +1172,11 @@
 			},
 			// 复用订单金额展示方法
 			getDisplayAmount(order) {
+				// 如果是转派订单，直接返回转派后的价格
+				if (this.isTransferred && this.transferredPrice) {
+					return this.transferredPrice;
+				}
+				
 				if (!this.riderUserInfo || !this.riderUserInfo.rate) return order.order_amount || order.price;
 				let amount = 0;
 				if (typeof order.order_amount === 'string') {

@@ -2,6 +2,10 @@
 
 Always communicate in Chinese
 
+Record my details in the CLAUDE.md file
+
+After each modification, upload it to Gitee and create a new branch named after the current modification
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -170,7 +174,36 @@ Use UniApp conditional compilation when needed:
 
 Built files are generated in `unpackage/` directory:
 - `unpackage/dist/build/h5/`: H5 web build
-- `unpackage/dist/build/mp-weixin/`: WeChat Mini Program build  
+- `unpackage/dist/build/mp-weixin/`: WeChat Mini Program build
 - `unpackage/dist/build/app-plus/`: Native app build
 - `unpackage/release/apk/`: Android APK files
-- 把我的细节记录到记忆文件里
+
+## Recent Changes
+
+### 2025-09-20: 修复腾讯地图API地址搜索镇名缺失问题
+
+**问题描述**:
+腾讯地图API在搜索地址时，返回的地址信息只包含街道名称，缺少镇名信息。例如搜索"广东省东莞市大岭山镇喜颜街3号4楼"时，返回数据格式为：
+```json
+{
+  "city": "东莞市",
+  "district": "东莞市",
+  "nation": "中国",
+  "province": "广东省",
+  "street": "喜颜路"
+}
+```
+
+**解决方案**:
+1. 将腾讯地图API的`address_format`参数从`'short'`修改为`'long'`，获取更详细的地址格式
+2. 对每个搜索结果使用腾讯地图的逆地理编码API(`reverseGeocoder`)获取完整地址信息
+3. 使用`Promise.all`并行处理多个逆地理编码请求，提高性能
+4. 优先使用逆地理编码返回的完整地址，其次使用搜索API返回的地址
+
+**修改文件**:
+- `pages/index/publish/map/index.vue` (第969-1082行的`searchWithTencentMap`方法)
+
+**技术实现**:
+- 使用Promise.all并行处理逆地理编码请求
+- 增加错误处理，逆地理编码失败时使用原有逻辑
+- 保持与原有代码风格和错误处理机制的一致性

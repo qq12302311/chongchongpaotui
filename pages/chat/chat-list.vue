@@ -61,10 +61,14 @@
 
 		<!-- 底部导航 -->
 		<tab-bar></tab-bar>
+
+		<!-- 悬浮小图 -->
+		<floating-image></floating-image>
 	</view>
 </template>
 
 <script>
+	import FloatingImage from '@/components/FloatingImage/index.vue'
 	import NavBar from '@/components/NavBar.vue'
 	import TabBar from '@/components/tab-bar/tab-bar.vue'
 	import md5 from 'md5'
@@ -72,7 +76,8 @@
 	export default {
 		components: {
 			NavBar,
-			TabBar
+			TabBar,
+		FloatingImage,
 		},
 		data() {
 			return {

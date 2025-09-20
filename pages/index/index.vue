@@ -89,10 +89,10 @@
 		/>
 
 		<!-- 悬浮图标组件 -->
-		<FloatingIcons ref="floatingIcons" />
+		<!-- <FloatingIcons ref="floatingIcons" /> -->
 
 		<!-- 悬浮聊天图标 -->
-		<FloatingChatIconUser />
+		<!-- <FloatingChatIconUser /> -->
 	</view>
 </template>
 
@@ -103,7 +103,7 @@ import AuthModal from '@/components/AuthModal/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
 import FloatingIcons from '@/components/FloatingIcons/index.vue'
-import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+// import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 import userMixin from '@/mixins/userMixin.js'
 
 export default {
@@ -114,7 +114,7 @@ export default {
 		PosterModal,
 		FloatingImage,
 		FloatingIcons,
-		FloatingChatIconUser
+		// FloatingChatIconUser
 	},
 	mixins: [userMixin],
 	data() {

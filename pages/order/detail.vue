@@ -206,8 +206,9 @@
 					<view class="blur-mask" v-if="!isFullyExpanded"></view>
 				</view>
 
-				<!-- 取消订单按钮只在展开状态时显示 -->
-				<view v-if="isFullyExpanded && (orderInfo.status === 'waiting' || orderInfo.status === 'assigned')" class="cancel-button-above-expand">
+				<!-- 操作按钮区域 -->
+				<view v-if="isFullyExpanded && (orderInfo.status === 'waiting' || orderInfo.status === 'assigned')" class="action-buttons-above-expand">
+					<button class="btn edit-btn" @click="editOrder">修改信息</button>
 					<button class="btn cancel-btn" @click="cancelOrder">取消订单</button>
 				</view>
 
@@ -362,6 +363,117 @@
 			@confirm="handleConfirmConfirm"
 		></AuthModal>
 
+		<!-- 修改订单信息弹窗 -->
+		<view class="edit-modal-mask" v-if="showEditModal" @click="closeEditModal"></view>
+		<view class="edit-modal-container" v-if="showEditModal">
+			<view class="edit-modal-header">
+				<text class="edit-modal-title">修改订单信息</text>
+				<view class="edit-modal-close" @click="closeEditModal">×</view>
+			</view>
+			<view class="edit-modal-content">
+				<!-- 订单备注 -->
+				<view class="edit-form-group">
+					<text class="edit-form-label">订单备注</text>
+					<textarea
+						v-model="editForm.additional_notes"
+						placeholder="请输入订单备注信息"
+						class="edit-form-textarea"
+						maxlength="200"
+					></textarea>
+				</view>
+
+				<!-- SN码 -->
+				<view class="edit-form-group">
+					<text class="edit-form-label">SN码</text>
+					<view class="sn-code-list">
+						<view v-for="(item, index) in editForm.sn_mac_code" :key="index" class="sn-code-item">
+							<input
+								v-model="item.value"
+								:placeholder="`请输入第${index + 1}个SN码`"
+								class="edit-form-input"
+								maxlength="50"
+							/>
+							<view class="remove-sn-btn" @click="removeSN(index)" v-if="editForm.sn_mac_code.length > 1">×</view>
+						</view>
+						<view class="add-sn-btn" @click="addSN">+ 添加SN码</view>
+					</view>
+				</view>
+
+				<!-- 建议骑手上门时间段 -->
+				<view class="edit-form-group">
+					<text class="edit-form-label">建议骑手上门时间段</text>
+					<view class="time-range-selector">
+						<view class="time-item">
+							<text class="time-label">开始时间</text>
+							<picker mode="time" :value="editForm.recommended_service_time_start" @change="onStartTimeChange">
+								<view class="time-picker">
+									{{ editForm.recommended_service_time_start || '选择时间' }}
+								</view>
+							</picker>
+						</view>
+						<view class="time-item">
+							<text class="time-label">结束时间</text>
+							<picker mode="time" :value="editForm.recommended_service_time_end" @change="onEndTimeChange">
+								<view class="time-picker">
+									{{ editForm.recommended_service_time_end || '选择时间' }}
+								</view>
+							</picker>
+						</view>
+					</view>
+				</view>
+
+				<!-- 设备是否外摆 -->
+				<view class="edit-form-group">
+					<text class="edit-form-label">设备是否外摆</text>
+					<view class="device-outside-selector">
+						<view
+							class="device-option"
+							:class="{active: editForm.device_outside === true}"
+							@click="editForm.device_outside = true"
+						>
+							<text>是</text>
+						</view>
+						<view
+							class="device-option"
+							:class="{active: editForm.device_outside === false}"
+							@click="editForm.device_outside = false"
+						>
+							<text>否</text>
+						</view>
+					</view>
+				</view>
+
+				<!-- 订单过期时间 -->
+				<view class="edit-form-group">
+					<text class="edit-form-label">订单过期时间</text>
+					<view class="datetime-selector">
+						<view class="datetime-item">
+							<text class="datetime-label">日期</text>
+							<picker mode="date" :value="editForm.deadlineDate" @change="onDeadlineDateChange">
+								<view class="time-picker">
+									{{ editForm.deadlineDate || '选择日期' }}
+								</view>
+							</picker>
+						</view>
+						<view class="datetime-item">
+							<text class="datetime-label">时间</text>
+							<picker mode="time" :value="editForm.deadlineTime" @change="onDeadlineTimeChange">
+								<view class="time-picker">
+									{{ editForm.deadlineTime || '选择时间' }}
+								</view>
+							</picker>
+						</view>
+					</view>
+				</view>
+			</view>
+			<view class="edit-modal-footer">
+				<view class="edit-modal-btn cancel" @click="closeEditModal">取消</view>
+				<view class="edit-modal-btn confirm" @click="saveOrderChanges" :class="{disabled: isSaving}">
+					{{ isSaving ? '保存中...' : '保存' }}
+				</view>
+			</view>
+		</view>
+
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
 	</view>
@@ -430,7 +542,20 @@
 					leftSubText: '',
 					rightSubText: ''
 				},
-				cancelReason: '' // 取消原因
+				cancelReason: '', // 取消原因
+				// 修改订单相关
+				showEditModal: false,
+				isSaving: false,
+				editForm: {
+					additional_notes: '',
+					sn_mac_code: [{ value: '' }],
+					recommended_service_time_start: '',
+					recommended_service_time_end: '',
+					device_outside: null,
+					deadline: '',
+					deadlineDate: '',
+					deadlineTime: ''
+				}
 			}
 		},
 		computed: {
@@ -1011,7 +1136,7 @@
 					});
 					return;
 				}
-				
+
 				uni.setClipboardData({
 					data: address,
 					success: () => {
@@ -1028,6 +1153,156 @@
 						});
 					}
 				});
+			},
+
+			// 修改订单信息
+			editOrder() {
+				// 初始化编辑表单数据
+				// 处理过期时间的分离
+				const deadline = this.orderInfo.deadline || '';
+				let deadlineDate = '';
+				let deadlineTime = '';
+
+				if (deadline) {
+					const parts = deadline.split(' ');
+					deadlineDate = parts[0] || '';
+					deadlineTime = parts[1] || '';
+				}
+
+				this.editForm = {
+					additional_notes: this.orderInfo.task_detail?.additional_notes || '',
+					sn_mac_code: this.orderInfo.task_detail?.sn_mac_code?.length > 0
+						? [...this.orderInfo.task_detail.sn_mac_code]
+						: [{ value: '' }],
+					recommended_service_time_start: this.orderInfo.recommended_service_time_start || '',
+					recommended_service_time_end: this.orderInfo.recommended_service_time_end || '',
+					device_outside: this.orderInfo.task_detail?.device_outside,
+					deadline: deadline,
+					deadlineDate: deadlineDate,
+					deadlineTime: deadlineTime
+				};
+				this.showEditModal = true;
+			},
+
+			// 关闭修改弹窗
+			closeEditModal() {
+				this.showEditModal = false;
+				this.isSaving = false;
+			},
+
+			// 添加SN码
+			addSN() {
+				this.editForm.sn_mac_code.push({ value: '' });
+			},
+
+			// 移除SN码
+			removeSN(index) {
+				if (this.editForm.sn_mac_code.length > 1) {
+					this.editForm.sn_mac_code.splice(index, 1);
+				}
+			},
+
+			// 开始时间选择
+			onStartTimeChange(e) {
+				this.editForm.recommended_service_time_start = e.detail.value;
+			},
+
+			// 结束时间选择
+			onEndTimeChange(e) {
+				this.editForm.recommended_service_time_end = e.detail.value;
+			},
+
+			// 过期日期选择
+			onDeadlineDateChange(e) {
+				this.editForm.deadlineDate = e.detail.value;
+				this.updateDeadline();
+			},
+
+			// 过期时间选择
+			onDeadlineTimeChange(e) {
+				this.editForm.deadlineTime = e.detail.value;
+				this.updateDeadline();
+			},
+
+			// 更新完整的过期时间
+			updateDeadline() {
+				if (this.editForm.deadlineDate && this.editForm.deadlineTime) {
+					this.editForm.deadline = `${this.editForm.deadlineDate} ${this.editForm.deadlineTime}`;
+				} else if (this.editForm.deadlineDate) {
+					this.editForm.deadline = this.editForm.deadlineDate;
+				} else {
+					this.editForm.deadline = '';
+				}
+			},
+
+			// 保存订单修改
+			async saveOrderChanges() {
+				if (this.isSaving) return;
+
+				this.isSaving = true;
+
+				try {
+					// 获取用户信息
+					const userInfo = uni.getStorageSync('userInfo');
+					const openid = uni.getStorageSync('openid');
+					if (!userInfo || !userInfo.user_id || !openid) {
+						uni.showToast({
+							title: '请先登录',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 构建请求参数
+					const params = {
+						task_id: this.orderId,
+						user_id: userInfo.user_id,
+						additional_notes: this.editForm.additional_notes,
+						sn_mac_code: this.editForm.sn_mac_code.filter(item => item.value.trim()),
+						recommended_service_time_start: this.editForm.recommended_service_time_start,
+						recommended_service_time_end: this.editForm.recommended_service_time_end,
+						device_outside: this.editForm.device_outside,
+						deadline: this.editForm.deadline,
+						sign: 'chongchong'
+					};
+
+					console.log('修改订单参数:', params);
+
+					// 调用修改接口
+					const res = await this.$request('task/update/deadline', params, 'POST');
+
+					if (res.code === 200) {
+						uni.showToast({
+							title: '修改成功',
+							icon: 'success'
+						});
+
+						// 更新本地数据
+						if (this.orderInfo.task_detail) {
+							this.orderInfo.task_detail.additional_notes = this.editForm.additional_notes;
+							this.orderInfo.task_detail.sn_mac_code = [...this.editForm.sn_mac_code];
+							this.orderInfo.task_detail.device_outside = this.editForm.device_outside;
+						}
+						this.orderInfo.recommended_service_time_start = this.editForm.recommended_service_time_start;
+						this.orderInfo.recommended_service_time_end = this.editForm.recommended_service_time_end;
+						this.orderInfo.deadline = this.editForm.deadline;
+
+						this.closeEditModal();
+					} else {
+						uni.showToast({
+							title: res.message || '修改失败',
+							icon: 'none'
+						});
+					}
+				} catch (error) {
+					console.error('修改订单失败:', error);
+					uni.showToast({
+						title: '网络请求失败',
+						icon: 'none'
+					});
+				} finally {
+					this.isSaving = false;
+				}
 			}
 		}
 	}
@@ -1504,19 +1779,26 @@
 			transform: rotate(180deg);
 		}
 
-		/* 取消订单按钮显示在展开/收起按钮上方 */
-		.cancel-button-above-expand {
+		/* 操作按钮区域 */
+		.action-buttons-above-expand {
 			padding: 20rpx 30rpx 10rpx;
 			background: #fff;
 			border-top: 1rpx solid #f0f0f0;
+			display: flex;
+			gap: 20rpx;
 
 			.btn {
-				width: 100%;
+				flex: 1;
 				height: 80rpx;
 				line-height: 80rpx;
 				font-size: 32rpx;
 				border-radius: 40rpx;
 				border: none;
+
+				&.edit-btn {
+					background: #52c41a;
+					color: #fff;
+				}
 
 				&.cancel-btn {
 					background: #ff4d4f;
@@ -2167,6 +2449,349 @@
 		to {
 			opacity: 1;
 			transform: translate(-50%, -50%) scale(1);
+		}
+	}
+
+	// 修改订单弹窗样式
+	.edit-modal-mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 999;
+	}
+
+	.edit-modal-container {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 90%;
+		max-width: 700rpx;
+		max-height: 80vh;
+		background-color: #fff;
+		border-radius: 20rpx;
+		overflow: hidden;
+		z-index: 1000;
+		animation: modalSlideIn 0.3s ease;
+		box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+		display: flex;
+		flex-direction: column;
+
+		.edit-modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 20rpx 24rpx;
+			border-bottom: 1rpx solid #f0f0f0;
+			flex-shrink: 0;
+
+			.edit-modal-title {
+				font-size: 28rpx;
+				font-weight: 600;
+				color: #333;
+			}
+
+			.edit-modal-close {
+				width: 40rpx;
+				height: 40rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 36rpx;
+				color: #999;
+				cursor: pointer;
+			}
+		}
+
+		.edit-modal-content {
+			flex: 1;
+			overflow-y: auto;
+			padding: 24rpx;
+			-webkit-overflow-scrolling: touch;
+
+			.edit-form-group {
+				margin-bottom: 32rpx;
+
+				&:last-child {
+					margin-bottom: 16rpx;
+				}
+
+				.edit-form-label {
+					display: block;
+					font-size: 26rpx;
+					color: #333;
+					font-weight: 600;
+					margin-bottom: 12rpx;
+					line-height: 1.4;
+				}
+
+				.edit-form-input {
+					width: 100%;
+					height: 66rpx;
+					padding: 0 20rpx;
+					border: 2rpx solid #e0e0e0;
+					border-radius: 12rpx;
+					font-size: 26rpx;
+					color: #333;
+					background-color: #fff;
+					box-sizing: border-box;
+					line-height: 1.4;
+
+					&:focus {
+						border-color: #2492F2;
+						background-color: #fff;
+						box-shadow: 0 0 0 2rpx rgba(36, 146, 242, 0.1);
+					}
+
+					&::placeholder {
+						color: #999;
+						font-size: 24rpx;
+					}
+				}
+
+				textarea.edit-form-textarea {
+					width: 100% !important;
+					min-height: 130rpx !important;
+					height: 130rpx !important;
+					padding: 12rpx !important;
+					border: 2rpx solid #e0e0e0;
+					border-radius: 12rpx;
+					font-size: 26rpx;
+					color: #333;
+					background-color: #fff;
+					box-sizing: border-box;
+					resize: none;
+					line-height: 1.4;
+
+					&:focus {
+						border-color: #2492F2;
+						background-color: #fff;
+						box-shadow: 0 0 0 2rpx rgba(36, 146, 242, 0.1);
+					}
+
+					&::placeholder {
+						color: #999;
+						font-size: 24rpx;
+					}
+				}
+
+				// SN码列表样式
+				.sn-code-list {
+					.sn-code-item {
+						display: flex;
+						align-items: center;
+						margin-bottom: 20rpx;
+
+						.edit-form-input {
+							flex: 1;
+							margin-right: 20rpx;
+						}
+
+						.remove-sn-btn {
+							width: 40rpx;
+							height: 40rpx;
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							background-color: #ff4d4f;
+							color: #fff;
+							border-radius: 50%;
+							font-size: 28rpx;
+							font-weight: bold;
+							cursor: pointer;
+							flex-shrink: 0;
+
+							&:active {
+								background-color: #d9363e;
+								transform: scale(0.95);
+							}
+						}
+					}
+
+					.add-sn-btn {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						height: 54rpx;
+						background-color: #52c41a;
+						color: #fff;
+						border-radius: 12rpx;
+						font-size: 26rpx;
+						font-weight: 500;
+						cursor: pointer;
+						margin-top: 10rpx;
+
+						&:active {
+							background-color: #389e0d;
+							transform: scale(0.98);
+						}
+					}
+				}
+
+				// 时间选择器样式
+				.time-range-selector {
+					display: flex;
+					gap: 24rpx;
+
+					.time-item {
+						flex: 1;
+
+						.time-label {
+							display: block;
+							font-size: 28rpx;
+							color: #666;
+							margin-bottom: 16rpx;
+							font-weight: 500;
+						}
+
+						.time-picker {
+							height: 66rpx;
+							line-height: 66rpx;
+							padding: 0 20rpx;
+							border: 2rpx solid #e0e0e0;
+							border-radius: 12rpx;
+							font-size: 26rpx;
+							color: #333;
+							background-color: #fff;
+							text-align: center;
+							cursor: pointer;
+							transition: all 0.2s;
+
+							&:active {
+								border-color: #2492F2;
+								background-color: #f0f9ff;
+							}
+						}
+					}
+				}
+
+				// 日期时间选择器样式
+				.datetime-selector {
+					display: flex;
+					gap: 24rpx;
+
+					.datetime-item {
+						flex: 1;
+
+						.datetime-label {
+							display: block;
+							font-size: 24rpx;
+							color: #666;
+							margin-bottom: 12rpx;
+							font-weight: 500;
+						}
+
+						.time-picker {
+							height: 66rpx;
+							line-height: 66rpx;
+							padding: 0 20rpx;
+							border: 2rpx solid #e0e0e0;
+							border-radius: 12rpx;
+							font-size: 26rpx;
+							color: #333;
+							background-color: #fff;
+							text-align: center;
+							cursor: pointer;
+							transition: all 0.2s;
+
+							&:active {
+								border-color: #2492F2;
+								background-color: #f0f9ff;
+							}
+						}
+					}
+				}
+
+				// 设备外摆选择器样式
+				.device-outside-selector {
+					display: flex;
+					gap: 24rpx;
+
+					.device-option {
+						flex: 1;
+						height: 66rpx;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						border: 2rpx solid #e0e0e0;
+						border-radius: 12rpx;
+						font-size: 26rpx;
+						color: #666;
+						background-color: #fff;
+						cursor: pointer;
+						transition: all 0.3s;
+						font-weight: 500;
+
+						&.active {
+							border-color: #2492F2;
+							background-color: #2492F2;
+							color: #fff;
+							box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.3);
+						}
+
+						&:active {
+							transform: scale(0.96);
+						}
+					}
+				}
+			}
+		}
+
+		.edit-modal-footer {
+			display: flex;
+			border-top: 2rpx solid #f0f0f0;
+			flex-shrink: 0;
+			padding: 16rpx 0;
+
+			.edit-modal-btn {
+				flex: 1;
+				height: 76rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 26rpx;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s;
+				margin: 0 16rpx;
+				border-radius: 12rpx;
+
+				&.cancel {
+					color: #666;
+					background-color: #f8f8f8;
+					border: 2rpx solid #e0e0e0;
+
+					&:active {
+						background-color: #e8e8e8;
+						transform: scale(0.98);
+					}
+				}
+
+				&.confirm {
+					color: #fff;
+					background-color: #2492F2;
+					box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.3);
+
+					&:active {
+						background-color: #1976D2;
+						transform: scale(0.98);
+					}
+
+					&.disabled {
+						background-color: #ccc;
+						cursor: not-allowed;
+						box-shadow: none;
+						transform: none;
+
+						&:active {
+							transform: none;
+						}
+					}
+				}
+			}
 		}
 	}
 </style>

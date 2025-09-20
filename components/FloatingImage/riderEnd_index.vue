@@ -8,8 +8,8 @@
   >
     <!-- <image :src="imageSrc" mode="aspectFit"></image> -->
     <!-- <image src="https://ccpt.qiniu.0871.cn/gwc-1.png" mode="aspectFit"></image> -->
-		<image @click="goToCart" class="img-3" src="https://ccpt.qiniu.0871.cn/gwc-gwc2.svg" mode="aspectFit"></image>
-		<image @click="goToChat" class="img-4" src="https://ccpt.qiniu.0871.cn/duihua2-active.svg" mode="aspectFit"></image>
+		<!-- <image @click="goToCart" class="img-3" src="https://ccpt.qiniu.0871.cn/gwc-gwc2.svg" mode="aspectFit"></image>
+		<image @click="goToChat" class="img-4" src="https://ccpt.qiniu.0871.cn/duihua2-active.svg" mode="aspectFit"></image> -->
 		<image @click="handleClick" class="img-2" src="https://ccpt.qiniu.0871.cn/tjyj-gwc.svg" mode="aspectFit"></image>
   </view>
 </template>
@@ -223,12 +223,12 @@ export default {
 <style lang="scss" scoped>
 // 悬浮小图样式
 .floating-image {
-	background-image: url('https://ccpt.qiniu.0871.cn/gwc-1.png');
+	// background-image: url('https://ccpt.qiniu.0871.cn/gwc-1.png');
 	background-size: cover;
   position: fixed;
   // 移除固定的 right 和 bottom，改为动态设置
-  width: 100rpx;
-  height: 290rpx;
+  width: 130rpx;
+  height: 150rpx;
   z-index: 999;
   transition: none; // 移除过渡动画，提高拖拽响应性
   
@@ -244,8 +244,8 @@ export default {
   }
 
   .img-2 {
-    width: 100rpx;
-    height: 100rpx;
+    width: 140rpx;
+    height: 170rpx;
     pointer-events: auto; // 确保图片可点击
     &:active {
       transform: scale(0.95);
