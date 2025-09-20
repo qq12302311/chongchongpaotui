@@ -319,8 +319,8 @@
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
 
-		<!-- 门店地址弹窗 -->
-		<auth-modal
+		<!-- 门店地址弹窗已取消 -->
+		<!-- <auth-modal
 			:show="showAddressPopup"
 			title="提示！"
 			:content="'当前选择了' + selectedCity + '与下单地址不符，请核对是否有误'"
@@ -328,7 +328,7 @@
 			confirm-text="知道了"
 			@confirm="showAddressPopup=false; "
 			@cancel="showAddressPopup=false; formData.address = ''"
-		/>
+		/> -->
 	</view>
 </template>
 
@@ -349,9 +349,10 @@
 				let selectedCity = uni.getStorageSync('selectedCity') || ''
 				selectedCity = selectedCity.replace(/·/g, '').replace(/ /g, '')
 				console.log('selectedCity', selectedCity)
-				if (!newValue.includes(selectedCity) && selectedCity != '') {
-					this.showAddressPopup = true
-				}
+				// 取消门店地址弹窗 - 注释掉原有的弹窗触发逻辑
+				// if (!newValue.includes(selectedCity) && selectedCity != '') {
+				// 	this.showAddressPopup = true
+				// }
 			}
 		},
 		data() {

@@ -4,8 +4,6 @@ Always communicate in Chinese
 
 Record my details in the CLAUDE.md file
 
-After each modification, upload it to Gitee and create a new branch named after the current modification
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -249,3 +247,16 @@ Built files are generated in `unpackage/` directory:
 修改文件：
 - `pages/index/publish/map/index.vue` (第1317-1373行地址数据设置逻辑)
 - `pages/index/publish/store-info/index.vue` (第486-567行备用匹配逻辑)
+
+### 2025-09-20: 取消门店地址弹窗
+
+**修改描述**:
+取消店铺信息页面的门店地址验证弹窗，不再检查地址与选中城市的匹配性。
+
+**修改内容**:
+1. 注释掉地址监听器中的弹窗触发逻辑
+2. 注释掉模板中的地址弹窗组件
+3. 保留相关数据结构以便后续需要时快速恢复
+
+**修改文件**:
+- `pages/index/publish/store-info/index.vue` (第352-355行弹窗触发逻辑，第323-331行弹窗组件)
