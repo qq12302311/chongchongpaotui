@@ -554,8 +554,8 @@
 				"text": "订单"
 			},
 			{
-				"pagePath": "pages/chat/chat-list",
-				"text": "对话"
+				"pagePath": "pages/cart/index",
+				"text": "购物车"
 			},
 			{
 				"pagePath": "pages/my/my",

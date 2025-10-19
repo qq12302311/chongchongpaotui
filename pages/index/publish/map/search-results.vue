@@ -13,14 +13,17 @@
 				</view>
 				<view class="search-input-wrap">
 					<text class="icon-search iconfont icon-search"></text>
-					<input 
-						class="search-input" 
-						type="text" 
-						v-model="searchKeyword" 
-						placeholder="请输入地址" 
+					<input
+						class="search-input"
+						type="text"
+						v-model="searchKeyword"
+						placeholder="请输入地址"
 						@input="handleSearch"
 					/>
 					<text class="icon-close iconfont icon-close" v-if="searchKeyword" @click="clearSearch"></text>
+				</view>
+				<view class="search-btn" @click="handleSearch">
+					<text class="search-text">搜索</text>
 				</view>
 			</view>
 			
@@ -36,7 +39,7 @@
 						<view class="address-name">{{ item.name }}</view>
 						<view class="address-detail">{{ item.address }}</view>
 					</view>
-					<view class="address-distance" v-if="item.distance">{{ item.distance }}km</view>
+					<view class="address-distance">{{ item.distance === '--' ? '--' : (item.distance || '0.0') }}km</view>
 				</view>
 				
 				<!-- 无结果提示 -->
@@ -118,7 +121,12 @@ export default {
 	computed: {
 		// 过滤掉"当前位置"的地址列表
 		filteredAddressList() {
-			return this.addressList.filter(item => item.name !== '当前位置');
+			const filtered = this.addressList.filter(item => item.name !== '当前位置');
+			console.log('过滤后的地址列表:', filtered);
+			filtered.forEach((item, index) => {
+				console.log(`过滤后地址${index}: ${item.name}, 距离: ${item.distance}`);
+			});
+			return filtered;
 		}
 	},
 	onLoad(options) {
@@ -130,41 +138,87 @@ export default {
 		// 获取导航栏高度
 		const menuButtonInfo = uni.getMenuButtonBoundingClientRect();
 		this.navBarHeight = menuButtonInfo.bottom + 8;
-		
+
 		// 获取地址类型
 		this.addressType = options.type || 'home';
-		
-		this.currentLocation.latitude = options.latitude
-		this.currentLocation.longitude = options.longitude
-		
+
+		// 获取传入的位置参数
+		console.log('传入的位置参数:', options);
+		if (options.latitude && options.longitude) {
+			this.currentLocation.latitude = parseFloat(options.latitude);
+			this.currentLocation.longitude = parseFloat(options.longitude);
+			console.log('使用传入的位置:', this.currentLocation);
+		} else {
+			// 尝试从本地存储获取位置信息
+			this.getLocationFromStorage();
+		}
+
 		// 从本地存储获取搜索关键词
 		const searchKeyword = uni.getStorageSync('searchKeyword');
 		if (searchKeyword) {
 			this.searchKeyword = searchKeyword;
 		}
-		
+
 		// 从本地存储获取地址列表
 		const addressList = uni.getStorageSync('addressList');
 		if (addressList) {
 			this.addressList = JSON.parse(addressList);
+			console.log('从本地存储加载的地址列表:', this.addressList);
+			// 检查距离数据
+			this.addressList.forEach((item, index) => {
+				console.log(`地址${index}: ${item.name}, 距离: ${item.distance}`);
+			});
 		}
-		
-		// 获取当前位置
-		// this.getLocation();
-		
-		// 从本地存储获取地址列表和当前城市
-		const storedAddressList = uni.getStorageSync('addressList');
-		if (storedAddressList) {
-			this.addressList = JSON.parse(storedAddressList);
-		}
-		
+
+		// 注释掉重复的加载逻辑
+		// const storedAddressList = uni.getStorageSync('addressList');
+		// if (storedAddressList) {
+		// 	this.addressList = JSON.parse(storedAddressList);
+		// }
+
 		const storedCity = uni.getStorageSync('currentCity');
 		if (storedCity) {
 			this.currentCity = storedCity;
 		}
+
+		// 确保当前位置信息完整，如果没有则重新设置
+		console.log('最终的当前位置信息:', this.currentLocation);
+		if (!this.currentLocation.latitude || !this.currentLocation.longitude) {
+			console.warn('搜索结果页面 - 当前位置信息不完整，尝试重新获取');
+			this.getLocationFromStorage();
+			console.log('重新获取后的位置信息:', this.currentLocation);
+		}
 	},
 	methods: {
-		// 获取当前位置
+		// 从本地存储获取位置信息
+		getLocationFromStorage() {
+			try {
+				// 尝试从providerInfo获取位置
+				const providerInfo = uni.getStorageSync('providerInfo');
+				if (providerInfo && providerInfo.info && providerInfo.info.latitude && providerInfo.info.longitude) {
+					this.currentLocation.latitude = parseFloat(providerInfo.info.latitude);
+					this.currentLocation.longitude = parseFloat(providerInfo.info.longitude);
+					console.log('从providerInfo获取位置:', this.currentLocation);
+					return;
+				}
+
+				// 尝试从其他可能的位置信息存储获取
+				const userLocation = uni.getStorageSync('userLocation');
+				if (userLocation && userLocation.latitude && userLocation.longitude) {
+					this.currentLocation.latitude = parseFloat(userLocation.latitude);
+					this.currentLocation.longitude = parseFloat(userLocation.longitude);
+					console.log('从userLocation获取位置:', this.currentLocation);
+					return;
+				}
+
+				// 如果都没有获取到，使用默认位置并提示用户
+				console.warn('无法获取当前位置信息，距离计算将不准确');
+			} catch (error) {
+				console.error('获取位置信息失败:', error);
+			}
+		},
+
+		// 获取当前位置（备用方法）
 		// getLocation() {
 		// 	// 周扬改
 		// 	const currentLocation = uni.getStorageSync('providerInfo');
@@ -259,24 +313,37 @@ export default {
 										.map(item => {
 											// console.log('123',item)
 											// 计算与当前位置的距离
-											let distance = ''
+											let distance = '0.0'
+											console.log('计算距离 - 当前位置:', this.currentLocation);
+											console.log('计算距离 - 目标位置:', item.location);
+
 											if (this.currentLocation.latitude && this.currentLocation.longitude) {
-												const lat1 = this.currentLocation.latitude
-												const lon1 = this.currentLocation.longitude
+												const lat1 = parseFloat(this.currentLocation.latitude)
+												const lon1 = parseFloat(this.currentLocation.longitude)
 												const lat2 = parseFloat(item.location.split(',')[1])
 												const lon2 = parseFloat(item.location.split(',')[0])
-												
-												const R = 6371000
-												const dLat = this.deg2rad(lat2 - lat1)
-												const dLon = this.deg2rad(lon2 - lon1)
-												const a = 
-													Math.sin(dLat/2) * Math.sin(dLat/2) +
-													Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) * 
-													Math.sin(dLon/2) * Math.sin(dLon/2)
-												const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-												const distanceInMeters = R * c
-												
-												distance = (distanceInMeters / 1000).toFixed(1)
+
+												// 验证坐标有效性
+												if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+													console.warn('坐标数据无效:', { lat1, lon1, lat2, lon2 });
+													distance = '--';
+												} else {
+													const R = 6371000
+													const dLat = this.deg2rad(lat2 - lat1)
+													const dLon = this.deg2rad(lon2 - lon1)
+													const a =
+														Math.sin(dLat/2) * Math.sin(dLat/2) +
+														Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+														Math.sin(dLon/2) * Math.sin(dLon/2)
+													const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+													const distanceInMeters = R * c
+
+													distance = (distanceInMeters / 1000).toFixed(1)
+													console.log('计算出的距离:', distance);
+												}
+											} else {
+												console.log('当前位置信息不完整，无法计算距离');
+												distance = '--';
 											}
 											
 											return {
@@ -462,22 +529,35 @@ export default {
 							const lon2 = parseFloat(item.location.lng);
 
 							// 计算与当前位置的距离
-							let distance = '';
+							let distance = '0.0';
+							console.log('腾讯地图 - 计算距离 - 当前位置:', this.currentLocation);
+							console.log('腾讯地图 - 计算距离 - 目标位置:', { lat: lat2, lng: lon2 });
+
 							if (this.currentLocation.latitude && this.currentLocation.longitude) {
-								const lat1 = this.currentLocation.latitude;
-								const lon1 = this.currentLocation.longitude;
+								const lat1 = parseFloat(this.currentLocation.latitude);
+								const lon1 = parseFloat(this.currentLocation.longitude);
 
-								const R = 6371000;
-								const dLat = this.deg2rad(lat2 - lat1);
-								const dLon = this.deg2rad(lon2 - lon1);
-								const a =
-									Math.sin(dLat/2) * Math.sin(dLat/2) +
-									Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
-									Math.sin(dLon/2) * Math.sin(dLon/2);
-								const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-								const distanceInMeters = R * c;
+								// 验证坐标有效性
+								if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+									console.warn('腾讯地图坐标数据无效:', { lat1, lon1, lat2, lon2 });
+									distance = '--';
+								} else {
+									const R = 6371000;
+									const dLat = this.deg2rad(lat2 - lat1);
+									const dLon = this.deg2rad(lon2 - lon1);
+									const a =
+										Math.sin(dLat/2) * Math.sin(dLat/2) +
+										Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+										Math.sin(dLon/2) * Math.sin(dLon/2);
+									const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+									const distanceInMeters = R * c;
 
-								distance = (distanceInMeters / 1000).toFixed(1);
+									distance = (distanceInMeters / 1000).toFixed(1);
+									console.log('腾讯地图计算出的距离:', distance);
+								}
+							} else {
+								console.log('腾讯地图 - 当前位置信息不完整，无法计算距离');
+								distance = '--';
 							}
 
 							// 处理地址信息，优先使用address，如果没有则使用title
@@ -692,6 +772,11 @@ export default {
 					publishPage.$vm.formData.distance = item.distance; // 距离km
 					publishPage.$vm.formData.province = addressComponent.province;
 
+					// 获取用户选择的城市信息，用于修正区县信息
+					const selectedCity = uni.getStorageSync('selectedCity') || '';
+					console.log('用户选择的城市:', selectedCity);
+					console.log('地址组件信息:', addressComponent);
+
 					// 针对重庆市这种特殊区域
 					if(Array.isArray(addressComponent.city)&&addressComponent.city.length==0) {
 						publishPage.$vm.formData.city = addressComponent.province;
@@ -699,66 +784,146 @@ export default {
 						publishPage.$vm.formData.city = addressComponent.city;
 					}
 
-					if(Array.isArray(addressComponent.district)&&addressComponent.district.length==0) {
-						publishPage.$vm.formData.district = addressComponent.township;
-					} else {
-						publishPage.$vm.formData.district = addressComponent.district;
+					// 修复地址组件解析逻辑，确保district与用户选择的城市一致
+					let districtValue = '';
+
+					// 优先使用用户在首页选择的城市信息
+					if (selectedCity && selectedCity.includes(' · ')) {
+						// 如果selectedCity包含区县信息，提取区县部分
+						const parts = selectedCity.split(' · ');
+						if (parts.length >= 2) {
+							districtValue = parts[1]; // 取区县/镇名部分，如"大岭山镇"
+							console.log('从selectedCity提取的区县名:', districtValue);
+						}
 					}
+
+					// 如果没有从selectedCity获取到有效信息，使用地址组件的信息
+					if (!districtValue) {
+						if(Array.isArray(addressComponent.district)&&addressComponent.district.length==0) {
+							districtValue = addressComponent.township || '';
+						} else {
+							districtValue = addressComponent.district || '';
+						}
+					}
+
+					// 特殊处理：如果地址组件中有镇名信息，优先使用镇名
+					if (addressComponent.township &&
+						addressComponent.township !== addressComponent.district) {
+						// 如果township不同于district，说明有更具体的行政区划信息
+						districtValue = addressComponent.township;
+						console.log('使用township作为区县名:', districtValue);
+					}
+					
+					
+					// 周扬加 
+					// if (addressComponent.district) {
+					// 	// 如果township不同于district，说明有更具体的行政区划信息
+					// 	districtValue = addressComponent.district;
+					// }
+
+					publishPage.$vm.formData.district = districtValue;
 
 					// 修复 万宁市属于行政区，导致无法识别系统区域的问题
 					if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
 						publishPage.$vm.formData.city = addressComponent.district;
 						publishPage.$vm.formData.district = addressComponent.township;
 					}
-				} else if (this.addressType === 'end') {
-					publishPage.$vm.endAddress = item.address;
-					publishPage.$vm.endLocation = {
-						latitude: item.latitude,
-						longitude: item.longitude
-					};
-				} else if (this.addressType === 'address') {
-					// 确保省市区信息存在
-					const province = addressComponent.province || '';
-					const city = addressComponent.city || '';
-					const district = addressComponent.district || '';
+				} 
+				// else if (this.addressType === 'end') {
+				// 	publishPage.$vm.endAddress = item.address;
+				// 	publishPage.$vm.endLocation = {
+				// 		latitude: item.latitude,
+				// 		longitude: item.longitude
+				// 	};
+				// } else if (this.addressType === 'address') {
+				// 	// 确保省市区信息存在
+				// 	const province = addressComponent.province || '';
+				// 	let city = addressComponent.city || '';
+				// 	let district = addressComponent.district || '';
 
-					console.log('省市区信息:', { province, city, district });
+				// 	// 获取用户选择的城市信息，用于修正区县信息
+				// 	const selectedCity = uni.getStorageSync('selectedCity') || '';
+				// 	console.log('用户选择的城市:', selectedCity);
+				// 	console.log('地址组件信息:', addressComponent);
 
-					// 更新 formData
-					const updatedFormData = {
-						...publishPage.$vm.formData,
-						address: item.address,
-						latitude: item.latitude,
-						longitude: item.longitude,
-						province: province,
-						city: city,
-						district: district
-					};
+				// 	// 针对重庆市这种特殊区域
+				// 	if (Array.isArray(city) && city.length == 0) {
+				// 		city = province;
+				// 	}
 
-					// 打印更新后的 formData
-					console.log('更新后的 formData:', updatedFormData);
+				// 	// 修复地址组件解析逻辑，确保district与用户选择的城市一致
+				// 	let districtValue = '';
 
-					// 输出到 AppData
-					const appData = {
-						formData: updatedFormData,
-						addressComponent: addressComponent,
-						selectedAddress: item.address,
-						location: {
-							latitude: item.latitude,
-							longitude: item.longitude
-						}
-					};
-					console.log('AppData:', appData);
+				// 	// 优先使用用户在首页选择的城市信息
+				// 	if (selectedCity && selectedCity.includes(' · ')) {
+				// 		// 如果selectedCity包含区县信息，提取区县部分
+				// 		const parts = selectedCity.split(' · ');
+				// 		if (parts.length >= 2) {
+				// 			districtValue = parts[1]; // 取区县/镇名部分，如"大岭山镇"
+				// 			console.log('从selectedCity提取的区县名:', districtValue);
+				// 		}
+				// 	}
 
-					// 使用 uni.setStorageSync 存储到本地，方便在开发者工具中查看
-					uni.setStorageSync('debug_formData', appData);
+				// 	// 如果没有从selectedCity获取到有效信息，使用地址组件的信息
+				// 	if (!districtValue) {
+				// 		if (Array.isArray(district) && district.length == 0) {
+				// 			districtValue = addressComponent.township || '';
+				// 		} else {
+				// 			districtValue = district;
+				// 		}
+				// 	}
 
-					// 更新父组件的 formData
-					publishPage.$vm.formData = updatedFormData;
+				// 	// 特殊处理：如果地址组件中有镇名信息，优先使用镇名
+				// 	if (addressComponent.township &&
+				// 		addressComponent.township !== district) {
+				// 		// 如果township不同于district，说明有更具体的行政区划信息
+				// 		districtValue = addressComponent.township;
+				// 		console.log('使用township作为区县名:', districtValue);
+				// 	}
 
-					// 触发父组件的更新
-					publishPage.$vm.$forceUpdate();
-				}
+				// 	// 修复 万宁市属于行政区，导致无法识别系统区域的问题
+				// 	if (province === '海南省' && city === '海南省') {
+				// 		city = district;
+				// 		districtValue = addressComponent.township || '';
+				// 	}
+
+				// 	console.log('省市区信息:', { province, city, district: districtValue });
+
+				// 	// 更新 formData
+				// 	const updatedFormData = {
+				// 		...publishPage.$vm.formData,
+				// 		address: item.address,
+				// 		latitude: item.latitude,
+				// 		longitude: item.longitude,
+				// 		province: province,
+				// 		city: city,
+				// 		district: districtValue
+				// 	};
+
+				// 	// 打印更新后的 formData
+				// 	console.log('更新后的 formData:', updatedFormData);
+
+				// 	// 输出到 AppData
+				// 	const appData = {
+				// 		formData: updatedFormData,
+				// 		addressComponent: addressComponent,
+				// 		selectedAddress: item.address,
+				// 		location: {
+				// 			latitude: item.latitude,
+				// 			longitude: item.longitude
+				// 		}
+				// 	};
+				// 	console.log('AppData:', appData);
+
+				// 	// 使用 uni.setStorageSync 存储到本地，方便在开发者工具中查看
+				// 	uni.setStorageSync('debug_formData', appData);
+
+				// 	// 更新父组件的 formData
+				// 	publishPage.$vm.formData = updatedFormData;
+
+				// 	// 触发父组件的更新
+				// 	publishPage.$vm.$forceUpdate();
+				// }
 
 				// 直接返回发布订单页
 				uni.navigateBack({
@@ -802,55 +967,56 @@ export default {
 									publishPage.$vm.formData.city = addressComponent.district;
 									publishPage.$vm.formData.district = addressComponent.township;
 								}
-							} else if (this.addressType === 'end') {
-								publishPage.$vm.endAddress = item.address;
-								publishPage.$vm.endLocation = {
-									latitude: item.latitude,
-									longitude: item.longitude
-								};
-							} else if (this.addressType === 'address') {
-								// 确保省市区信息存在
-								const province = addressComponent.province || '';
-								const city = addressComponent.city || '';
-								const district = addressComponent.district || '';
+							} 
+							// else if (this.addressType === 'end') {
+							// 	publishPage.$vm.endAddress = item.address;
+							// 	publishPage.$vm.endLocation = {
+							// 		latitude: item.latitude,
+							// 		longitude: item.longitude
+							// 	};
+							// } else if (this.addressType === 'address') {
+							// 	// 确保省市区信息存在
+							// 	const province = addressComponent.province || '';
+							// 	const city = addressComponent.city || '';
+							// 	const district = addressComponent.district || '';
 
-								console.log('省市区信息:', { province, city, district });
+							// 	console.log('省市区信息:', { province, city, district });
 
-								// 更新 formData
-								const updatedFormData = {
-									...publishPage.$vm.formData,
-									address: item.address,
-									latitude: item.latitude,
-									longitude: item.longitude,
-									province: province,
-									city: city,
-									district: district
-								};
+							// 	// 更新 formData
+							// 	const updatedFormData = {
+							// 		...publishPage.$vm.formData,
+							// 		address: item.address,
+							// 		latitude: item.latitude,
+							// 		longitude: item.longitude,
+							// 		province: province,
+							// 		city: city,
+							// 		district: district
+							// 	};
 
-								// 打印更新后的 formData
-								console.log('更新后的 formData:', updatedFormData);
+							// 	// 打印更新后的 formData
+							// 	console.log('更新后的 formData:', updatedFormData);
 
-								// 输出到 AppData
-								const appData = {
-									formData: updatedFormData,
-									addressComponent: addressComponent,
-									selectedAddress: item.address,
-									location: {
-										latitude: item.latitude,
-										longitude: item.longitude
-									}
-								};
-								console.log('AppData:', appData);
+							// 	// 输出到 AppData
+							// 	const appData = {
+							// 		formData: updatedFormData,
+							// 		addressComponent: addressComponent,
+							// 		selectedAddress: item.address,
+							// 		location: {
+							// 			latitude: item.latitude,
+							// 			longitude: item.longitude
+							// 		}
+							// 	};
+							// 	console.log('AppData:', appData);
 
-								// 使用 uni.setStorageSync 存储到本地，方便在开发者工具中查看
-								uni.setStorageSync('debug_formData', appData);
+							// 	// 使用 uni.setStorageSync 存储到本地，方便在开发者工具中查看
+							// 	uni.setStorageSync('debug_formData', appData);
 
-								// 更新父组件的 formData
-								publishPage.$vm.formData = updatedFormData;
+							// 	// 更新父组件的 formData
+							// 	publishPage.$vm.formData = updatedFormData;
 
-								// 触发父组件的更新
-								publishPage.$vm.$forceUpdate();
-							}
+							// 	// 触发父组件的更新
+							// 	publishPage.$vm.$forceUpdate();
+							// }
 
 							// 直接返回发布订单页
 							uni.navigateBack({
@@ -992,23 +1158,51 @@ export default {
 		display: flex;
 		align-items: center;
 		padding: 0 30rpx;
-		
+		margin-right: 20rpx;
+
 		.icon-search {
 			font-size: 28rpx;
 			color: #999999;
 			margin-right: 10rpx;
 		}
-		
+
 		.search-input {
 			flex: 1;
 			height: 100%;
 			font-size: 28rpx;
 		}
-		
+
 		.icon-close {
 			font-size: 28rpx;
 			color: #999999;
 			padding: 0 10rpx;
+		}
+	}
+
+	.search-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 24rpx;
+		height: 72rpx;
+		background-color: #2492f2;
+		border-radius: 36rpx;
+		cursor: pointer;
+		transition: background-color 0.3s;
+
+		.search-text {
+			font-size: 28rpx;
+			color: #ffffff;
+			font-weight: 500;
+		}
+
+		&:hover {
+			background-color: #1976d2;
+		}
+
+		&:active {
+			background-color: #1565c0;
+			transform: scale(0.95);
 		}
 	}
 }

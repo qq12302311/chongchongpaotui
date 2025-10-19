@@ -180,7 +180,7 @@ export default {
 			bannerList: [ // banner轮播图列表
 				{
 					id: 1,
-					image: 'https://ccpt.qiniu.0871.cn/home/banner13.png',
+					image: 'https://ccpt.qiniu.0871.cn/222.png',
 					title: 'Banner 1',
 					url: ''
 				},

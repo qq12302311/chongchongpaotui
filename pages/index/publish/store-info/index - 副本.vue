@@ -17,7 +17,7 @@
 		</view>
 
 		<!-- 认证提示弹窗 -->
-		<auth-modal :show="showAuthModal" title="提示" content="抱歉！当前城市尚未开通！!请联系微信：agan-24h" cancel-text="取消"
+		<auth-modal :show="showAuthModal" title="提示" content="抱歉！当前城市尚未开通！!申请成为跑腿服务商/骑手，接单赚外快！" cancel-text="取消"
 			confirm-text="去申请" @cancel="handleAuthCancel" @confirm="handleAuthConfirm" />
 
 		<!-- 设备编码帮助弹窗 -->
@@ -46,65 +46,6 @@
 
 		<view class="info-card">
 
-			<!-- 所选区县 -->
-			<view class="form-item">
-				<view class="input-row">
-					<view class="label-container">
-						<text class="dot"></text>
-						<text>所选区县</text>
-					</view>
-					<view class="input-container horizontal">
-						<view class="district-display">
-							<text class="district-text">{{ displaySelectedCity }}</text>
-							<view class="checkbox-wrapper" @click="toggleDistrictConfirm">
-								<view class="checkbox" :class="{ 'checked': isDistrictConfirmed }">
-									<text class="checkbox-icon" v-if="isDistrictConfirmed">✓</text>
-								</view>
-							</view>
-						</view>
-					</view>
-				</view>
-			</view>
-
-			<!-- 门店地址 -->
-			<view class="form-item">
-				<view class="input-row">
-					<view class="label-container">
-						<text class="dot"></text>
-						<text>门店地址</text>
-					</view>
-					<view class="input-container horizontal">
-						<view class="input-wrapper address-input-wrapper" @click="handleAddressSelect">
-							<textarea v-model="formData.address" class="custom-input address-textarea" placeholder=" "
-								disabled auto-height />
-							<view class="placeholder-box" v-if="!formData.address">
-								<text class="placeholder-text">选择地址定位</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/address.png" class="location-icon">
-								</image>
-							</view>
-						</view>
-					</view>
-				</view>
-
-				<!-- 地图预览区域 -->
-				<view class="map-preview-container" v-if="formData.latitude && formData.longitude" @click="navigateToLocation">
-					<map
-						:latitude="parseFloat(formData.latitude)"
-						:longitude="parseFloat(formData.longitude)"
-						:markers="mapMarkers"
-						:show-location="false"
-						:enable-scroll="false"
-						:enable-zoom="false"
-						:enable-rotate="false"
-						style="width: 100%; height: 100%;"
-					></map>
-				<view class="map-overlay">
-					<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="nav-icon"></image>
-					<text class="nav-text">点击导航复核点位</text>
-				</view>
-				</view>
-			</view>
-
 			<!-- 门店名称 -->
 			<view class="form-item">
 				<view class="input-row">
@@ -120,6 +61,26 @@
 							<view class="placeholder-box" v-if="!formData.storeName">
 								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">点击填写门店名称</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+			<!-- 门店地址 -->
+			<view class="form-item">
+				<view class="input-row">
+					<view class="label-container">
+						<text class="dot"></text>
+						<text>门店地址</text>
+					</view>
+					<view class="input-container horizontal">
+						<view class="input-wrapper address-input-wrapper" @click="handleAddressSelect">
+							<textarea v-model="formData.address" class="custom-input address-textarea" placeholder=" "
+								disabled auto-height />
+							<view class="placeholder-box" v-if="!formData.address">
+								<text class="placeholder-text">选择地址定位</text>
+								<image src="https://ccpt.qiniu.0871.cn/publish/address.png" class="location-icon">
+								</image>
 							</view>
 						</view>
 					</view>
@@ -167,8 +128,8 @@
 				</view>
 			</view>
 
-			<!-- 联系人 - 已隐藏 -->
-			<!-- <view class="form-item">
+			<!-- 联系人 -->
+			<view class="form-item">
 				<view class="input-row">
 					<view class="label-container">
 						<text>联系人</text>
@@ -185,7 +146,7 @@
 						</view>
 					</view>
 				</view>
-			</view> -->
+			</view>
 
 			<!-- 设备编码 -->
 			<view class="form-item">
@@ -247,12 +208,12 @@
 				<!-- 门店POI备注上方添加分隔线 -->
 				<view class="divider"></view>
 
-				<!-- 设备摆放点位 -->
+				<!-- 设备是否外摆 -->
 				<view class="form-item">
 					<view class="input-row">
 						<view class="label-container">
 							<text class="dot"></text>
-							<text>设备摆放点位</text>
+							<text>设备是否外摆</text>
 						</view>
 						<view class="radio-container">
 							<view class="radio-group">
@@ -398,7 +359,6 @@
 			return {
 				showAddressPopup: false,
 				selectedCity: uni.getStorageSync('selectedCity'),
-				isDistrictConfirmed: false, // 区县确认勾选状态，默认不勾选
 				formData: {
 					address: '',
 					detailAddress: '',
@@ -581,13 +541,6 @@
 								return provinceItem.children.some(cityItem => {
 									// 检查城市名称是否匹配
 									if (cityItem.name === this.formData.city) {
-										// 特殊处理：如果city与district同名，只匹配市级即可
-										if (this.formData.city === this.formData.district) {
-											console.log('城市与区县同名，直接匹配市级:', this.formData.city);
-											uni.setStorageSync('selectedDistrictId_new', cityItem.city_id);
-											return true;
-										}
-
 										// 检查区县级
 										if (cityItem.children && Array.isArray(cityItem.children)) {
 											// 先查找精确匹配或镇名匹配的项目
@@ -601,27 +554,6 @@
 												matchedDistrictItem = cityItem.children.find(districtItem =>
 													isAddressMatch(districtItem.name, alternativeDistrict)
 												);
-											}
-
-											// 如果仍未匹配到，尝试从selectedCity中提取更多信息
-											if (!matchedDistrictItem && selectedCity) {
-												console.log('尝试使用selectedCity完整信息匹配');
-												const cityPart = selectedCity.split(' · ')[0]; // 如"东莞市"
-												const districtPart = selectedCity.split(' · ')[1]; // 如"大岭山镇"
-
-												// 检查城市名称是否与selectedCity一致，如果不一致可能需要特殊处理
-												if (cityPart && cityPart.includes(this.formData.city)) {
-													matchedDistrictItem = cityItem.children.find(districtItem => {
-														// 尝试多种匹配方式
-														return isAddressMatch(districtItem.name, districtPart) ||
-															   isAddressMatch(districtItem.name, districtPart?.replace(/[镇街道乡]/g, '')) ||
-															   districtItem.name.includes(districtPart?.replace(/[镇街道乡]/g, ''));
-													});
-
-													if (matchedDistrictItem) {
-														console.log('通过selectedCity扩展匹配成功:', districtPart, '→', matchedDistrictItem.name);
-													}
-												}
 											}
 
 											if (matchedDistrictItem) {
@@ -643,52 +575,9 @@
 						return false;
 					});
 
-					console.log('最终判断结果:', isServiceAvailable, district_id);
+					console.log('最终判断结果:', isServiceAvailable,district_id);
 
-					// 添加详细的调试信息，帮助理解匹配失败的原因
 					if (!isServiceAvailable) {
-						console.log('=== 地址匹配失败调试信息 ===');
-						console.log('用户选择的服务城市:', uni.getStorageSync('selectedCity'));
-						console.log('地址解析的城市信息:', {
-							province: this.formData.province,
-							city: this.formData.city,
-							district: this.formData.district,
-							address: this.formData.address
-						});
-						console.log('alternativeDistrict:', alternativeDistrict);
-
-						// 显示具体哪个层级匹配失败
-						const matchingProvinceItem = parsedCityList.find(provinceItem =>
-							provinceItem.name === this.formData.province
-						);
-						if (!matchingProvinceItem) {
-							console.log('❌ 省级匹配失败:', this.formData.province);
-							console.log('可用省份列表:', parsedCityList.map(p => p.name));
-						} else {
-							console.log('✅ 省级匹配成功:', matchingProvinceItem.name);
-
-							const matchingCityItem = matchingProvinceItem.children?.find(cityItem =>
-								cityItem.name === this.formData.city
-							);
-							if (!matchingCityItem) {
-								console.log('❌ 地址所在城市未开通服务:', this.formData.city);
-								console.log('当前省份已开通的城市列表:', matchingProvinceItem.children?.map(c => c.name));
-
-								// 显示友好的提示信息
-								uni.showToast({
-									title: `${this.formData.city}暂未开通服务`,
-									icon: 'none',
-									duration: 3000
-								});
-							} else {
-								console.log('✅ 市级匹配成功:', matchingCityItem.name);
-								console.log('❌ 区县级匹配失败:', this.formData.district);
-								console.log('可用区县列表:', matchingCityItem.children?.map(d => d.name));
-							}
-						}
-						console.log('=== 调试信息结束 ===');
-
-						// 只有在确实是服务区域问题时才显示弹窗
 						this.showAuthModal = true;
 					}
 				} catch (error) {
@@ -696,72 +585,7 @@
 				}
 			}
 		},
-		computed: {
-			// 显示的所选城市
-			displaySelectedCity() {
-				return this.selectedCity || '未选择';
-			},
-			// 地图标记点
-			mapMarkers() {
-				if (!this.formData.latitude || !this.formData.longitude) {
-					return [];
-				}
-			return [{
-				id: 1,
-				latitude: parseFloat(this.formData.latitude),
-				longitude: parseFloat(this.formData.longitude),
-				width: 1,
-				height: 1,
-				callout: {
-					content: this.formData.storeName || '门店位置',
-					color: '#333333',
-					fontSize: 12,
-					borderRadius: 4,
-					bgColor: '#FFFFFF',
-					padding: 8,
-					display: 'ALWAYS'
-				}
-			}];
-			}
-		},
 		methods: {
-			// 切换区县确认勾选状态
-			toggleDistrictConfirm() {
-				this.isDistrictConfirmed = !this.isDistrictConfirmed;
-			},
-			// 导航到门店位置
-			navigateToLocation() {
-				if (!this.formData.latitude || !this.formData.longitude) {
-					uni.showToast({
-						title: '门店位置信息缺失',
-						icon: 'none'
-					});
-					return;
-				}
-
-				const latitude = parseFloat(this.formData.latitude);
-				const longitude = parseFloat(this.formData.longitude);
-				const name = this.formData.storeName || '目的地';
-				const address = this.formData.address || '';
-
-				uni.openLocation({
-					latitude,
-					longitude,
-					name,
-					address,
-					scale: 18,
-					success: () => {
-						console.log('打开地图成功');
-					},
-					fail: (err) => {
-						console.error('打开地图失败:', err);
-						uni.showToast({
-							title: '打开地图失败',
-							icon: 'none'
-						});
-					}
-				});
-			},
 			async gethistoryRecords() {
 				try {
 					// 检查用户ID是否有效
@@ -1021,11 +845,6 @@
 			},
 			// 表单验证函数
 			validateFormData() {
-				// 检查区县确认勾选状态
-				if (!this.isDistrictConfirmed) {
-					return { isValid: false, message: '请核对所选区县' };
-				}
-
 				// 检查地址
 				if (!this.formData.address || this.formData.address.trim() === '') {
 					return { isValid: false, message: '请选择门店地址' };
@@ -1072,14 +891,14 @@
 					}
 				}
 
-				// 严格验证设备摆放点位必填项 - 必须是有效的数值选择
+				// 严格验证设备是否外摆必填项 - 必须是有效的数值选择
 				console.log('验证 device_outside 值:', this.formData.device_outside, '类型:', typeof this.formData.device_outside);
-
-				if (this.formData.device_outside === '' ||
-					this.formData.device_outside === null ||
+				
+				if (this.formData.device_outside === '' || 
+					this.formData.device_outside === null || 
 					this.formData.device_outside === undefined ||
 					(this.formData.device_outside !== 0 && this.formData.device_outside !== 1 && this.formData.device_outside !== 2)) {
-					return { isValid: false, message: '请选择设备摆放点位（外摆/非外摆/不清楚）' };
+					return { isValid: false, message: '请选择设备是否外摆（外摆/非外摆/不清楚）' };
 				}
 
 				return { isValid: true, message: '' };
@@ -1094,18 +913,6 @@
 					const publishPage = pages[pages.length - 2];
 
 					if (publishPage && publishPage.$vm) {
-						// 【修复】同步更新发布页面的区域选择数据
-						const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
-						const selectedCity = uni.getStorageSync('selectedCity');
-						if (selectedDistrictId) {
-							publishPage.$vm.selectedDistrictId = selectedDistrictId;
-							console.log('✅ 已同步更新发布页面的 selectedDistrictId:', selectedDistrictId);
-						}
-						if (selectedCity) {
-							publishPage.$vm.selectedCity = selectedCity;
-							console.log('✅ 已同步更新发布页面的 selectedCity:', selectedCity);
-						}
-						
 						// 更新发布订单页的 formData
 						publishPage.$vm.formData = {
 							...publishPage.$vm.formData,
@@ -1131,20 +938,12 @@
 						// 强制更新发布页面并重新计算价格
 						publishPage.$vm.$forceUpdate();
 
-						// 【关键】重新获取服务商信息（使用更新后的 selectedDistrictId）
-						if (typeof publishPage.$vm.getProviderInfo === 'function') {
-							publishPage.$vm.$nextTick(async () => {
-								await publishPage.$vm.getProviderInfo();
-								console.log('门店信息保存后重新获取服务商信息并重新计算价格');
+						// 触发价格重新计算
+						if (typeof publishPage.$vm.calculatePrice === 'function') {
+							publishPage.$vm.$nextTick(() => {
+								publishPage.$vm.calculatePrice();
+								console.log('门店信息保存后重新计算价格');
 							});
-						} else {
-							// 如果没有 getProviderInfo 方法，则直接重新计算价格
-							if (typeof publishPage.$vm.calculatePrice === 'function') {
-								publishPage.$vm.$nextTick(() => {
-									publishPage.$vm.calculatePrice();
-									console.log('门店信息保存后重新计算价格');
-								});
-							}
 						}
 
 						console.log('已更新发布页面数据');
@@ -1172,9 +971,9 @@
 
 					// 双重检查：确保 device_outside 一定有有效值
 					if (this.formData.device_outside !== 0 && this.formData.device_outside !== 1 && this.formData.device_outside !== 2) {
-						console.error('设备摆放点位验证失败，当前值:', this.formData.device_outside);
+						console.error('设备是否外摆验证失败，当前值:', this.formData.device_outside);
 						uni.showToast({
-							title: '请选择设备摆放点位选项',
+							title: '请选择设备是否外摆选项',
 							icon: 'none',
 							duration: 3000
 						});
@@ -1258,32 +1057,23 @@
 
 					console.log('保存响应:', res);
 
-				if (res.status === 'success') {
-					// 【关键修复】将 selectedDistrictId_new 覆盖到 selectedDistrictId
-					const selectedDistrictId_new = uni.getStorageSync('selectedDistrictId_new');
-					if (selectedDistrictId_new) {
-						uni.setStorageSync('selectedDistrictId', selectedDistrictId_new);
-						console.log('✅ 已将 selectedDistrictId_new 覆盖到 selectedDistrictId:', selectedDistrictId_new);
-						// 清除 selectedDistrictId_new
-						uni.removeStorageSync('selectedDistrictId_new');
-					}
-					
-					// 保存成功后更新页面数据
-					this.updatePublishPageData(deviceOutsideValue);
-					
-					// 显示保存成功提示
-					uni.showToast({
-						title: '保存成功',
-						icon: 'success',
-						duration: 2000
-					});
-
-					// 延迟跳转
-					setTimeout(() => {
-						uni.navigateBack({
-							delta: 1
+					if (res.status === 'success') {
+						// 保存成功后更新页面数据
+						this.updatePublishPageData(deviceOutsideValue);
+						
+						// 显示保存成功提示
+						uni.showToast({
+							title: '保存成功',
+							icon: 'success',
+							duration: 2000
 						});
-					}, 1500);
+
+						// 延迟跳转
+						setTimeout(() => {
+							uni.navigateBack({
+								delta: 1
+							});
+						}, 1500);
 					} else {
 						// 根据不同错误类型显示不同提示
 						let errorMessage = '保存失败，请重试';
@@ -1574,54 +1364,6 @@
 					width: 28rpx;
 					height: 28rpx;
 					margin-left: 8rpx;
-				}
-			}
-		}
-	}
-
-	// 所选区县样式
-	.district-display {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		width: 100%;
-
-		.district-text {
-			font-size: 24rpx;
-			color: #333;
-			margin-right: 20rpx;
-			flex: 1;
-			text-align: right;
-		}
-
-		.checkbox-wrapper {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			cursor: pointer;
-			flex-shrink: 0;
-
-			.checkbox {
-				width: 32rpx;
-				height: 32rpx;
-				border: 2rpx solid #D3D4D6;
-				border-radius: 6rpx;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transition: all 0.3s ease;
-				background-color: #FFFFFF;
-
-				&.checked {
-					border-color: #2492F2;
-					background-color: #2492F2;
-				}
-
-				.checkbox-icon {
-					font-size: 20rpx;
-					color: #FFFFFF;
-					font-weight: bold;
-					line-height: 1;
 				}
 			}
 		}
@@ -2012,43 +1754,6 @@
 			width: 600rpx;
 			max-width: 90vw;
 			border-radius: 8rpx;
-		}
-	}
-
-	// 地图预览样式
-	.map-preview-container {
-		width: 100%;
-		height: 300rpx;
-		border-radius: 8rpx;
-		overflow: hidden;
-		margin-top: 20rpx;
-		position: relative;
-		background-color: #E5E5E5;
-
-		.map-overlay {
-			position: absolute;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
-			padding: 16rpx 20rpx;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 10;
-
-			.nav-icon {
-				width: 24rpx;
-				height: 24rpx;
-				margin-right: 8rpx;
-				filter: brightness(0) invert(1);
-			}
-
-			.nav-text {
-				font-size: 24rpx;
-				color: #FFFFFF;
-				font-weight: 500;
-			}
 		}
 	}
 </style>

@@ -1,7 +1,7 @@
 <template>
   <view class="cart-page">
     <!-- 自定义导航栏 -->
-    <nav-bar title="购物车" title-align="center" :showBackButton="true"></nav-bar>
+		<nav-bar title="购物车" title-align="center"></nav-bar>
 
     <!-- 内容区域 -->
     <view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
@@ -80,18 +80,28 @@
     </view>
 
     <!-- 悬浮聊天图标 -->
-    <FloatingChatIconUser />
+    <!-- <FloatingChatIconUser /> -->
+
+		<!-- 底部导航 -->
+		<tab-bar></tab-bar>
+
+		<!-- 悬浮小图 -->
+		<floating-image></floating-image>
   </view>
 </template>
 
 <script>
+	import FloatingImage from '@/components/FloatingImage/index.vue'
 import NavBar from '@/components/NavBar.vue'
-import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+// import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+	import TabBar from '@/components/tab-bar/tab-bar.vue'
 
 export default {
   components: {
     NavBar,
-    FloatingChatIconUser
+    // FloatingChatIconUser,
+	FloatingImage,
+			TabBar,
   },
   data() {
     return {
@@ -214,7 +224,7 @@ export default {
       }
       uni.showModal({
         title: '确认删除',
-        content: '确定要从购物车中删除此项吗？',
+        content: '确定从购物车移除？',
         success: async (res) => {
           if (res.confirm) {
             try {
@@ -720,7 +730,7 @@ export default {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 100rpx; /* 底部导航栏高度，避免被遮挡 */
   height: 120rpx;
   background-color: #ffffff;
   display: flex;

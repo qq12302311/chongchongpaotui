@@ -33,9 +33,9 @@
 				>
 					<image
 						class="icon"
-						:src="current === 2 ? 'https://ccpt.qiniu.0871.cn/duihua2-active.svg' : 'https://ccpt.qiniu.0871.cn/duihua2.svg'"
+						:src="current === 2 ? 'https://ccpt.qiniu.0871.cn/gwc-gwc2.svg' : 'https://ccpt.qiniu.0871.cn/gwc-gwc3.svg'"
 					></image>
-					<text class="text" :class="{ active: current === 2 }">对话</text>
+					<text class="text" :class="{ active: current === 2 }">购物车</text>
 				</view>
 
 				<view
@@ -78,7 +78,7 @@ export default {
 			const routes = [
 				'/pages/index/index',
 				'/pages/order/order',
-				'/pages/chat/chat-list',
+				'/pages/cart/index',
 				'/pages/my/my'
 			]
 
@@ -96,7 +96,7 @@ export default {
 			const routeMap = {
 				'/pages/index/index': 0,
 				'/pages/order/order': 1,
-				'/pages/chat/chat-list': 2,
+				'/pages/cart/index': 2,
 				'/pages/my/my': 3
 			}
 

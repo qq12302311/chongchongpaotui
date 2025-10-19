@@ -1,6 +1,6 @@
 <template>
 	<view class="container">
-		<nav-bar title="离线&异常" title-align="center"></nav-bar>
+		<nav-bar :title="selectedCity || '请选择服务区域'" title-align="center"></nav-bar>
 
 		<!-- 透明蒙版：当用户没有选择城市时覆盖整个页面 -->
 		<view
@@ -11,13 +11,9 @@
 		></view>
 
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
-			<!-- 第一块：Banner -->
-			<view class="banner">
-				<image src="https://ccpt.qiniu.0871.cn/home/banner.png" mode="aspectFill"></image>
-			</view>
 
 			<!-- 选择品牌 - 独立卡片 -->
-			<view class="info-card">
+			<view class="info-card mar-top-4">
 				<view class="form-item">
 					<view class="form-label section-title">
 						<text class="dot"></text>
@@ -33,8 +29,8 @@
 							<text>怪兽</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/jiedian.png" mode="aspectFit"></image>
-							<text>街电</text>
+							<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
+							<text>街电搜电</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
 							<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
@@ -329,16 +325,27 @@
 					</view>
 
 					<!-- 特别提醒 -->
-					<view class="coupon-section">
+					<!-- <view class="coupon-section">
 						<view class="coupon-reminder">
 							<text class="reminder-text">特别提醒！下单前请确认点位/门店设备可服务。如因停电、维修、关门、商户不同意等非骑手原因无法处理的。骑手到店打卡并反馈问题，视为完成任务！</text>
 						</view>
-					</view>
+					</view> -->
 				</view>
 			</view>
 
 			<!-- 底部提交元素 -->
 			<view class="submit-bar">
+
+				<!-- 特别提醒 -->
+				<view class="coupon-section">
+					<view class="coupon-reminder">
+						<text class="reminder-text">特别提醒！下单前请确认点位/门店设备可服务。如因停电、维修、关门、商户不同意等非骑手原因无法处理的。骑手到店打卡并反馈问题，视为完成任务！</text>
+					</view>
+				</view>
+
+				<!-- 间隔线 -->
+				<view class="divider-line" style="margin-bottom: 5px;"></view>
+
 				<view class="submit-content">
 					<view class="price-section" @tap="togglePriceDetail">
 						<text class="price-label">预估价格</text>
@@ -346,12 +353,25 @@
 							<text class="currency">¥</text>
 							<text class="amount">{{priceDetails.total.toFixed(2)}}</text>
 							<text class="arrow" :class="{ 'arrow-up': showPricePopup }">▼</text>
+							<!-- 价格疑问提示 -->
+							<view class="price-question" @click.stop="showPriceQuestionModal">
+								<text class="question-text">价格有疑问？</text>
+							</view>
 						</view>
-						<!-- 价格疑问提示 -->
-						<view class="price-question" @click.stop="showPriceQuestionModal">
-							<text class="question-text">价格有疑问？</text>
+						<view class="coupon-section2">
+							<view class="coupon-reminder2">
+								<text class="reminder-text">价格含：跑腿、备用宝、电费押金</text>
+							</view>
 						</view>
 					</view>
+					<!-- 加入购物车按钮已隐藏 -->
+					<!-- <button
+						class="cart-btn"
+						:style="{
+							'background-color': isLoggedIn ? '#52C41A' : '#52C41A',
+							'color': '#2492F2'
+						}"
+						@click="isLoggedIn ? addToCart() : goToLogin()">{{ isLoggedIn ? '加入购物车' : '去登录' }}</button> -->
 					<button
 						class="submit-btn"
 						:style="{
@@ -362,7 +382,6 @@
 				</view>
 			</view>
 		</view>
-
 		<!-- 价格明细弹窗 -->
 		<uni-popup ref="pricePopup" type="bottom" @change="onPricePopupChange" :mask-click="true" :z-index="100000">
 			<view class="price-detail">
@@ -606,8 +625,8 @@
 					wireFee: 0,
 					extraWireFee: 0,
 					powerFee: 0,
-					couponAmount: 0, // 添加优惠券金额
-					total: 0
+					couponAmount: 0,
+					total: 0 // 初始化为0，等待用户选择服务后计算
 				},
 				providerInfo: {},
 				// 区域选择相关数据
@@ -666,6 +685,8 @@
 		},
 		// 页面显示时检查登录状态
 		onShow() {
+			console.log('📱 离线异常页面-onShow 触发');
+
 			// 更新用户信息
 			this.currentUserInfo = uni.getStorageSync('userInfo') || {};
 
@@ -678,11 +699,11 @@
 			// 初始化区域选择数据
 			this.initAreaData();
 
-			// 获取服务商信息
+			// 获取服务商信息（异步）
 			this.getProviderInfo();
 
-			// 重新计算价格（可能用户信息发生了变化）
-			this.calculatePrice();
+			// 注意：calculatePrice() 会在 getProviderInfo() 完成后自动调用
+			// 如果提前调用会因为 providerInfo 未加载而失败
 
 			// 不再在页面进入时检查区域，等用户点击选项时再检查
 			// this.checkInitialAreaSelection();
@@ -712,6 +733,9 @@
 			// 设置默认时间为24小时均可
 			this.formData.recommended_service_time_start = '00:00';
 			this.formData.recommended_service_time_end = '00:00';
+
+			// 注意：不要在这里调用 calculatePrice()，因为 providerInfo 还未加载
+			// calculatePrice() 会在 onShow() -> getProviderInfo() 完成后自动调用
 
 			// 延迟初始化一些需要等待组件加载完成的操作
 			setTimeout(() => {
@@ -876,29 +900,38 @@
 				try {
 					const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
 					if (!selectedDistrictId) {
-						console.log('未选择服务区域，跳过获取服务商信息');
+						console.log('⚠️ 未选择服务区域，跳过获取服务商信息');
 						return;
 					}
 
+					console.log('🔄 正在获取服务商信息，区域ID:', selectedDistrictId);
 					const res = await this.$request('task/provider/info', { district_id: selectedDistrictId }, 'POST');
-					console.log('服务商信息:', res);
+					console.log('📦 服务商信息返回:', res);
+
 					if (res.code === 200) {
 						this.providerInfo = res.data;
 						// 保存到本地存储供价格计算使用
 						uni.setStorageSync('providerInfo', res.data);
 
+						console.log('✅ 服务商信息设置成功:', {
+							service_provider_id: res.data.service_provider_id,
+							hasPrices: !!res.data.prices,
+							priceKeys: res.data.prices ? Object.keys(res.data.prices) : []
+						});
+
 						// 更新可用品牌列表
 						this.updateAvailableBrands();
 
 						// 重新计算价格
+						console.log('🔢 准备重新计算价格...');
 						this.calculatePrice();
 
 						console.log('✅ 离线异常页面-服务商信息获取成功，价格已重新计算');
 					} else {
-						console.error('获取服务商信息失败:', res.msg);
+						console.error('❌ 获取服务商信息失败:', res.msg);
 					}
 				} catch (err) {
-					console.error('获取服务商信息失败:', err);
+					console.error('❌ 获取服务商信息异常:', err);
 				}
 			},
 
@@ -909,9 +942,16 @@
 			},
 			// 添加价格计算方法
 			calculatePrice() {
+				console.log('🔢 开始计算价格:', {
+					selectedService: this.selectedService,
+					selectedBrand: this.selectedBrand,
+					offlineQuantity: this.formData.offlineQuantity
+				});
+
 				// 如果没有选择服务，重置价格为0
 				if (!this.selectedService) {
-					this.formData.estimatedPrice = 0.01;
+					console.log('❌ 未选择服务，价格重置为0');
+					this.formData.estimatedPrice = 0;
 					this.priceDetails = {
 						baseServiceFee: 0,
 						extraDeviceFee: 0,
@@ -922,15 +962,28 @@
 						extraWireFee: 0,
 						powerFee: 0,
 						couponAmount: 0,
-						total: 0.01
+						total: 0
 					};
 					return;
 				}
 
 				// 获取服务商信息
 				const providerInfo = uni.getStorageSync('providerInfo');
-				if (!providerInfo) {
-					// 静默处理，不显示弹窗
+				if (!providerInfo || !providerInfo.prices) {
+					console.log('⚠️ 服务商信息未加载，价格重置为0');
+					this.formData.estimatedPrice = 0;
+					this.priceDetails = {
+						baseServiceFee: 0,
+						extraDeviceFee: 0,
+						distanceFee: 0,
+						extraDistanceFee: 0,
+						timeLimitFee: 0,
+						wireFee: 0,
+						extraWireFee: 0,
+						powerFee: 0,
+						couponAmount: 0,
+						total: 0
+					};
 					return;
 				}
 
@@ -1033,7 +1086,7 @@
 					total: parseFloat(totalPrice)
 				};
 
-				console.log('离线&异常服务价格计算详情:', {
+				console.log('✅ 离线&异常服务价格计算完成:', {
 					selectedService: this.selectedService,
 					baseServiceFee,
 					extraDeviceFee,
@@ -1045,8 +1098,12 @@
 					powerFee,
 					couponAmount,
 					totalPrice,
-					offlineQuantity: this.formData.offlineQuantity
+					offlineQuantity: this.formData.offlineQuantity,
+					priceDetails: this.priceDetails
 				});
+
+				// 强制触发视图更新
+				this.$forceUpdate();
 			},
 			selectBrand(brand) {
 				this.selectedBrand = brand
@@ -1286,6 +1343,142 @@
 					},
 				})
 			},
+
+			// 加入购物车
+			async addToCart() {
+				// 验证表单
+				if (!this.validateForm()) {
+					return;
+				}
+
+				// 显示加载提示
+				uni.showLoading({
+					title: '加入购物车中...',
+					mask: true
+				});
+
+				try {
+					// 获取用户信息
+					const userInfo = uni.getStorageSync('userInfo');
+					if (!userInfo || !userInfo.openid) {
+						uni.hideLoading();
+						uni.showToast({
+							title: '请先登录',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 根据服务类型选择数量
+					const itemNumber = this.selectedService === 'offline_abnormal'
+						? this.formData.offlineQuantity
+						: this.formData.quantity;
+
+					const timeIntervalStr = this.formData.timeInterval ? String(this.formData.timeInterval) : '';
+
+					// 构建请求数据
+					const submitData = {
+						openid: userInfo.openid,
+						user_id: userInfo.user_id,
+						task_type_id: this.taskTypeId,
+						service_provider_id: this.providerInfo.service_provider_id,
+						phone_number: this.formData.phone,
+						name: this.formData.contact,
+						brand: this.selectedBrand,
+						province: this.formData.province,
+						city: this.formData.city,
+						district: this.formData.district,
+						shop_address: this.formData.address,
+						address: this.formData.detailAddress,
+						longitude: this.formData.longitude,
+						latitude: this.formData.latitude,
+						base_service_fee: this.priceDetails.baseServiceFee + this.priceDetails.extraDeviceFee + this.priceDetails.distanceFee + this.priceDetails.timeLimitFee,
+						extra_distance_fee: this.priceDetails.extraDistanceFee,
+						additional_service_fee: this.priceDetails.wireFee + this.priceDetails.extraWireFee + this.priceDetails.powerFee,
+						time_fee: this.priceDetails.timeLimitFee,
+						order_amount: this.formData.estimatedPrice,
+						service_time_type: this.formData.timeType,
+						time_limit: this.formData.timeType === 'before_deadline' ? parseInt(this.formData.appointmentTime) : null,
+						range_start_date: this.formData.timeType === 'time_range' && timeIntervalStr ? timeIntervalStr.substring(0, 19) : null,
+						range_end_date: this.formData.timeType === 'time_range' && timeIntervalStr ? timeIntervalStr.substring(20) : null,
+						recommended_service_time_start: this.formData.recommended_service_time_start || '',
+						recommended_service_time_end: this.formData.recommended_service_time_end || '',
+						distance: this.formData.distance,
+						store_name: this.formData.storeName,
+						sn_mac_code: this.formData.snMacList,
+						detail: this.selectedService,
+						item_number: itemNumber,
+						device_outside: this.formData.device_outside,
+						extra_task_1: this.selectedService === 'other_abnormal' && this.formData.feedbackOptions.coexist ? true : null,
+						extra_task_2: this.selectedService === 'other_abnormal' && this.formData.feedbackOptions.damage ? true : null,
+						extra_task_3: this.selectedService === 'other_abnormal' && this.formData.feedbackOptions.position ? true : null,
+						extra_task_4: this.selectedAdditionalServices.includes('wiring') ? '接电源线' : null,
+						extra_task_4_item_number: this.selectedAdditionalServices.includes('wiring') ? this.formData.wiringQuantity : 0,
+						extra_task_5: this.selectedAdditionalServices.includes('powerCable') ? '换根电源线' : null,
+						extra_task_5_item_number: this.selectedAdditionalServices.includes('powerCable') ? this.formData.cableQuantity : 0,
+						description: this.formData.locationDesc,
+						additional_notes: this.formData.additional_notes || '',
+						pic_url: this.formData.doorImages,
+						shop_poi: this.formData.shop_poi,
+						ticket_id: this.formData.couponId || null,
+						timestamp: Math.floor(Date.now() / 1000),
+						sign: 'chongchong'
+					};
+
+					// 调用加入购物车接口
+					const res = await this.$request('cart/add', submitData, 'POST');
+
+					// 隐藏加载提示
+					uni.hideLoading();
+
+					if (res.code === 200) {
+						uni.showToast({
+							title: '已加入购物车',
+							icon: 'success',
+							duration: 2000
+						});
+
+						// 通知购物车数据更新
+						uni.$emit('cartUpdated');
+
+						// 提示是否跳转购物车
+						setTimeout(() => {
+							uni.showModal({
+								title: '提示',
+								content: '是否立即查看购物车？',
+								success: (modalRes) => {
+									if (modalRes.confirm) {
+										uni.switchTab({
+											url: '/pages/cart/index',
+											fail: () => {
+												uni.showToast({
+												title: '购物车页面暂未开放',
+												icon: 'none'
+											});
+											}
+										});
+									}
+								}
+							});
+						}, 1500);
+					} else {
+						uni.showToast({
+							title: res.message || '加入购物车失败',
+							icon: 'none'
+						});
+					}
+				} catch (error) {
+					// 隐藏加载提示
+					uni.hideLoading();
+
+					console.error('加入购物车失败', error);
+					uni.showToast({
+						title: '网络错误，请重试',
+						icon: 'none'
+					});
+				}
+			},
+
 			async submitOrder() {
 				// 验证表单
 				if (!this.validateForm()) {
@@ -1993,22 +2186,7 @@
 	.content {
 		padding: 30rpx;
 		position: relative;
-		padding-bottom: 240rpx; /* 增加底部内边距,从180rpx改为240rpx */
-	}
-
-	.banner {
-		width: 100%;
-		height: 200rpx;
-		border-radius: 12rpx;
-		overflow: hidden;
-		margin-bottom: 30rpx;
-		padding-top: 30rpx;
-
-		image {
-			width: 100%;
-			height: 100%;
-			border-radius: 12rpx;
-		}
+		padding-bottom: 405rpx; /* 预留足够空间避免被底部栏遮挡 */
 	}
 
 	.info-card {
@@ -2699,23 +2877,45 @@
 						transform: rotate(180deg);
 					}
 				}
+
+				.price-question {
+					margin-left: 12rpx;
+					cursor: pointer;
+					display: flex;
+					align-items: center;
+
+					.question-text {
+						font-size: 24rpx;
+						color: #2492F2;
+						text-decoration: none;
+						transition: color 0.2s ease;
+						white-space: nowrap;
+
+						&:active {
+							color: #1976D2;
+						}
+					}
+				}
 			}
 		}
 
-		.price-question {
-			margin-top: 4rpx;
-			cursor: pointer;
-			align-self: flex-start;
+		.cart-btn {
+			width: 190rpx;
+			height: 60rpx;
+			line-height: 60rpx;
+			text-align: center;
+			font-size: 26rpx;
+			border-radius: 30rpx;
+			border: 2rpx solid #2492F2;
+			background: transparent;
+			color: #2492F2;
+			font-weight: 500;
+			transition: all 0.3s ease;
+			background-color: transparent !important;
 
-			.question-text {
-				font-size: 22rpx;
-				color: #2492F2;
-				text-decoration: underline;
-				transition: color 0.3s ease;
-
-				&:active {
-					color: #1976D2;
-				}
+			&:active {
+				transform: translateY(2rpx);
+				opacity: 0.9;
 			}
 		}
 
@@ -2729,8 +2929,7 @@
 			border: none;
 			font-weight: 500;
 			transition: all 0.3s ease;
-			margin-right: 20rpx;
-			background-color: #2492F2 !important; /* 添加 !important 确保颜色不被覆盖 */
+			background-color: #2492F2 !important;
 
 			&:active {
 				transform: translateY(2rpx);
@@ -3005,6 +3204,26 @@
 			}
 		}
 	}
+
+	.coupon-section2 {
+		margin-top: 6rpx;
+
+		.coupon-reminder2 {
+			padding: 10rpx;
+			background-color: #FFF1F0;
+			border-radius: 8rpx;
+			display: inline-block;
+			width: fit-content;
+
+			.reminder-text {
+				font-size: 20rpx;
+				color: #FF4D4F;
+				line-height: 1.3;
+				display: block;
+			}
+		}
+	}
+
 
 	.price-section {
 		margin-bottom: 30rpx;

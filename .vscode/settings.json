@@ -25,5 +25,6 @@
     // Git 配置
     "git.enableSmartCommit": true,
     "git.confirmSync": false,
-    "chatgpt.openOnStartup": true
+    "chatgpt.openOnStartup": true,
+    "claudeCodeChat.permissions.yoloMode": false
 }

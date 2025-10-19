@@ -64,18 +64,18 @@
 
 				<!-- 温馨提示 -->
 				<view class="time-tip">
-					<text class="tip-text">温馨提示：24小时内为标准时效(推荐)，低于24小时为加急(费用增加)，超过24小时费用优惠！</text>
+					<text class="tip-text">温馨提示：48小时内为标准时效(推荐)，低于48小时为加急(费用增加)，超过48小时费用优惠！</text>
 				</view>
 
 				<!-- 备注部分 -->
-				<view class="remark-section">
+				<!-- <view class="remark-section">
 					<view class="remark-header">
 						<text class="label">备注（选填）</text>
 						<text class="count">{{ remark.length }}/100</text>
 					</view>
 					<textarea class="remark-input" v-model="remark" placeholder="请输入备注信息" :maxlength="100"
 						:show-confirm-bar="false" />
-				</view>
+				</view> -->
 
 				<view class="footer">
 					<button class="confirm-btn" :disabled="!canConfirm" @click="handleConfirm">确认</button>
@@ -119,22 +119,7 @@
 			const minutes = String(now.getMinutes()).padStart(2, '0');
 
 			return {
-				appointmentOptions: [{
-						label: '24小时内',
-						value: 24,
-						price: 0
-					},
-					{
-						label: '48小时内',
-						value: 48,
-						price: 0
-					},
-					{
-						label: '72小时内',
-						value: 72,
-						price: 0
-					}
-				],
+				appointmentOptions: [],
 				timeOptions: [],
 				selectedTime: null,
 				selectedDate: '',
@@ -154,6 +139,8 @@
 		created() {
 			// 初始化时间选项
 			this.initTimeOptions();
+			// 初始化约定时间选项
+			this.initAppointmentOptions();
 		},
 		computed: {
 			canConfirm() {
@@ -179,12 +166,76 @@
 			},
 			pricesStr: {
 				handler(newVal) {
-					// 当价格信息变化时，更新时间选项的价格
+					// 当价格信息变化时，重新初始化约定时间选项并更新价格
+					this.initAppointmentOptions();
 					this.updatePrices();
 				}
 			}
 		},
 		methods: {
+			// 初始化约定时间选项，根据布尔值过滤
+			initAppointmentOptions() {
+				// 所有可能的时间选项配置
+				const allTimeOptions = [
+					{ label: '1小时内', value: 1, price: 0 },
+					{ label: '2小时内', value: 2, price: 0 },
+					{ label: '3小时内', value: 3, price: 0 },
+					{ label: '4小时内', value: 4, price: 0 },
+					{ label: '5小时内', value: 5, price: 0 },
+					{ label: '6小时内', value: 6, price: 0 },
+					{ label: '7小时内', value: 7, price: 0 },
+					{ label: '8小时内', value: 8, price: 0 },
+					{ label: '24小时内', value: 24, price: 0 },
+					{ label: '48小时内', value: 48, price: 0 },
+					{ label: '72小时内', value: 72, price: 0 }
+				];
+
+				// 解析价格字符串获取可用性配置
+				let prices = {};
+				try {
+					prices = JSON.parse(this.pricesStr || '{}');
+				} catch (e) {
+					console.error('解析价格信息失败:', e);
+					// 如果解析失败，默认显示标准选项
+					this.appointmentOptions = [
+						{ label: '24小时内', value: 24, price: 0 },
+						{ label: '48小时内', value: 48, price: 0 },
+						{ label: '72小时内', value: 72, price: 0 }
+					];
+					return;
+				}
+
+				// 根据 bubao_time_limit_x_available 布尔值过滤选项
+				this.appointmentOptions = [];
+
+				for (let i = 1; i <= 9; i++) {
+					const availableKey = `bubao_time_limit_${i}_available`;
+					const timeLimitKey = `bubao_time_limit_${i}`;
+
+					// 检查该时效是否可用
+					if (prices[availableKey] === true && prices[timeLimitKey]) {
+						const hours = parseInt(prices[timeLimitKey]);
+						const option = allTimeOptions.find(opt => opt.value === hours);
+						if (option) {
+							this.appointmentOptions.push({
+								...option,
+								price: parseFloat(prices[`bubao_time_limit_${i}_fee`]) || 0
+							});
+						}
+					}
+				}
+
+				// 如果没有可用选项，显示默认选项
+				if (this.appointmentOptions.length === 0) {
+					this.appointmentOptions = [
+						{ label: '24小时内', value: 24, price: 0 },
+						{ label: '48小时内', value: 48, price: 0 },
+						{ label: '72小时内', value: 72, price: 0 }
+					];
+				}
+
+				console.log('已过滤的时效选项:', this.appointmentOptions);
+			},
 			initTimeOptions() {
 				const now = new Date();
 				const hours = now.getHours();
@@ -394,23 +445,13 @@
 
 				if (!prices || Object.keys(prices).length === 0) return;
 
-				// 更新24小时内选项的价格
-				const price24h = this.getPriceForHours(24, prices);
-				if (price24h !== null) {
-					this.appointmentOptions[0].price = price24h;
-				}
-
-				// 更新48小时内选项的价格
-				const price48h = this.getPriceForHours(48, prices);
-				if (price48h !== null) {
-					this.appointmentOptions[1].price = price48h;
-				}
-
-				// 更新72小时内选项的价格
-				const price72h = this.getPriceForHours(72, prices);
-				if (price72h !== null) {
-					this.appointmentOptions[2].price = price72h;
-				}
+				// 更新所有时间选项的价格
+				this.appointmentOptions.forEach(option => {
+					const price = this.getPriceForHours(option.value, prices);
+					if (price !== null) {
+						option.price = price;
+					}
+				});
 			},
 			// 根据小时数获取对应的价格
 			getPriceForHours(hours, prices) {

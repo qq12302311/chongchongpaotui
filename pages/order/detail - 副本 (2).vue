@@ -472,55 +472,25 @@
 		<!-- 取消订单确认弹窗 -->
 		<view class="cancel-modal-mask" v-if="showCancelModal" @click="closeCancelModal"></view>
 		<view class="cancel-modal-container" v-if="showCancelModal">
-			<!-- 弹窗头部带卡通人物 -->
-			<view class="cancel-modal-top">
-				<image class="modal-character" src="https://ccpt.qiniu.0871.cn/qxyy-qs.png" mode="widthFix"></image>
+			<view class="cancel-modal-header">
+				<text class="cancel-modal-title">{{ cancelModalData.title }}</text>
+				<view class="cancel-modal-close" @click="closeCancelModal">×</view>
 			</view>
-
-			<!-- 弹窗内容 -->
 			<view class="cancel-modal-content">
-				<!-- 取消原因选择列表 -->
-				<view class="cancel-reason-list">
-					<text class="reason-list-title">取消原因：（必选）</text>
-					<view class="reason-options">
-						<radio-group @change="onReasonChange">
-							<label class="reason-option-item" v-for="(reason, index) in cancelReasonOptions" :key="index">
-								<radio
-									:value="reason.value"
-									:checked="selectedCancelReason === reason.value"
-									color="#2492F2"
-								/>
-								<text class="reason-text">{{ reason.text }}</text>
-							</label>
-						</radio-group>
-					</view>
+				<text class="cancel-modal-text">{{ cancelModalData.content }}</text>
+				<view class="cancel-reason-group">
+					<text class="cancel-reason-label">取消原因</text>
+					<textarea
+						v-model="cancelReason"
+						placeholder="请输入取消原因"
+						class="cancel-reason-input"
+						maxlength="200"
+					></textarea>
 				</view>
 			</view>
-
-			<!-- 弹窗底部按钮 -->
 			<view class="cancel-modal-footer">
-				<view class="cancel-modal-btn cancel" @click="handleCancelAction">狠心取消</view>
-				<view class="cancel-modal-btn confirm" @click="handleConfirmAction">调度催派</view>
-			</view>
-		</view>
-
-		<!-- 二次确认弹窗 -->
-		<view class="confirm-cancel-mask" v-if="showConfirmCancelModal" @click="closeConfirmCancelModal"></view>
-		<view class="confirm-cancel-container" v-if="showConfirmCancelModal">
-			<!-- 弹窗头部带卡通人物 -->
-			<view class="confirm-cancel-top">
-				<image class="modal-character" src="https://ccpt.qiniu.0871.cn/tjcgtb.png" mode="widthFix"></image>
-			</view>
-
-			<!-- 弹窗内容 -->
-			<view @click="copy_wechat()" class="confirm-cancel-content">
-				<image class="content-image" src="https://ccpt.qiniu.0871.cn/tjcg-zj.png" mode="widthFix"></image>
-			</view>
-
-			<!-- 弹窗底部按钮 -->
-			<view class="confirm-cancel-footer">
-				<view class="confirm-cancel-btn withdraw" @click="closeConfirmCancelModal">撤回申请</view>
-				<view class="confirm-cancel-btn confirm" @click="submitCancelOrder">确认</view>
+				<view class="cancel-modal-btn cancel" @click="handleCancelAction">{{ cancelModalData.leftButton }}</view>
+				<view class="cancel-modal-btn confirm" @click="handleConfirmAction">{{ cancelModalData.rightButton }}</view>
 			</view>
 		</view>
 
@@ -649,7 +619,7 @@
 		</view>
 
 		<!-- 底部悬浮操作按钮 -->
-		<view class="bottom-float-action" v-if="!showRewardModal && !showCancelModal && !showEditModal && !showConfirmModal && !showConfirmCancelModal && orderInfo.status !== 'completed'">
+		<view class="bottom-float-action" v-if="!showRewardModal">
 			<view class="action-button" @click="handleOrderAction">
 				<text class="action-text">操作订单</text>
 			</view>
@@ -743,14 +713,6 @@
 					rightSubText: ''
 				},
 				cancelReason: '', // 取消原因
-				selectedCancelReason: '', // 选中的取消原因
-				showConfirmCancelModal: false, // 二次确认弹窗
-				cancelReasonOptions: [
-					{ value: '长时间无骑手接单', text: '长时间无骑手接单' },
-					{ value: '已安排人员上门完成维护', text: '已安排人员上门完成维护' },
-					{ value: '设备正常或有归还宝', text: '设备正常或有归还宝' },
-					{ value: '信息错误，重新下单', text: '信息错误，重新下单' }
-				],
 				// 修改订单相关
 				showEditModal: false,
 				isSaving: false,
@@ -780,16 +742,6 @@
 			if (options.id) {
 				this.orderId = options.id
 				this.loadOrderDetail()
-			}
-		},
-
-		onShow() {
-			// 每次页面显示时，如果退款申请中，则弹出第二个弹窗
-			if (this.orderInfo.refund_request === 1 && this.orderId) {
-				// 延迟显示，确保页面已完全加载
-				setTimeout(() => {
-					this.showConfirmCancelModal = true;
-				}, 500);
 			}
 		},
 		methods: {
@@ -962,18 +914,14 @@
 			},
 			// 取消订单
 			cancelOrder() {
-				// 显示取消确认弹窗（新版设计）
-				this.selectedCancelReason = ''; // 重置选中的取消原因
-				// 稍微延迟显示弹窗，确保操作菜单已关闭
-				setTimeout(() => {
-					this.showCancelModal = true;
-				}, 100);
-			},
-
-			// 处理单选框组变化
-			onReasonChange(e) {
-				this.selectedCancelReason = e.detail.value;
-				this.cancelReason = e.detail.value; // 同步更新旧的cancelReason字段
+				// 根据订单状态显示不同的取消确认弹窗
+				if (this.orderInfo.status === 'assigned') {
+					// 情况②：骑手已接单
+					this.showCancelConfirm('assigned');
+				} else {
+					// 情况①：下单未接单
+					this.showCancelConfirm('waiting');
+				}
 			},
 
 			// 显示取消确认弹窗
@@ -1009,23 +957,31 @@
 				this.showCancelModal = false;
 			},
 
-			// 处理取消操作（左侧按钮 - 狠心取消）
+			// 处理取消操作（左侧按钮）
 			handleCancelAction() {
-				// 检查是否选择了取消原因
-				if (!this.selectedCancelReason) {
-					uni.showToast({
-						title: '请选择取消原因',
-						icon: 'none'
-					});
-					return;
+				if (this.cancelModalData.type === 'waiting') {
+					// 狠心取消
+					this.performCancelOrder();
+				} else if (this.cancelModalData.type === 'assigned') {
+					// 仍要取消
+					this.performCancelOrder();
 				}
-				// 直接提交取消申请
-				this.submitCancelApplication();
+				this.closeCancelModal();
 			},
 
-			// 处理确认操作（右侧按钮 - 调度催派）
+			// 处理确认操作（右侧按钮）
 			handleConfirmAction() {
-				// 调度催派
+				if (this.cancelModalData.type === 'waiting') {
+					// 调度催派
+					this.dispatchUrge();
+				} else if (this.cancelModalData.type === 'assigned') {
+					// 我已知晓
+					this.closeCancelModal();
+				}
+			},
+
+			// 调度催派
+			dispatchUrge() {
 				uni.showToast({
 					title: '已通知调度加急处理',
 					icon: 'success'
@@ -1033,92 +989,63 @@
 				this.closeCancelModal();
 			},
 
-			// 提交取消申请
-			submitCancelApplication() {
+			// 执行取消订单
+			performCancelOrder() {
 				// 获取用户信息
-				const userInfo = uni.getStorageSync('userInfo');
-				const openid = uni.getStorageSync('openid');
+				const userInfo = uni.getStorageSync('userInfo')
+				const openid = uni.getStorageSync('openid')
 				if (!userInfo || !userInfo.user_id || !openid) {
 					uni.showToast({
 						title: '请先登录',
 						icon: 'none'
-					});
-					return;
+					})
+					return
 				}
 
 				// 构建请求参数
 				const params = {
 					task_id: this.orderId,
 					user_id: userInfo.user_id,
-					reason: this.selectedCancelReason.trim(),
+					reason: this.cancelReason.trim(),
 					sign: 'chongchong'
-				};
+				}
 
 				// 调用取消订单接口
 				uni.showLoading({
-					title: '提交中...'
-				});
+					title: '取消中...'
+				})
 
 				this.$request('task/cancel', params, 'POST').then(res => {
-					uni.hideLoading();
+					uni.hideLoading()
 					if (res.status === 'success') {
-						// 重新加载订单详情以获取最新的 refund_request 状态
-						this.loadOrderDetail().then(() => {
-							// 关闭第一个弹窗，显示第二个弹窗
-							this.showCancelModal = false;
-							this.showConfirmCancelModal = true;
-						});
+						uni.showToast({
+							title: '申请成功 请等待平台审核!',
+							icon: 'success'
+						})
+						// 清空取消原因并关闭弹窗
+						this.cancelReason = ''
+						this.closeCancelModal()
+						// 延迟跳转到订单列表页面
+						setTimeout(() => {
+							uni.switchTab({
+								url: '/pages/order/order'
+							})
+						}, 1500)
 					} else {
 						uni.showToast({
-							title: res.message || '提交失败',
+							title: res.message || '取消失败',
 							icon: 'none'
-						});
+						})
 					}
 				}).catch(err => {
-					uni.hideLoading();
-					console.error('提交取消申请失败:', err);
+					uni.hideLoading()
+					console.error('取消订单失败:', err)
 					uni.showToast({
 						title: '网络请求失败',
 						icon: 'none'
-					});
-				});
+					})
+				})
 			},
-
-			// 关闭二次确认弹窗
-			closeConfirmCancelModal() {
-				this.showConfirmCancelModal = false;
-			},
-
-			// 提交取消订单（最终确认）
-			submitCancelOrder() {
-				// 关闭第二个弹窗
-				this.showConfirmCancelModal = false;
-				// 清空取消原因
-				this.cancelReason = '';
-				this.selectedCancelReason = '';
-				// 不跳转，留在当前页面
-			},
-
-			// 复制微信号
-			copy_wechat() {
-				const wechatId = 'agan-24h';
-				uni.setClipboardData({
-					data: wechatId,
-					success: () => {
-						uni.showToast({
-							title: '微信号已复制',
-							icon: 'success'
-						});
-					},
-					fail: () => {
-						uni.showToast({
-							title: '复制失败',
-							icon: 'none'
-						});
-					}
-				});
-			},
-
 
 			// 确认完成订单
 			confirmOrder() {
@@ -1643,20 +1570,16 @@
 
 				// 根据订单状态添加可用操作
 				if (this.orderInfo.status === 'waiting') {
-					// 待接单状态：打赏骑手、修改信息、取消订单（退款申请中时不显示）
+					// 待接单状态：打赏骑手、修改信息、取消订单
 					actions.push('打赏骑手');
 					actions.push('修改信息');
-					if (this.orderInfo.refund_request !== 1) {
-						actions.push('取消订单');
-					}
+					actions.push('取消订单');
 				} else if (this.orderInfo.status === 'assigned') {
-					// 作业中状态：联系骑手、打赏骑手、修改信息、取消订单（退款申请中时不显示）
+					// 作业中状态：联系骑手、打赏骑手、修改信息、取消订单
 					actions.push('联系骑手');
 					actions.push('打赏骑手');
 					actions.push('修改信息');
-					if (this.orderInfo.refund_request !== 1) {
-						actions.push('取消订单');
-					}
+					actions.push('取消订单');
 				} else if (this.orderInfo.status === 'finished') {
 					// 待确认状态：确认完成
 					actions.push('确认完成');
@@ -3650,7 +3573,7 @@
 			}
 		}
 
-	// 取消订单弹窗样式（新版）
+	// 取消订单弹窗样式
 	.cancel-modal-mask {
 		position: fixed;
 		top: 0;
@@ -3663,92 +3586,85 @@
 
 	.cancel-modal-container {
 		position: fixed;
-		top: 50%;
+		top: 40%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: 90%;
-		max-width: 650rpx;
-		background-color: transparent;
-		border-radius: 24rpx;
+		width: 85%;
+		max-width: 600rpx;
+		background-color: #fff;
+		border-radius: 20rpx;
 		overflow: hidden;
 		z-index: 1000;
 		animation: modalSlideIn 0.3s ease;
+		box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
 
-		// 顶部区域带卡通人物
-		.cancel-modal-top {
-			position: relative;
-			width: 100%;
-			overflow: hidden;
-			line-height: 0;
-			font-size: 0;
+		.cancel-modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 30rpx;
+			border-bottom: 1rpx solid #f0f0f0;
 
-			.modal-character {
-				width: 100%;
-				height: auto;
-				display: block;
-				vertical-align: bottom;
+			.cancel-modal-title {
+				font-size: 32rpx;
+				font-weight: 600;
+				color: #333;
+			}
+
+			.cancel-modal-close {
+				width: 40rpx;
+				height: 40rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 36rpx;
+				color: #999;
+				cursor: pointer;
 			}
 		}
 
-		// 内容区域
 		.cancel-modal-content {
-			padding: 0rpx 30rpx 30rpx 30rpx;
-			background-color: #FFFFFF;
-			margin-top: -1px;
-			margin-bottom: -1px;
+			padding: 30rpx;
 
-			// 取消原因列表
-			.cancel-reason-list {
-				background-color: #EBF5FF;
-				border-radius: 12rpx;
-				padding: 20rpx;
-				
-				.reason-list-title {
+			.cancel-modal-text {
+				font-size: 28rpx;
+				color: #666;
+				line-height: 1.6;
+				margin-bottom: 30rpx;
+			}
+
+			.cancel-reason-group {
+				.cancel-reason-label {
 					display: block;
-					font-size: 30rpx;
-					color: #333333;
+					font-size: 26rpx;
+					color: #333;
 					font-weight: 500;
-					margin-bottom: 20rpx;
+					margin-bottom: 16rpx;
 				}
 
-				.reason-options {
-					.reason-option-item {
-						display: flex;
-						align-items: center;
-						padding: 7rpx 0;
-						border-bottom: 1rpx solid #f5f5f5;
-						cursor: pointer;
+				.cancel-reason-input {
+					width: 100%;
+					min-height: 120rpx;
+					padding: 20rpx;
+					border: 1rpx solid #e0e0e0;
+					border-radius: 12rpx;
+					font-size: 26rpx;
+					color: #333;
+					background-color: #fafafa;
+					box-sizing: border-box;
+					resize: none;
 
-						&:last-child {
-							border-bottom: none;
-						}
-
-						radio {
-							margin-right: 16rpx;
-							transform: scale(0.9);
-						}
-
-						.reason-text {
-							flex: 1;
-							font-size: 28rpx;
-							color: #333333;
-							line-height: 1.4;
-						}
-
-						&:active {
-							background-color: #f8f8f8;
-						}
+					&:focus {
+						border-color: #2492F2;
+						background-color: #fff;
 					}
 				}
 			}
 		}
 
-		// 底部按钮区域
 		.cancel-modal-footer {
 			display: flex;
-			padding: 0 30rpx 30rpx;
-			gap: 24rpx;
-			background-color: #FFFFFF;
+			border-top: 1rpx solid #f0f0f0;
 
 			.cancel-modal-btn {
 				flex: 1;
@@ -3756,31 +3672,25 @@
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				font-size: 32rpx;
+				font-size: 28rpx;
 				font-weight: 500;
-				border-radius: 44rpx;
 				cursor: pointer;
-				transition: all 0.3s ease;
 
 				&.cancel {
-					color: #FF4D4F;
-					background-color: #FFFFFF;
-					border: 2rpx solid #FF4D4F;
+					color: #666;
+					background-color: #f8f8f8;
 
 					&:active {
-						background-color: #FFF5F5;
-						transform: scale(0.98);
+						background-color: #e8e8e8;
 					}
 				}
 
 				&.confirm {
-					color: #FFFFFF;
-					background: linear-gradient(135deg, #4FB5FF 0%, #2492F2 100%);
-					box-shadow: 0 8rpx 24rpx rgba(36, 146, 242, 0.3);
+					color: #fff;
+					background-color: #2492F2;
 
 					&:active {
-						transform: scale(0.98);
-						box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.2);
+						background-color: #1976D2;
 					}
 				}
 			}
@@ -3795,129 +3705,6 @@
 		to {
 			opacity: 1;
 			transform: translate(-50%, -50%) scale(1);
-		}
-	}
-
-	// 二次确认弹窗样式
-	.confirm-cancel-mask {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background-color: rgba(0, 0, 0, 0.5);
-		z-index: 1001;
-	}
-
-	.confirm-cancel-container {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 90%;
-		max-width: 650rpx;
-		border-radius: 24rpx;
-		overflow: hidden;
-		z-index: 1002;
-		animation: modalSlideIn 0.3s ease;
-		display: flex;
-		flex-direction: column;
-
-		// 顶部区域带卡通人物
-		.confirm-cancel-top {
-			position: relative;
-			width: 100%;
-			overflow: hidden;
-			margin: 0;
-			padding: 0;
-			flex-shrink: 0;
-
-			.modal-character {
-				width: 100%;
-				height: auto;
-				display: block;
-				vertical-align: bottom;
-			}
-		}
-
-		// 内容区域
-		.confirm-cancel-content {
-			padding: 0;
-			background-color: #FFFFFF;
-			display: block;
-			margin: 0;
-			position: relative;
-			z-index: 5;
-			flex-shrink: 0;
-			margin-bottom: -1px;
-			margin-top: -1px;
-
-			.content-image {
-				width: 100%;
-				height: auto;
-				display: block;
-				margin: 0;
-				padding: 0;
-				vertical-align: bottom;
-				user-select: none;
-				-webkit-user-select: none;
-				pointer-events: none;
-				line-height: 0;
-				font-size: 0;
-			}
-		}
-
-		// 底部按钮区域
-		.confirm-cancel-footer {
-			display: flex;
-			padding: 30rpx;
-			gap: 0;
-			background-color: #FFFFFF;
-			margin-top: 0;
-			position: relative;
-			z-index: 10;
-			border-top: none;
-			line-height: 0;
-			font-size: 0;
-			flex-shrink: 0;
-
-			.confirm-cancel-btn {
-				flex: 1;
-				height: 88rpx;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				font-size: 32rpx;
-				font-weight: 500;
-				border-radius: 44rpx;
-				cursor: pointer;
-				transition: all 0.3s ease;
-				margin: 0 12rpx;
-				line-height: normal;
-
-				&.withdraw {
-					color: #FFFFFF;
-					background: linear-gradient(135deg, #4FB5FF 0%, #2492F2 100%);
-					box-shadow: 0 8rpx 24rpx rgba(36, 146, 242, 0.3);
-
-					&:active {
-						transform: scale(0.98);
-						box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.2);
-					}
-				}
-
-				&.confirm {
-					color: #FFFFFF;
-					background-color: #FF4D4F;
-					box-shadow: 0 8rpx 24rpx rgba(255, 77, 79, 0.3);
-
-					&:active {
-						background-color: #E04345;
-						transform: scale(0.98);
-						box-shadow: 0 4rpx 12rpx rgba(255, 77, 79, 0.2);
-					}
-				}
-			}
 		}
 	}
 

@@ -216,7 +216,7 @@
           class="rider-item"
           v-for="(rider, index) in riderList"
           :key="index"
-          @click="showRiderDetail(rider)"
+          @click="showRiderDetail(rider, $event)"
         >
           <!-- 推荐标识 - 绝对定位在右上角 -->
           <view v-if="rider.referrer_id" class="referral-badge">{{rider.referrer_id}}荐</view>
@@ -403,6 +403,7 @@
           <view class="rider-actions">
             <view class="action-btn edit" @click.stop="showEditModal(rider)">编辑</view>
             <view class="action-btn edit" @click.stop="showZoneEditModal(rider)">编辑区域</view>
+            <view class="action-btn balance" @click.stop="showBalanceModal(rider)">余额</view>
             <view class="action-btn reset" @click.stop="showResetPasswordModal(rider)">密码</view>
             <view v-if="rider.submit_certification === '待审核' && rider.latest_certification" class="action-btn verify" @click.stop="showVerifyModal(rider)">
               审核
@@ -694,6 +695,70 @@
 
 
 
+    <!-- 余额操作弹窗 -->
+    <view class="modal-mask" v-if="showBalance" @click="closeBalanceModal"></view>
+    <view class="modal-container" v-if="showBalance">
+      <view class="modal-header">
+        <text class="modal-title">调整骑手余额</text>
+        <view class="modal-close" @click="closeBalanceModal">×</view>
+      </view>
+      <view class="modal-content">
+        <view class="input-group">
+          <text class="input-label">骑手信息</text>
+          <input type="text" :value="currentRider.real_name || currentRider.contact_person || '未设置'" class="input-field" disabled />
+        </view>
+        <view class="input-group">
+          <text class="input-label">当前余额(¥)</text>
+          <input type="text" :value="currentRider.balance || '0.00'" class="input-field" disabled />
+        </view>
+        <view class="input-group">
+          <text class="input-label">操作类型</text>
+          <view class="balance-type-selector">
+            <view
+              class="type-btn"
+              :class="{ active: balanceForm.type === 'income' }"
+              @click="balanceForm.type = 'income'"
+            >
+              增加
+            </view>
+            <view
+              class="type-btn"
+              :class="{ active: balanceForm.type === 'expense' }"
+              @click="balanceForm.type = 'expense'"
+            >
+              减少
+            </view>
+          </view>
+        </view>
+        <view class="input-group">
+          <text class="input-label">调整金额(¥)</text>
+          <input
+            type="digit"
+            v-model="balanceForm.amount"
+            placeholder="请输入调整金额"
+            class="input-field"
+          />
+        </view>
+        <view class="input-group">
+          <text class="input-label">操作说明</text>
+          <textarea
+            v-model="balanceForm.description"
+            placeholder="请输入操作说明（必填）"
+            class="input-textarea"
+            maxlength="200"
+          ></textarea>
+          <text class="textarea-counter">{{ (balanceForm.description || '').length }}/200</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" @click="closeBalanceModal" :class="{ 'btn-disabled': balanceLoading }">取消</view>
+        <view class="modal-btn confirm" @click="confirmBalanceAdjust" :class="{ 'btn-disabled': balanceLoading }">
+          <view v-if="balanceLoading" class="btn-loading-small"></view>
+          <text>确认调整</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 修改密码弹窗 -->
     <view class="modal-mask" v-if="showResetPassword" @click="closeResetPasswordModal"></view>
     <view class="modal-container" v-if="showResetPassword">
@@ -819,7 +884,14 @@ export default {
         new_password: '',
         new_password_confirmation: ''
       },
-      defaultPassword: 'ccqs666'
+      defaultPassword: 'ccqs666',
+      showBalance: false, // 是否显示余额操作弹窗
+      balanceLoading: false, // 余额操作加载状态
+      balanceForm: {
+        type: 'income', // 操作类型: income增加 expense减少
+        amount: '', // 调整金额
+        description: '' // 操作说明
+      }
     }
   },
   onLoad() {
@@ -1283,18 +1355,46 @@ export default {
     },
 
     // 显示骑手详情
-    showRiderDetail(rider) {
+    showRiderDetail(rider, event) {
       // 避免与展开服务区域的点击冲突
-      if (event && event.target && (
-        event.target.className.includes('zone-expand-btn') ||
-        event.target.className.includes('zone-count') ||
-        event.target.className.includes('arrow')
-      )) {
-        return;
+      if (event && event.target) {
+        const className = event.target.className || '';
+        if (typeof className === 'string' && (
+          className.includes('zone-expand-btn') ||
+          className.includes('zone-count') ||
+          className.includes('arrow')
+        )) {
+          return;
+        }
       }
 
-      // 可以在这里实现查看详情的逻辑
-      console.log('查看骑手详情:', rider);
+      // 跳转到骑手接单历史页面
+      console.log('点击骑手，准备跳转:', rider);
+      console.log('骑手ID (service_member_id):', rider.service_member_id);
+      
+      const riderInfo = encodeURIComponent(JSON.stringify({
+        id: rider.service_member_id,
+        real_name: rider.real_name,
+        contact_person: rider.contact_person,
+        phone_number: rider.phone_number
+      }));
+      
+      const url = `/adminEnd/riderManagement/riderOrderHistory?riderId=${rider.service_member_id}&riderInfo=${riderInfo}`;
+      console.log('跳转 URL:', url);
+      
+      uni.navigateTo({
+        url: url,
+        success: () => {
+          console.log('跳转成功');
+        },
+        fail: (err) => {
+          console.error('跳转失败:', err);
+          uni.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          });
+        }
+      });
     },
 
     // 显示编辑弹窗
@@ -1964,6 +2064,118 @@ export default {
       }
       // 如果rate已经是百分比形式（如15），直接返回
       return parseFloat(rate).toFixed(0);
+    },
+
+    // 显示余额操作弹窗
+    showBalanceModal(rider) {
+      this.currentRider = rider;
+      this.balanceForm = {
+        type: 'income',
+        amount: '',
+        description: ''
+      };
+      this.showBalance = true;
+    },
+
+    // 关闭余额操作弹窗
+    closeBalanceModal() {
+      this.showBalance = false;
+      this.balanceLoading = false;
+      this.balanceForm = {
+        type: 'income',
+        amount: '',
+        description: ''
+      };
+    },
+
+    // 确认余额调整
+    async confirmBalanceAdjust() {
+      if (this.balanceLoading) return; // 如果正在加载中，则不执行
+
+      // 验证金额
+      if (!this.balanceForm.amount || this.balanceForm.amount <= 0) {
+        uni.showToast({
+          title: '请输入有效的调整金额',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+
+      // 验证操作说明
+      if (!this.balanceForm.description || !this.balanceForm.description.trim()) {
+        uni.showToast({
+          title: '请输入操作说明',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+
+      this.balanceLoading = true; // 设置加载状态
+      uni.showLoading({ title: '处理中...', mask: true }); // 显示加载提示
+
+      try {
+        const params = {
+          service_member_id: this.adminInfo.id, // 管理员ID
+          member_id: this.currentRider.service_member_id, // 被调整骑手ID
+          type: this.balanceForm.type, // income增加 expense减少
+          amount: parseFloat(this.balanceForm.amount), // 调整金额
+          description: this.balanceForm.description.trim(), // 操作说明
+          timestamp: Math.floor(Date.now() / 1000), // 秒级时间戳
+          sign: "chongchong"
+        };
+
+        const res = await this.$request('service/balance/adjust', params, 'POST');
+
+        uni.hideLoading(); // 隐藏加载提示
+
+        if (res.status === 'success') {
+          uni.showToast({
+            title: '余额调整成功',
+            icon: 'success',
+            duration: 2000
+          });
+
+          // 更新本地数据
+          const index = this.riderList.findIndex(item => item.service_member_id === this.currentRider.service_member_id);
+          if (index !== -1) {
+            // 计算新余额
+            const currentBalance = parseFloat(this.currentRider.balance) || 0;
+            const adjustAmount = parseFloat(this.balanceForm.amount);
+            let newBalance;
+
+            if (this.balanceForm.type === 'income') {
+              newBalance = currentBalance + adjustAmount;
+            } else {
+              newBalance = currentBalance - adjustAmount;
+            }
+
+            this.riderList[index] = {
+              ...this.riderList[index],
+              balance: newBalance.toFixed(2)
+            };
+          }
+
+          this.closeBalanceModal();
+        } else {
+          uni.showToast({
+            title: res.msg || res.message || '余额调整失败',
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      } catch (err) {
+        uni.hideLoading(); // 隐藏加载提示
+        console.error('余额调整失败:', err);
+        uni.showToast({
+          title: '网络请求失败',
+          icon: 'none',
+          duration: 2000
+        });
+      } finally {
+        this.balanceLoading = false; // 重置加载状态
+      }
     },
   }
 }
@@ -2851,6 +3063,11 @@ export default {
     color: #6c5ce7;
   }
 
+  &.balance {
+    background-color: rgba(255, 165, 0, 0.1);
+    color: #ff8c00;
+  }
+
   &.disable {
     background-color: rgba(255, 71, 87, 0.1);
     color: #ff4757;
@@ -3595,6 +3812,39 @@ export default {
 
     &:last-child {
       margin-right: 0;
+    }
+  }
+}
+
+// 余额操作类型选择器样式
+.balance-type-selector {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 8rpx;
+
+  .type-btn {
+    flex: 1;
+    height: 80rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 8rpx;
+    font-size: 28rpx;
+    color: #666;
+    transition: all 0.3s ease;
+
+    &.active {
+      background-color: #e6f2ff;
+      border-color: #2492F2;
+      color: #2492F2;
+      font-weight: 500;
+    }
+
+    &:active {
+      opacity: 0.8;
+      transform: scale(0.98);
     }
   }
 }

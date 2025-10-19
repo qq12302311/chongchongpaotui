@@ -9,9 +9,9 @@
 				</view>
 				<view class="history-section">
 					<view class="history-btn" @click="showHistoryRecords">
-						<text class="history-text">历史门店记录</text>
+						<image src="https://ccpt.qiniu.0871.cn/lsmd-jl.png" class="history-image" mode="aspectFit"></image>
 					</view>
-					<text class="history-subtitle">一键导入服务过门店详情，更省时！</text>
+					<text class="history-subtitle">一键导入服务过门店，更方便！</text>
 				</view>
 			</view>
 		</view>
@@ -42,6 +42,24 @@
 			<view class="store-info-row" v-if="hasValidMac">
 				<text class="label">MAC码：</text>
 				<text class="value">{{ formatSnMacList }}</text>
+			</view>
+
+			<!-- 地图预览区域 -->
+			<view class="map-preview" v-if="formData.latitude && formData.longitude" @click.stop="navigateToLocation">
+				<map
+					:latitude="parseFloat(formData.latitude)"
+					:longitude="parseFloat(formData.longitude)"
+					:markers="mapMarkers"
+					:show-location="false"
+					:enable-scroll="false"
+					:enable-zoom="false"
+					:enable-rotate="false"
+					style="width: 100%; height: 100%;"
+				></map>
+				<view class="map-overlay">
+					<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="nav-icon"></image>
+					<text class="nav-text">点击导航</text>
+				</view>
 			</view>
 			<view class="store-images" v-if="formData.doorImages && formData.doorImages.length > 0">
 				<image v-for="(img, index) in formData.doorImages.slice(0, 3)" :key="index" :src="img"
@@ -137,6 +155,39 @@
 				uni.navigateTo({
 					url: '/pages/index/publish/store-info/index'
 				});
+			},
+			// 导航到门店位置
+			navigateToLocation() {
+				if (!this.formData.latitude || !this.formData.longitude) {
+					uni.showToast({
+						title: '门店位置信息缺失',
+						icon: 'none'
+					});
+					return;
+				}
+
+				const latitude = parseFloat(this.formData.latitude);
+				const longitude = parseFloat(this.formData.longitude);
+				const name = this.formData.storeName || '目的地';
+				const address = this.formData.address || '';
+
+				uni.openLocation({
+					latitude,
+					longitude,
+					name,
+					address,
+					scale: 18,
+					success: () => {
+						console.log('打开地图成功');
+					},
+					fail: (err) => {
+						console.error('打开地图失败:', err);
+						uni.showToast({
+							title: '打开地图失败',
+							icon: 'none'
+						});
+					}
+				});
 			}
 		},
 		computed: {
@@ -151,6 +202,28 @@
 				if (validMacs.length === 0) return '';
 				if (validMacs.length === 1) return validMacs[0];
 				return `${validMacs[0]} 等${validMacs.length}个`;
+			},
+			// 地图标记点
+			mapMarkers() {
+				if (!this.formData.latitude || !this.formData.longitude) {
+					return [];
+				}
+			return [{
+				id: 1,
+				latitude: parseFloat(this.formData.latitude),
+				longitude: parseFloat(this.formData.longitude),
+				width: 1,
+				height: 1,
+				callout: {
+					content: this.formData.storeName || '门店位置',
+					color: '#333333',
+					fontSize: 12,
+					borderRadius: 4,
+					bgColor: '#FFFFFF',
+					padding: 8,
+					display: 'ALWAYS'
+				}
+			}];
 			}
 		}
 	}
@@ -222,16 +295,13 @@
 				align-items: flex-end;
 
 				.history-btn {
-					background-color: #F0F8FF;
-					padding: 2rpx 16rpx;
-					border-radius: 20rpx;
-					/* 更圆的按钮 */
-					border: 1px solid #E6F0FF;
+					display: flex;
+					align-items: center;
+					justify-content: center;
 
-					.history-text {
-						font-size: 22rpx;
-						color: #2492F2;
-						font-weight: normal;
+					.history-image {
+						width: 194rpx;
+						height: 50rpx;
 					}
 				}
 
@@ -249,6 +319,42 @@
 		background-color: #F8F8F8;
 		border-radius: 8rpx;
 		padding: 20rpx;
+
+		.map-preview {
+			width: 100%;
+			height: 300rpx;
+			border-radius: 8rpx;
+			overflow: hidden;
+			margin-top: 20rpx;
+			position: relative;
+			background-color: #E5E5E5;
+
+			.map-overlay {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+				padding: 16rpx 20rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10;
+
+				.nav-icon {
+					width: 24rpx;
+					height: 24rpx;
+					margin-right: 8rpx;
+					filter: brightness(0) invert(1);
+				}
+
+				.nav-text {
+					font-size: 24rpx;
+					color: #FFFFFF;
+					font-weight: 500;
+				}
+			}
+		}
 
 		.store-info-row {
 			display: flex;

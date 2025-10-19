@@ -577,12 +577,12 @@
 				return codes.map(item => item.value).filter(value => value && value.trim())
 			},
 			
-			// 过滤订单备注中的所有数字
+			// 过滤订单备注中连续3位以上的数字
 			filteredOrderNotes() {
 				const notes = this.orderInfo.task_detail && this.orderInfo.task_detail.additional_notes
 				if (!notes) return ''
-				// 使用正则表达式过滤掉所有数字
-				return notes.replace(/\d/g, '')
+				// 使用正则表达式过滤掉连续3位以上的数字
+				return notes.replace(/\d{3,}/g, '')
 			},
 			// 已将taskDuration从计算属性改为数据属性
 		},

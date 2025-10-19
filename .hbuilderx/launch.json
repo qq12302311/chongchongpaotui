@@ -3,13 +3,16 @@
     "configurations" : [
         {
             "default" : {
-                "launchtype" : "local"
+                "launchtype" : "remote"
             },
             "h5" : {
-                "launchtype" : "local"
+                "launchtype" : "remote"
             },
             "mp-weixin" : {
-                "launchtype" : "local"
+                "launchtype" : "remote"
+            },
+            "app-plus" : {
+                "launchtype" : "remote"
             },
             "provider" : "aliyun",
             "type" : "uniCloud"

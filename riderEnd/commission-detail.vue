@@ -23,10 +23,10 @@
         <!-- 左侧：日期选择和佣金总览标题 -->
         <view class="summary-left">
           <!-- 日期选择 - 只在按日模式下显示，放在总览上方 -->
-          <view v-if="currentTab === 'day'" class="date-selector" @click="showMonthPicker">
+         <!-- <view v-if="currentTab === 'day'" class="date-selector" @click="showMonthPicker">
             <text class="date-text">{{ currentYear }}-{{ String(currentMonth).padStart(2, '0') }}</text>
             <view class="dropdown-icon">▼</view>
-          </view>
+          </view> -->
           <text class="summary-label">佣金总览（元）</text>
         </view>
 
@@ -61,7 +61,7 @@
             <text class="item-subtitle">{{ item.subtitle }}</text>
           </view>
           <view class="item-column item-amount-column">
-            <text class="amount-text">+{{ item.amount }}</text>
+            <text class="amount-text">{{ item.amount }}</text>
           </view>
         </view>
       </view>
@@ -138,10 +138,11 @@ export default {
       months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     }
   },
-  onLoad() {
+  async onLoad() {
     this.initYears();
     this.loadUserInfo();
-    this.loadCommissionData();
+    // 确保用户信息加载后再获取数据
+    await this.loadCommissionData();
   },
   methods: {
     initYears() {
@@ -165,38 +166,54 @@ export default {
 
       this.loading = true;
       try {
-        const params = {
-          month: this.currentMonth,
-          year: this.currentYear,
-          service_member_id: this.userInfo.id,
-          owner_type: "member",
-          owner_id: this.userInfo.id,
-          page: this.page,
-          per_page: this.pageSize,
-          sign: "chongchong"
-        };
+        // 先获取佣金总览数据
+        // await this.loadCommissionSummary();
 
-        const res = await this.$request('service/task/month', params, 'POST');
+        let params, apiUrl;
+
+        if (this.currentTab === 'day') {
+          // 按日查询：使用新的接口和参数
+          params = {
+            owner_id: this.userInfo.id,
+            owner_type: "member",
+            service_member_id: this.userInfo.id,
+            sign: "chongchong",
+            timestamp: Date.now(),
+            page: this.page,
+            per_page: this.pageSize
+          };
+          apiUrl = 'service/ledger';
+        } else {
+          // 按月查询：保持原有接口和参数
+          params = {
+            month: this.currentMonth,
+            year: this.currentYear,
+            service_member_id: this.userInfo.id,
+            owner_type: "member",
+            owner_id: this.userInfo.id,
+            page: this.page,
+            per_page: this.pageSize,
+            sign: "chongchong"
+          };
+          apiUrl = 'service/task/month';
+        }
+
+        const res = await this.$request(apiUrl, params, 'POST');
 
         if (res.code === 200 && res.data) {
           // 调试信息：打印完整数据结构
           console.log('佣金详情API返回数据:', res.data);
 
-          // 处理月度数据
-          const monthData = res.data.month_data;
-          console.log('月度数据:', monthData);
-
-          // 更新佣金总额
-          this.totalCommission = monthData ? monthData.total_income : '0.00';
-
           // 根据当前选项卡处理不同的数据
           if (this.currentTab === 'day') {
-            // 按日显示：处理任务列表数据
-            const tasksData = res.data.tasks;
-            console.log('任务数据:', tasksData);
+            // 按日显示：处理新接口的账本数据
+            console.log('账本数据:', res.data);
+			
+			this.totalCommission = res.total_income 
 
-            if (tasksData && tasksData.data) {
-              const newData = this.formatTasksData(tasksData.data);
+            // 处理账本记录数据
+            if (res.data.data && Array.isArray(res.data.data)) {
+              const newData = this.formatLedgerData(res.data.data);
 
               if (this.page === 1) {
                 this.commissionList = newData;
@@ -205,7 +222,7 @@ export default {
               }
 
               // 根据分页信息判断是否还有更多数据
-              this.hasMore = tasksData.current_page < tasksData.last_page;
+              this.hasMore = res.data.current_page < res.data.last_page;
             } else {
               if (this.page === 1) {
                 this.commissionList = [];
@@ -213,6 +230,10 @@ export default {
               this.hasMore = false;
             }
           } else {
+            // 按月显示：处理原有接口数据
+            const monthData = res.data.month_data;
+            console.log('月度数据:', monthData);
+
             // 按月显示：处理统计数据
             const statsData = res.data.stats;
             console.log('统计数据:', statsData);
@@ -225,12 +246,6 @@ export default {
               } else {
                 this.commissionList = [...this.commissionList, ...newData];
               }
-
-              // 计算stats数组中total_income的总和
-              const totalIncome = statsData.reduce((sum, item) => {
-                return sum + (parseFloat(item.total_income) || 0);
-              }, 0);
-              this.totalCommission = totalIncome.toFixed(2);
 
               // 统计数据通常不需要分页，设置为没有更多数据
               this.hasMore = false;
@@ -259,7 +274,88 @@ export default {
       }
     },
 
-    // 格式化任务数据（按日显示）
+    // 加载佣金总览数据
+    async loadCommissionSummary() {
+      try {
+        console.log('开始获取佣金总览, userInfo:', this.userInfo);
+
+        if (!this.userInfo || !this.userInfo.id) {
+          console.error('用户信息不存在，无法获取佣金总览');
+          this.totalCommission = '0.00';
+          return;
+        }
+
+        const params = {
+          owner_id: this.userInfo.id,
+          owner_type: "member",
+          service_member_id: this.userInfo.id,
+          sign: "chongchong",
+          timestamp: Date.now(),
+          page: 1,
+          per_page: 1 // 只获取第一页来获取总览数据
+        };
+
+        console.log('佣金总览请求参数:', params);
+        const res = await this.$request('service/ledger', params, 'POST');
+        console.log('佣金总览接口返回:', res);
+
+        if (res.code === 200 && res.data) {
+          // 更新佣金总额 - 始终使用ledger接口的total_income
+          this.totalCommission = res.data.total_income || '0.00';
+          console.log('佣金总览更新成功:', this.totalCommission);
+        } else {
+          console.error('佣金总览接口返回错误:', res);
+          this.totalCommission = '0.00';
+        }
+      } catch (error) {
+        console.error('获取佣金总览失败:', error);
+        this.totalCommission = '0.00';
+      }
+    },
+
+    // 格式化账本数据（按日显示 - 新接口）
+    formatLedgerData(data) {
+      if (!data || !Array.isArray(data)) return [];
+
+      return data.map(item => {
+        // 根据新接口数据结构格式化显示内容
+        const categoryMap = {
+          'referral_commission': '推荐佣金',
+          'task_commission': '任务佣金',
+          'bonus': '奖励',
+          'penalty': '罚款',
+          'withdrawal': '提现',
+          'refund': '退款'
+        };
+
+        const category = categoryMap[item.category] || item.category || '其他';
+        const amount = item.amount || '0';
+        const type = item.type === 'income' ? '+' : '-';
+        const description = item.description || '';
+        const createdAt = item.created_at || '';
+
+        // 从描述中提取关键信息作为标题
+        let title = category;
+        let subtitle = description;
+
+        // 如果是推荐佣金，从metadata中获取更多信息
+        if (item.category === 'referral_commission' && item.metadata) {
+          const metadata = item.metadata;
+          title = `推荐佣金 (${metadata.task_count}笔)`;
+          subtitle = `总金额: ¥${metadata.total_amount}`;
+          // subtitle = `总金额: ¥${metadata.total_amount}, 费率: ${metadata.commission_rate}%`;
+        }
+
+        return {
+          title: title,
+          subtitle: subtitle,
+          time: `时间：${createdAt}`,
+          amount: `${type}${amount}`
+        };
+      });
+    },
+
+    // 格式化任务数据（按日显示 - 原接口）
     formatTasksData(data) {
       if (!data || !Array.isArray(data)) return [];
 
@@ -331,25 +427,22 @@ export default {
       return brandMap[brand] || brand || '未知品牌';
     },
 
-    switchTab(tab) {
+    async switchTab(tab) {
       if (this.currentTab !== tab) {
         this.currentTab = tab;
-        this.refreshData();
+        await this.refreshData();
       }
     },
 
-    refreshData() {
+    async refreshData() {
       this.page = 1;
       this.hasMore = true;
       this.commissionList = [];
       this.refreshing = true;
-      this.loadCommissionData();
+      await this.loadCommissionData();
     },
 
     loadMore() {
-      // 按月模式不支持分页
-      if (this.currentTab === 'month') return;
-
       if (!this.hasMore || this.loading) return;
       this.page++;
       this.loadCommissionData();
@@ -367,11 +460,11 @@ export default {
       this.pickerValue = e.detail.value;
     },
 
-    confirmPicker() {
+    async confirmPicker() {
       this.currentYear = this.years[this.pickerValue[0]];
       this.currentMonth = this.months[this.pickerValue[1]];
       this.hidePicker();
-      this.refreshData();
+      await this.refreshData();
     }
   }
 }

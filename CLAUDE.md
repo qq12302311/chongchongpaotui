@@ -2,9 +2,11 @@
 
 Always communicate in Chinese
 
-Record my details in the CLAUDE.md file
+Record my daily development habits in the CLAUDE.md file
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+不要动我改的代码
 
 ## Project Overview
 
@@ -298,3 +300,49 @@ Module build failed: 语法错误 "Unexpected token, expected ',' (765:7)"
 
 **修改文件**:
 - `pages/index/publish/map/search-results.vue` (第687-792行代码结构修复)
+
+### 2025-09-22: 隐藏任务设置页面特定服务时效选项
+
+**问题描述**:
+管理端任务设置页面需要隐藏1、2、5、7小时的服务时效选项，简化界面并避免用户选择这些不需要的时效。
+
+**解决方案**:
+1. 修改`updateTimeOptions`方法，添加时效过滤逻辑
+2. 在时间选项生成时过滤掉指定的小时数（1、2、5、7）
+3. 更新默认时间选项数组，移除对应的配置项
+
+**修改内容**:
+1. **动态过滤**: 在`updateTimeOptions`方法中添加`hiddenHours = [1, 2, 5, 7]`数组
+2. **条件判断**: 修改时间选项生成逻辑，使用`!hiddenHours.includes(hours)`过滤
+3. **默认数据**: 更新data中的timeOptions默认数组，移除1、2、5、7小时的配置项
+
+**修改文件**:
+- `adminEnd/userSettings/taskSettings.vue` (第970-1000行默认时间选项，第1474-1487行过滤逻辑)
+
+**技术实现**:
+- 保持原有数据结构和索引不变，确保后端兼容性
+- 仅在前端UI层面隐藏指定选项
+- 过滤逻辑同时应用于初始默认数据和动态加载数据
+
+### 2025-09-30: 修复iOS真机uniCloud本地调试连接失败问题
+
+**问题描述**:
+iOS真机运行时，短信发送功能报错"无法连接uniCloud本地调试服务，请检查当前客户端是否与主机在同一局域网下"，导致验证码无法发送。
+
+**根本原因**:
+`.hbuilderx/launch.json` 配置文件中所有平台的 `launchtype` 都设置为 `"local"`，导致应用尝试连接HBuilderX的本地调试服务。iOS设备无法连接到电脑的localhost地址。
+
+**解决方案**:
+1. 修改 `.hbuilderx/launch.json` 配置文件，将所有平台的 `launchtype` 从 `"local"` 改为 `"remote"`
+2. 在云函数调用中添加 `local: false` 参数作为双重保障
+3. 删除临时创建的 `vue.config.js` 配置文件（已无需要）
+
+**修改文件**:
+- `.hbuilderx/launch.json` (第6、9、12、15行：将 launchtype 从 local 改为 remote)
+- `riderEnd/register.vue` (第782、689行：云函数调用添加 local: false 参数)
+
+**技术要点**:
+- `launchtype: "local"` 表示连接本地云函数调试服务
+- `launchtype: "remote"` 表示连接云端（阿里云）正式云函数服务
+- iOS真机调试时必须使用 `remote` 模式，避免网络连接问题
+- 该配置对所有平台生效：default、h5、mp-weixin、app-plus

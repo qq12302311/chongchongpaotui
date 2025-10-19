@@ -71,17 +71,13 @@
 				<view v-else class="order-list">
 					<view v-for="(order, index) in orderList" :key="index" class="order-item" @click="goToOrderDetail(order)">
 						<view class="order-header">
-							<text class="order-type">{{order.task_name}}</text>
+							<text class="order-type">{{getBrandText(order.brand)}} {{getDetailText(order.task_detail)}} x{{getItemNumber(order.task_detail)}}</text>
 							<text class="order-status" :class="order.status">{{getStatusText(order.status)}}</text>
 						</view>
 						<view class="order-info">
 							<view class="info-item">
-								<text class="label">订单编号：</text>
-								<text class="value">{{order.task_no}}</text>
-							</view>
-							<view class="info-item">
-								<text class="label">下单时间：</text>
-								<text class="value">{{order.task_date}}</text>
+								<text class="label">门店名称：</text>
+								<text class="value">{{getStoreName(order.task_detail)}}</text>
 							</view>
 							<view class="info-item">
 								<text class="label">门店地址：</text>
@@ -91,24 +87,23 @@
 								<text class="label">订单金额：</text>
 								<text class="value price">¥{{order.order_amount}}</text>
 							</view>
-							<view class="info-item" v-if="order.task_detail && order.task_detail.length > 0">
-								<text class="label">任务详情：</text>
-								<text class="value">{{order.task_detail[0].detail}}</text>
+							<view class="info-item" v-if="order.reward && order.reward.length > 0">
+								<text class="label">打赏金额：</text>
+								<text class="value reward">¥{{getTotalRewardAmount(order.reward)}}</text>
 							</view>
-							<view class="info-item" v-if="order.service_time_type === 'before_deadline'">
-								<text class="label">截止时间：</text>
-								<text class="value">{{order.deadline}}</text>
+							<view class="info-item">
+								<text class="label">下单时间：</text>
+								<text class="value">{{order.task_date}}</text>
 							</view>
-							<view class="info-item" v-if="order.service_time_type === 'time_range'">
-								<text class="label">服务时间：</text>
-								<text class="value">{{order.range_start_date}} 至 {{order.range_end_date}}</text>
-							</view>
-						</view>
-						<!-- <view class="order-footer">
-							<button class="btn" v-if="order.status === 'assigned'" @click="handleComplete(order)">完成</button>
-							<button class="btn" v-if="order.status === 'finished' || order.status === 'finished_timeout'" @click="handleConfirm(order)">确认</button>
-						</view> -->
 					</view>
+				<!-- 订单操作按钮 -->
+				<view class="order-footer">
+					<view class="reorder-btn" @click.stop="handleReorderFromOrder(order)">
+						<text class="reorder-emoji">🔄</text>
+						<text class="reorder-text">再来一单</text>
+					</view>
+				</view>
+				</view>
 				</view>
 			</view>
 		</view>
@@ -156,22 +151,94 @@
 				hasMore: true // 是否还有更多数据
 			}
 		},
-		onShow() {
-			// 计算导航栏高度
-			const systemInfo = uni.getSystemInfoSync()
-			const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
-			this.navBarHeight = menuButtonInfo.bottom + 12
+	onShow() {
+		// 计算导航栏高度
+		const systemInfo = uni.getSystemInfoSync()
+		const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
+		this.navBarHeight = menuButtonInfo.bottom + 12
 
-			this.loadOrderList() // 初始加载，不是加载更多
-		},
+		this.loadOrderList() // 初始加载，不是加载更多
+	},
+	onUnload() {
+		// 页面卸载时清理可能残留的临时数据
+		uni.removeStorageSync('reorderFormData')
+	},
 		mounted() {
 			// 初始化标签下划线位置
 			this.updateTabLinePosition(this.currentTab)
 		},
-		methods: {
-			toggleSearchConditions() {
-				this.showSearchConditions = !this.showSearchConditions
-			},
+	methods: {
+		// 【新增方法】根据城市和区县名称查找并更新 district_id
+		async updateDistrictIdByAddress(cityName, districtName) {
+			try {
+				console.log('🔍 [再来一单] 开始查找 district_id，城市:', cityName, '区县:', districtName);
+				
+				// 获取城市列表数据
+				let cityListData = uni.getStorageSync('cityList');
+				if (!cityListData) {
+					console.log('📥 城市列表数据为空，正在获取...');
+					const res = await this.$request('service/zone', {}, 'POST');
+					if (res.code === 200 && res.data) {
+						cityListData = res.data;
+						uni.setStorageSync('cityList', cityListData);
+						console.log('✅ 城市列表数据获取成功');
+					} else {
+						console.error('❌ 获取城市列表数据失败:', res.msg);
+						return;
+					}
+				}
+
+				// 如果是字符串，尝试解析
+				if (typeof cityListData === 'string') {
+					try {
+						cityListData = JSON.parse(cityListData);
+					} catch (e) {
+						console.error('解析城市列表数据失败:', e);
+						return;
+					}
+				}
+
+				// 遍历城市列表查找匹配的 district_id
+				let foundDistrictId = null;
+				
+				for (const province of cityListData) {
+					if (province.children && Array.isArray(province.children)) {
+						for (const city of province.children) {
+							// 匹配城市名
+							if (city.name === cityName) {
+								// 在该城市下查找匹配的区县
+								if (city.children && Array.isArray(city.children)) {
+									for (const district of city.children) {
+										if (district.name === districtName) {
+											foundDistrictId = district.district_id;
+											console.log('✅ [再来一单] 找到匹配的区县，district_id:', foundDistrictId);
+											break;
+										}
+									}
+								}
+								
+								if (foundDistrictId) break;
+							}
+						}
+					}
+					if (foundDistrictId) break;
+				}
+
+				if (foundDistrictId) {
+					// 更新本地存储
+					uni.setStorageSync('selectedDistrictId', foundDistrictId);
+					console.log('✅ [再来一单] 已更新本地存储 selectedDistrictId:', foundDistrictId);
+				} else {
+					console.warn('⚠️ [再来一单] 未找到匹配的 district_id，城市:', cityName, '区县:', districtName);
+				}
+			} catch (error) {
+				console.error('❌ [再来一单] 更新 district_id 失败:', error);
+			}
+		},
+		
+		toggleSearchConditions() {
+			this.showSearchConditions = !this.showSearchConditions
+		},
 			switchTab(index) {
 				this.currentTab = index
 				this.updateTabLinePosition(index)
@@ -355,14 +422,274 @@
 				}
 				return statusMap[status] || status
 			},
-			// 跳转到订单详情页
-			goToOrderDetail(order) {
-				uni.navigateTo({
-					url: `/pages/order/detail?id=${order.task_id}`
+			// 获取品牌文本
+			getBrandText(brand) {
+				const brandMap = {
+					'meituan': '美团',
+					'guaishou': '怪兽',
+					'xiaodian': '小电',
+					'jiedian': '街电',
+					'zhumang': '竹芒'
+				}
+				return brandMap[brand] || brand
+			},
+			// 获取服务详情文本
+			getDetailText(taskDetail) {
+				if (!taskDetail || !taskDetail.detail) return ''
+				const detailMap = {
+					'bubao': '补宝',
+					'offline_abnormal': '离线异常',
+					'income_abnormal': '收入异常',
+					'other_abnormal': '其他异常'
+				}
+				return detailMap[taskDetail.detail] || taskDetail.detail
+			},
+			// 获取任务数量
+			getItemNumber(taskDetail) {
+				if (!taskDetail || !taskDetail.item_number) return 0
+				return taskDetail.item_number
+			},
+			// 获取门店名称
+			getStoreName(taskDetail) {
+				if (!taskDetail || !taskDetail.store_name) return '-'
+				return taskDetail.store_name
+			},
+			// 计算打赏总金额
+			getTotalRewardAmount(rewards) {
+				if (!rewards || !Array.isArray(rewards)) return '0.00'
+				// 只计算支付成功的打赏
+				const successfulRewards = rewards.filter(item => item.status === 'paid')
+				const total = successfulRewards.reduce((sum, item) => {
+					return sum + parseFloat(item.order_amount || 0)
+				}, 0)
+				return total.toFixed(2)
+			},
+		// 跳转到订单详情页
+		goToOrderDetail(order) {
+			uni.navigateTo({
+				url: `/pages/order/detail?id=${order.task_id}`
+			})
+		},
+		// 从订单再来一单
+		async handleReorderFromOrder(order) {
+			try {
+				uni.showLoading({
+					title: '正在导入...',
+					mask: true
+				})
+
+				// 获取订单详情
+				const userInfo = uni.getStorageSync('userInfo')
+				const openid = uni.getStorageSync('openid')
+				
+				if (!userInfo || !userInfo.user_id || !openid) {
+					uni.showToast({
+						title: '请先登录',
+						icon: 'none'
+					})
+					return
+				}
+
+				// 调用订单详情接口获取完整信息
+				const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
+				const sign = md5(signStr)
+				
+				const params = {
+					task_id: order.task_id,
+					user_id: userInfo.user_id,
+					sign: sign
+				}
+
+				const res = await this.$request('task/info', params, 'POST')
+
+				if (res.code === 200 && res.data) {
+					const orderDetail = res.data
+					console.log('订单详情数据:', orderDetail)
+					console.log('任务详情:', orderDetail.task_detail)
+					
+					// 【调试】打印经纬度信息
+					console.log('===== 经纬度调试信息 =====')
+					console.log('订单顶层经纬度:', {
+						longitude: orderDetail.longitude,
+						latitude: orderDetail.latitude,
+						type: typeof orderDetail.longitude
+					})
+					if (orderDetail.task_detail) {
+						console.log('task_detail 中的可能字段:', {
+							has_longitude: 'longitude' in orderDetail.task_detail,
+							has_latitude: 'latitude' in orderDetail.task_detail,
+							has_shop_longitude: 'shop_longitude' in orderDetail.task_detail,
+							has_shop_latitude: 'shop_latitude' in orderDetail.task_detail
+						})
+						// 打印 task_detail 的所有键
+						console.log('task_detail 的所有字段:', Object.keys(orderDetail.task_detail))
+					}
+					console.log('========================')
+
+					// 调用 task/provider/info 接口同步价格信息
+					try {
+						const districtId = orderDetail.district_id || uni.getStorageSync('selectedDistrictId')
+						if (districtId) {
+							const priceRes = await this.$request('task/provider/info', { district_id: districtId }, 'POST')
+							if (priceRes.code === 200 && priceRes.data) {
+								// 保存价格信息到本地存储
+								uni.setStorageSync('providerInfo', priceRes.data)
+								console.log('已同步价格信息:', priceRes.data)
+							}
+						}
+					} catch (priceError) {
+						console.error('同步价格信息失败:', priceError)
+						// 不影响主流程,继续执行
+					}
+					
+				// 获取门店的经纬度（优先从 task_detail 获取，如果不存在则从顶层获取）
+				const shopLongitude = orderDetail.task_detail?.shop_longitude || 
+									  orderDetail.task_detail?.longitude || 
+									  orderDetail.longitude;
+				const shopLatitude = orderDetail.task_detail?.shop_latitude || 
+									 orderDetail.task_detail?.latitude || 
+									 orderDetail.latitude;
+				
+				console.log('最终使用的门店经纬度:', {
+					longitude: shopLongitude,
+					latitude: shopLatitude,
+					source: orderDetail.task_detail?.shop_longitude ? 'task_detail.shop_longitude' :
+						   orderDetail.task_detail?.longitude ? 'task_detail.longitude' : 'orderDetail.longitude'
+				})
+					
+				// 将订单信息转换为发布页面需要的格式
+				const formData = {
+					// 用户信息
+					user_id: userInfo.user_id || 0,
+
+					// 门店基本信息
+					storeName: orderDetail.task_detail?.store_name || '',
+					address: orderDetail.shop_address || '',  // shop_address 对应门店地址
+					detailAddress: orderDetail.address || '',  // address 对应详细地址
+					longitude: parseFloat(shopLongitude) || 0,
+					latitude: parseFloat(shopLatitude) || 0,
+					province: orderDetail.province_name || '',
+					city: orderDetail.city_name || '',
+					district: orderDetail.district_name || '',
+
+					// 联系信息
+					contact: orderDetail.task_detail?.contact_name || orderDetail.contact_name || '',
+					phone: orderDetail.task_detail?.phone_number || orderDetail.phone_number || '',
+
+					// 设备信息
+					snMacList: orderDetail.task_detail?.sn_mac_code || [{
+						id: Date.now(),
+						value: ''
+					}],
+					poiRemark: orderDetail.task_detail?.shop_poi || '',
+					shop_poi: orderDetail.task_detail?.shop_poi || '',
+					device_outside: orderDetail.task_detail?.device_outside !== undefined ?
+						orderDetail.task_detail.device_outside : '',
+
+					// 门店图片
+					doorImages: orderDetail.task_detail?.pic_url || [],
+
+					// 订单备注和时间建议
+					additional_notes: orderDetail.task_detail?.additional_notes || '',
+					recommended_service_time_start: orderDetail.recommended_service_time_start || '',
+					recommended_service_time_end: orderDetail.recommended_service_time_end || '',
+
+				// 【关键】所有数量、价格、时间字段必须重置为初始值
+				// 避免从订单详情中导入任何可能影响价格计算的字段
+				distance: 0,
+				estimatedPrice: 0.01,
+				quantity: '',  // 补宝数量必须重新填写
+				badItemQuantity: 0,
+				cableQuantity: 0,
+				powerQuantity: 0,
+				wiringQuantity: 0,
+				warehouseQuantity: 0,
+				riderTip: 0,  // 打赏金额清零
+				timeType: 'before_deadline',
+				appointmentTime: '',
+				timeInterval: '',
+				timeRemark: '',
+				coupon: '',
+				couponId: '',
+				couponAmount: 0,
+				taskDetails: '',
+				goodsRequirement: '',
+				timeFrame: '5小时内',
+				timeSlot: '15日 12点-14点',
+				locationDesc: ''  // 位置描述清空
+			}
+					
+					// 保存到本地存储（添加时间戳确保数据新鲜度）
+					const reorderDataWithTimestamp = {
+						...formData,
+						_timestamp: Date.now(),  // 添加时间戳
+						_source: 'order_reorder'  // 标记数据来源
+					}
+					
+				console.log('准备保存的formData:', reorderDataWithTimestamp)
+				console.log('地址信息:', {
+					address: formData.address,
+					detailAddress: formData.detailAddress,
+					storeName: formData.storeName,
+					province: formData.province,
+					city: formData.city,
+					district: formData.district
+				})
+				console.log('【重要】经纬度信息:', {
+					longitude: formData.longitude,
+					latitude: formData.latitude,
+					longitudeType: typeof formData.longitude,
+					latitudeType: typeof formData.latitude,
+					isValidLongitude: formData.longitude !== 0 && !isNaN(formData.longitude),
+					isValidLatitude: formData.latitude !== 0 && !isNaN(formData.latitude)
+				})
+				uni.setStorageSync('reorderFormData', reorderDataWithTimestamp)
+				
+				// 同时设置城市信息到本地存储，确保发布页面能正确识别区域
+				const cityInfo = orderDetail.city_name && orderDetail.district_name 
+					? `${orderDetail.city_name} · ${orderDetail.district_name}` 
+					: orderDetail.city_name || '';
+				if (cityInfo) {
+					uni.setStorageSync('selectedCity', cityInfo)
+					uni.setStorageSync('currentCity', cityInfo)
+					console.log('设置城市信息:', cityInfo)
+				}
+				
+				// 【关键修复】根据城市和区县名称查找并更新 district_id
+				if (orderDetail.city_name && orderDetail.district_name) {
+					await this.updateDistrictIdByAddress(orderDetail.city_name, orderDetail.district_name);
+				}
+				
+				uni.hideLoading()
+					
+					// 跳转到发布页面
+					uni.navigateTo({
+						url: '/pages/index/publish/index?from=reorder',
+						success: () => {
+							uni.showToast({
+								title: '订单信息已导入',
+								icon: 'success'
+							})
+						}
+					})
+				} else {
+					uni.hideLoading()
+					uni.showToast({
+						title: res.message || '获取订单详情失败',
+						icon: 'none'
+					})
+				}
+			} catch (error) {
+				console.error('再来一单失败:', error)
+				uni.hideLoading()
+				uni.showToast({
+					title: '操作失败，请重试',
+					icon: 'none'
 				})
 			}
 		}
 	}
+}
 </script>
 
 <style lang="scss" scoped>
@@ -740,6 +1067,12 @@
 							font-weight: 600;
 							font-size: 28rpx;
 						}
+
+						&.reward {
+							color: #FF6B00;
+							font-weight: 600;
+							font-size: 28rpx;
+						}
 					}
 				}
 			}
@@ -767,6 +1100,52 @@
 						box-shadow: 0 2rpx 6rpx rgba(36, 146, 242, 0.2);
 					}
 				}
+
+			.reorder-btn {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 14rpx 32rpx;
+				background: linear-gradient(135deg, #2492F2 0%, #5CB3FF 100%);
+				border-radius: 36rpx;
+				box-shadow: 0 6rpx 16rpx rgba(36, 146, 242, 0.25);
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				position: relative;
+				overflow: hidden;
+
+				&::before {
+					content: '';
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+					opacity: 0;
+					transition: opacity 0.3s ease;
+				}
+
+				&:active {
+					transform: translateY(2rpx) scale(0.98);
+					box-shadow: 0 3rpx 8rpx rgba(36, 146, 242, 0.2);
+					
+					&::before {
+						opacity: 1;
+					}
+				}
+
+				.reorder-emoji {
+					font-size: 28rpx;
+					margin-right: 8rpx;
+				}
+
+				.reorder-text {
+					font-size: 26rpx;
+					color: #FFFFFF;
+					font-weight: 600;
+					letter-spacing: 0.5rpx;
+				}
+			}
 			}
 		}
 	}

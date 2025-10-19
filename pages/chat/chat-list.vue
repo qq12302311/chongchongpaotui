@@ -60,31 +60,31 @@
 		</view>
 
 		<!-- 底部导航 -->
-		<tab-bar></tab-bar>
+		<!-- <tab-bar></tab-bar> -->
 
 		<!-- 悬浮小图 -->
-		<floating-image></floating-image>
+		<!-- <floating-image></floating-image> -->
 	</view>
 </template>
 
 <script>
-	import FloatingImage from '@/components/FloatingImage/index.vue'
+	// import FloatingImage from '@/components/FloatingImage/index.vue'
 	import NavBar from '@/components/NavBar.vue'
-	import TabBar from '@/components/tab-bar/tab-bar.vue'
+	// import TabBar from '@/components/tab-bar/tab-bar.vue'
 	import md5 from 'md5'
 
 	export default {
 		components: {
 			NavBar,
-			TabBar,
-		FloatingImage,
+		// 	TabBar,
+		// FloatingImage,
 		},
 		data() {
 			return {
 				navBarHeight: 88,
 				searchKeyword: '',
 				chatList: [],
-				defaultAvatar: 'https://ccpt.qiniu.0871.cn/duihua2.svg'
+				defaultAvatar: 'https://ccpt.qiniu.0871.cn/duihua2-active.svg'
 			}
 		},
 		computed: {
@@ -291,7 +291,7 @@
 					position: absolute;
 					top: -8rpx;
 					right: -8rpx;
-					background-color: #2492F2;
+					background-color: red;
 					border-radius: 20rpx;
 					min-width: 32rpx;
 					height: 32rpx;

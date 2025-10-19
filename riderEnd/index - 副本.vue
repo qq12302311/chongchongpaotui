@@ -117,9 +117,9 @@
           </view>
           
           <!-- 打赏信息横幅 -->
-		  <view class="reward-badge" v-if="order.reward">
+		  <view class="reward-badge">
 			<image src="https://ccpt.qiniu.0871.cn/dstb.png" class="reward-badge-image" mode="aspectFit"></image>
-			<text class="reward-badge-amount">{{ parseInt(order.reward.amount) }}</text>
+			<text class="reward-badge-amount">{{ order.reward.amount || '10' }}</text>
 		  </view>
           <view class="reward-banner" v-if="order.reward">
             <view class="reward-banner-content">
@@ -152,13 +152,7 @@
               <view class="service-item" :data-content="order.serviceItem">任务：</view>
             </view>
 
-            <view class="price-info-wrapper">
-              <view class="service-time" :data-content="getTotalAmountWithReward(order)"></view>
-              <!-- 订单金额+打赏金额 -->
-              <view class="order-total-amount" v-if="order.reward">
-                <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ order.reward.amount }}）</text>
-              </view>
-            </view>
+            <view class="service-time" :data-content="getDisplayAmount(order)"></view>
             <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons" @click.stop="goToOrderDetail(order)">
 				<image class="button-class" src="https://ccpt.qiniu.0871.cn/zhuandanjiedan.svg"></image>
               <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="goToOrderDetail(order)">去接单</button>
@@ -809,11 +803,6 @@ export default {
       const address = order.address;
       if (!address) return '';
 
-      // 如果中文字数少于14个字，显示全部地址
-      if (address.length < 18) {
-        return address;
-      }
-
       // 根据订单类型隐藏不同数量的字符
       const charsToHide = order.isRecentTask ? 4 : 6;
 
@@ -973,7 +962,7 @@ export default {
     formatOrderData(order, isCompleted = false, isAssigned = false, isRecentTask = false) {
       const taskDetail = order.task_detail || {};
       
-      // 处理打赏信息 - 只显示真实的打赏数据
+      // 处理打赏信息 - 如果没有真实数据，使用模拟数据
       let rewardInfo = null;
       if (order.reward && Array.isArray(order.reward) && order.reward.length > 0) {
         // 计算打赏总金额（只计算已支付的）
@@ -985,6 +974,13 @@ export default {
             count: paidRewards.length
           };
         }
+      } else if (!isCompleted && !isAssigned) {
+        // 模拟数据 - 仅用于展示效果
+        rewardInfo = {
+          amount: '10',
+          count: 1,
+          isMock: true // 标记为模拟数据
+        };
       }
       
       return {
@@ -1631,23 +1627,6 @@ export default {
       const rate = Number(this.riderUserInfo.rate);
       const realAmount = amount * rate;
       return `¥${realAmount.toFixed(2)}`;
-    },
-    // 获取订单金额+打赏金额的总和
-    getTotalAmountWithReward(order) {
-      // 获取基础订单金额
-      const baseAmount = this.getDisplayAmount(order);
-      
-      // 如果有打赏，则计算总金额
-      if (order.reward && order.reward.amount) {
-        // 提取数字部分
-        const baseValue = parseFloat(baseAmount.replace('¥', ''));
-        const rewardValue = parseFloat(order.reward.amount);
-        const total = baseValue + rewardValue;
-        return `¥${total.toFixed(2)}`;
-      }
-      
-      // 没有打赏，返回原金额
-      return baseAmount;
     },
 
     // 计算转单奖励金额
@@ -3033,9 +3012,8 @@ export default {
             color: #FF6B00;
             font-weight: 700;
 			position: absolute;
-			left: 57%;
-			bottom: 15%;
-			transform: translateX(-50%);
+			    bottom: 7px;
+			    right: 6px;
           }
         }
 
@@ -3045,18 +3023,6 @@ export default {
       margin-bottom: 20rpx;
       padding-bottom: 10rpx;
       border-bottom: 1rpx solid #eee;
-    }
-    
-    // 订单金额+打赏金额样式
-    .order-total-amount {
-      text-align: right;
-      line-height: 1.2;
-      
-      .total-amount-text {
-        font-size: 20rpx;
-        color: #999;
-        line-height: 1.2;
-      }
     }
 
     .order-content {
@@ -3159,8 +3125,6 @@ export default {
       .order-details {
         flex: 1;
         min-width: 0;
-        max-width: calc(100% - 250rpx);
-        padding-right: 10rpx;
 
         .address {
           font-size: 25rpx;
@@ -3168,19 +3132,12 @@ export default {
           font-weight: 600;
           margin-bottom: 10rpx;
           word-break: break-all;
-          max-width: 100%;
-          overflow: hidden;
-          line-height: 1.5;
-          min-height: 40rpx;
-          max-height: 75rpx;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
         }
 
         .service-time, .service-item {
           font-size: 22rpx;
           color: #666;
+          margin-bottom: 6rpx;
           word-break: break-all;
 
           &::after {
@@ -3220,28 +3177,13 @@ export default {
 
 
 
-      // 价格信息容器
-      .price-info-wrapper {
-        position: absolute;
-        right: 10rpx;
-        top: 10rpx;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4rpx;
-        z-index: 10;
-        min-height: 100rpx;
-        max-height: calc(100% - 80rpx);
-        justify-content: flex-start;
-        padding-bottom: 10rpx;
-      }
-
       .service-time {
         font-size: 26rpx;
         color: #666;
+        margin-bottom: 6rpx;
+        margin-left: 10rpx;
+        flex-shrink: 0;
         word-break: break-all;
-        text-align: right;
-        line-height: 1.2;
 
         &::after {
           content: attr(data-content);
@@ -3259,7 +3201,6 @@ export default {
         border-radius: 25rpx;
         overflow: hidden;
         box-shadow: 0 2rpx 8rpx rgba(255, 107, 0, 0.3);
-        z-index: 5;
       }
 
       .take-order-btn {

@@ -1,6 +1,6 @@
 <template>
 	<view class="container">
-		<nav-bar :title="selectedCity || '请选择服务区域'" title-align="center"></nav-bar>
+		<nav-bar title="补宝" title-align="center"></nav-bar>
 
 		<!-- 透明蒙版：当用户没有选择城市时覆盖整个页面 -->
 		<view
@@ -11,8 +11,13 @@
 		></view>
 
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
+			<!-- 第一块：Banner -->
+			<view class="banner">
+				<image src="https://ccpt.qiniu.0871.cn/home/banner.png" mode="aspectFill"></image>
+			</view>
+
 			<!-- 选择品牌 - 独立卡片 -->
-			<view class="info-card mar-top-10" >
+			<view class="info-card">
 				<view class="form-item">
 					<view class="form-label section-title">
 						<text class="dot"></text>
@@ -28,8 +33,8 @@
 							<text>怪兽</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-							<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
-							<text>街电搜电</text>
+							<image src="https://ccpt.qiniu.0871.cn/publish/jiedian.png" mode="aspectFit"></image>
+							<text>街电</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
 							<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
@@ -205,6 +210,26 @@
 							</view>
 						</view>
 						<!-- 间隔线 -->
+						<view class="divider-line"></view>
+					</view>
+
+					<!-- 给骑手打赏 -->
+					<view class="time-range-section">
+						<view class="time-table-row">
+							<view class="time-table-cell time-option">
+								<view class="required-label">
+									<text class="shang-class" style="color: #fff;">赏</text>
+									<text>给骑手打赏</text>
+									<text class="time-note-2">如点位偏远/特殊/紧迫/难度大 可自愿为骑手打赏</text>
+								</view>
+							</view>
+							<view class="time-table-cell time-value">
+								<view class="time-picker-wrapper" @click="openTipModal">
+									<text class="time-display">{{ getTipDisplay() }}</text>
+									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-arrow"></image>
+								</view>
+							</view>
+						</view>
 						<view class="divider-line"></view>
 					</view>
 
@@ -456,10 +481,16 @@
 		</uni-popup>
 
 		<!-- 骑手打赏弹窗 -->
-		<!-- <uni-popup ref="tipModal" type="bottom" @change="onTipModalChange" :mask-click="true" :z-index="100000">
+		<uni-popup ref="tipModal" type="bottom" @change="onTipModalChange" :mask-click="true" :z-index="100000">
 			<view class="tip-modal">
 				<view class="tip-close" @click="closeTipModal">×</view>
-				<image src="https://ccpt.qiniu.0871.cn/fb-toubutupian.png" class="tip-banner" mode="widthFix"></image>
+				<view class="tip-banner">
+					<!-- <view class="banner-text">
+						<text class="banner-title">给骑手打赏</text>
+						<text class="banner-subtitle">小小关怀，给骑手补充满满活力！</text>
+					</view> -->
+					<image src="https://ccpt.qiniu.0871.cn/fb-toubutupian.png" class="banner-hero" mode="heightFix"></image>
+				</view>
 				<view class="tip-panel">
 					<view class="tip-options">
 						<view class="tip-option" :class="{ active: selectedTipOption === 'heart' }" @click="selectTipOption('heart', 8)">
@@ -510,7 +541,7 @@
 					</button>
 				</view>
 			</view>
-		</uni-popup> -->
+		</uni-popup>
 
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
@@ -528,7 +559,7 @@
 							<view class="confirm-value brand-value service-value">
 								<image v-if="selectedBrand === 'meituan'" src="https://ccpt.qiniu.0871.cn/publish/meituan.png" class="brand-icon" mode="aspectFit"></image>
 								<image v-if="selectedBrand === 'guaishou'" src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" class="brand-icon" mode="aspectFit"></image>
-								<image v-if="selectedBrand === 'jiedian'" src="https://ccpt.qiniu.0871.cn/zhumang.png" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'jiedian'" src="https://ccpt.qiniu.0871.cn/publish/jiedian.png" class="brand-icon" mode="aspectFit"></image>
 								<image v-if="selectedBrand === 'xiaodian'" src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" class="brand-icon" mode="aspectFit"></image>
 								<text class="brand-text">{{ getBrandName() }}</text>
 							</view>
@@ -575,10 +606,10 @@
 					</view>
 					<!-- 我的备注信息块 -->
 					<view class="service-info-block imgcc4">
-						<!-- <view class="confirm-item service-item" v-if="formData.additional_notes">
+						<view class="confirm-item service-item" v-if="formData.additional_notes">
 							<text class="confirm-value service-value">{{ formData.additional_notes }}</text>
 							<text class="confirm-label service-label">我的备注</text>
-						</view> -->
+						</view>
 						<view class="confirm-item service-item" v-if="formData.locationDesc">
 							<text class="confirm-value service-value" style="color: #5B5B5C !important;">{{ formData.locationDesc }}</text>
 							<text class="confirm-label service-label">我的备注</text>
@@ -606,13 +637,6 @@
 			@confirm="showAddressPopup=false; formData.address = ''"
 			@cancel="showAddressPopup=false; formData.address = ''"
 		/> -->
-
-		<!-- 打赏弹窗 -->
-		<reward-modal
-			:show="showRewardModal"
-			@close="showRewardModal = false"
-			@confirm="handleRewardConfirm"
-		/>
 	</view>
 </template>
 
@@ -622,7 +646,6 @@
 	import StoreInfo from '@/components/StoreInfo.vue'
 	import AuthModal from '@/components/AuthModal/index.vue'
 	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
-	import RewardModal from '@/components/RewardModal/index.vue'
 
 	export default {
 		components: {
@@ -630,8 +653,7 @@
 			TimePicker,
 			StoreInfo,
 			AuthModal,
-			FloatingChatIconUser,
-			RewardModal
+			FloatingChatIconUser
 		},
 		// watch: {
 		// 	'formData.address'(newValue) {
@@ -646,18 +668,16 @@
 		// 		}
 		// 	}
 		// },
-	data() {
-		return {
-			showAddressPopup: false,
-			showRewardModal: false,
-			navBarHeight: 0,
-			selectedBrand: '', // 修改默认值为空字符串
-			selectedService: 'bubao', // 默认选择补宝服务
-			taskTypeId: null, // 添加 taskTypeId 字段
-			isReorderMode: false, // 标记是否为再来一单模式
+		data() {
+			return {
+				showAddressPopup: false,
+				navBarHeight: 0,
+				selectedBrand: '', // 修改默认值为空字符串
+				selectedService: 'bubao', // 默认选择补宝服务
+				taskTypeId: null, // 添加 taskTypeId 字段
 
-			selectedAdditionalServices: [], // 改为数组，支持多选
-			inputFocus: '',
+				selectedAdditionalServices: [], // 改为数组，支持多选
+				inputFocus: '',
 				formData: {
 					storeName: '',
 					snMacList: [''], // 初始化一个空的输入框
@@ -684,15 +704,14 @@
 					appointmentTime: '', // 约定时间
 					timeInterval: '', // 指定时间区间
 					timeRemark: '', // 添加时间备注字段
-				powerQuantity: 0,
-				warehouseQuantity: 0,
-				phone: '', // 添加联系电话字段
-				contact: '', // 添加联系人字段
-				distance: 0, // 选中地址后与服务点位测算的距离
-				riderTip: 0, // 给骑手的打赏金额
-				shop_poi: '', // 新增POI字段
-				device_outside: false, // 设备是否外摆，默认为否
-			},
+					powerQuantity: 0,
+					warehouseQuantity: 0,
+					phone: '', // 添加联系电话字段
+					distance: 0, // 选中地址后与服务点位测算的距离
+					riderTip: 0, // 给骑手的打赏金额
+					shop_poi: '', // 新增POI字段
+					device_outside: false, // 设备是否外摆，默认为否
+				},
 				showTimePicker: false,
 				currentTimeType: 'before_deadline',
 				lastAppointmentTime: null,
@@ -739,7 +758,7 @@
 				showOrderConfirmPopup: false,
 				// 打赏弹窗相关
 				showTipModal: false,
-				selectedTipOption: 'drink',
+				selectedTipOption: '',
 				selectedTipAmount: 12
 			}
 		},
@@ -812,85 +831,6 @@
 				this.taskTypeId = this.selectedService === 'bubao' ? 1 : 2
 			}
 
-			// 处理再来一单的数据导入
-			if (options.from === 'reorder') {
-				const reorderData = uni.getStorageSync('reorderFormData')
-				console.log('从存储读取的再来一单数据:', reorderData)
-				
-				// 立即清除临时数据，防止数据污染
-				uni.removeStorageSync('reorderFormData')
-				
-				if (reorderData) {
-					// 验证数据时效性（5分钟内的数据才有效）
-					const currentTime = Date.now()
-					const dataTimestamp = reorderData._timestamp || 0
-					const timeElapsed = (currentTime - dataTimestamp) / 1000 / 60  // 转换为分钟
-					
-					if (timeElapsed > 5) {
-						console.warn('再来一单数据已过期，忽略导入')
-						uni.showToast({
-							title: '数据已过期，请重新操作',
-							icon: 'none'
-						})
-						return
-					}
-					
-					console.log('数据来源:', reorderData._source, '时间差:', timeElapsed.toFixed(2), '分钟')
-					
-				// 移除元数据字段
-				delete reorderData._timestamp
-				delete reorderData._source
-				
-				// 直接替换 formData，确保所有字段都被正确设置
-				this.formData = reorderData
-				
-				// 【关键】再次确保所有数量和价格字段都已清空，避免价格计算错误
-				this.formData.quantity = ''
-				this.formData.badItemQuantity = 0
-				this.formData.cableQuantity = 0
-				this.formData.powerQuantity = 0
-				this.formData.wiringQuantity = 0
-				this.formData.warehouseQuantity = 0
-				this.formData.riderTip = 0
-				this.formData.distance = 0
-				this.formData.estimatedPrice = 0.01
-				this.formData.appointmentTime = ''
-				this.formData.timeInterval = ''
-				this.formData.couponAmount = 0
-				
-				// 清空附加服务选项
-				this.selectedAdditionalServices = []
-				
-				// 清空品牌和服务选择（用户需要重新选择）
-				this.selectedBrand = ''
-				
-				console.log('导入后的formData:', this.formData)
-				console.log('地址字段:', {
-					address: this.formData.address,
-					detailAddress: this.formData.detailAddress,
-					storeName: this.formData.storeName,
-					province: this.formData.province,
-					city: this.formData.city,
-					district: this.formData.district
-				})
-				console.log('数量字段（应该全部为空或0）:', {
-					quantity: this.formData.quantity,
-					badItemQuantity: this.formData.badItemQuantity,
-					cableQuantity: this.formData.cableQuantity,
-					powerQuantity: this.formData.powerQuantity,
-					distance: this.formData.distance
-				})
-				
-				// 强制更新视图
-				this.$nextTick(() => {
-					this.$forceUpdate()
-				})
-				
-				// 标记为再来一单模式，在 onShow 中处理接口调用顺序
-				this.isReorderMode = true
-				}
-			}
-
 			// 获取并打印用户信息用于调试
 			this.currentUserInfo = uni.getStorageSync('userInfo') || {};
 			console.log('页面加载时的用户信息:', this.currentUserInfo);
@@ -908,50 +848,18 @@
 			// 页面渲染完成后执行的操作
 			this.initializeComponents();
 		},
-		onUnload() {
-			// 页面卸载时清理可能残留的临时数据
-			uni.removeStorageSync('reorderFormData')
+		async onShow(){
+			// 初始化区域选择数据
+			this.initAreaData();
+
+			// 获取服务商信息
+			await this.getProviderInfo();
+
+			this.calculatePrice()
+
+			// 不再在页面进入时检查区域，等用户点击选项时再检查
+			// this.checkInitialAreaSelection()
 		},
-	async onShow(){
-		// 初始化区域选择数据
-		this.initAreaData();
-
-		// 如果是再来一单模式，先调用 user/create，再调用 getProviderInfo
-		if (this.isReorderMode) {
-			console.log('再来一单模式：开始按顺序调用接口')
-			
-			// 1. 先调用 user/create 接口
-			await this.callUserCreate()
-			
-			// 2. 再调用 task/provider/info 接口
-			await this.getProviderInfo()
-			
-			// 3. 【关键】再次确保所有数量字段为空，避免价格异常
-			this.formData.quantity = ''
-			this.formData.badItemQuantity = 0
-			this.formData.cableQuantity = 0
-			this.formData.powerQuantity = 0
-			this.formData.wiringQuantity = 0
-			this.formData.warehouseQuantity = 0
-			this.formData.riderTip = 0
-			this.formData.distance = 0
-			this.formData.estimatedPrice = 0.01
-			this.selectedAdditionalServices = []
-			
-			console.log('再来一单：数量字段已全部清零')
-			
-			// 重置标记
-			this.isReorderMode = false
-		} else {
-			// 正常模式：直接获取服务商信息
-			await this.getProviderInfo()
-		}
-
-		this.calculatePrice()
-
-		// 不再在页面进入时检查区域，等用户点击选项时再检查
-		// this.checkInitialAreaSelection()
-	},
 		methods: {
 			// 初始化区域数据
 			initAreaData() {
@@ -1085,68 +993,24 @@
 				return true; // 允许继续操作
 			},
 
-		// 调用 user/create 接口
-		async callUserCreate() {
-			try {
-				console.log('📞 调用 user/create 接口')
-				const userInfo = uni.getStorageSync('userInfo')
-				
-				if (!userInfo || !userInfo.openid) {
-					console.log('用户未登录，跳过 user/create 接口')
-					return
-				}
-
-				const params = {
-					openid: userInfo.openid,
-					userPhone: userInfo.phone_number || userInfo.userPhone || ''
-				}
-
-				const response = await uni.request({
-					url: 'https://ccpt.0871.cn/api/user/create',
-					method: 'POST',
-					data: params,
-					header: {
-						'Content-Type': 'application/json'
-					}
-				})
-
-				if (response.statusCode === 200 && response.data) {
-					console.log('✅ user/create 接口调用成功:', response.data)
-					// 更新用户信息（如果接口返回了新的用户信息）
-					if (response.data.data) {
-						const updatedUserInfo = {
-							...userInfo,
-							...response.data.data
+			// 获取服务商信息
+			async getProviderInfo() {
+				try {
+					let selectedDistrictId;
+					const selectedDistrictId_new = uni.getStorageSync('selectedDistrictId_new');
+					if(selectedDistrictId_new) {
+						selectedDistrictId = selectedDistrictId_new
+					} else {
+						selectedDistrictId = uni.getStorageSync('selectedDistrictId');
+						if (!selectedDistrictId) {
+							console.log('未选择服务区域，跳过获取服务商信息');
+							return;
 						}
-						uni.setStorageSync('userInfo', updatedUserInfo)
-						this.currentUserInfo = updatedUserInfo
 					}
-				} else {
-					console.error('❌ user/create 接口调用失败:', response)
-				}
-			} catch (error) {
-				console.error('❌ user/create 接口调用异常:', error)
-			}
-		},
 
-		// 获取服务商信息
-		async getProviderInfo() {
-			try {
-				let selectedDistrictId;
-				const selectedDistrictId_new = uni.getStorageSync('selectedDistrictId_new');
-				if(selectedDistrictId_new) {
-					selectedDistrictId = selectedDistrictId_new
-				} else {
-					selectedDistrictId = uni.getStorageSync('selectedDistrictId');
-					if (!selectedDistrictId) {
-						console.log('未选择服务区域，跳过获取服务商信息');
-						return;
-					}
-				}
-
-				console.log('🏪 获取服务商信息，区域ID:', selectedDistrictId);
-				const res = await this.$request('task/provider/info', { district_id: selectedDistrictId }, 'POST');
-				console.log('服务商信息:', res);
+					console.log('🏪 获取服务商信息，区域ID:', selectedDistrictId);
+					const res = await this.$request('task/provider/info', { district_id: selectedDistrictId }, 'POST');
+					console.log('服务商信息:', res);
 
 					if (res.code === 200) {
 						uni.removeStorageSync('selectedDistrictId_new');
@@ -1381,52 +1245,28 @@
 				}
 
 				// 6. 获取打赏金额
-
 				const riderTip = parseFloat(this.formData.riderTip) || 0;
 
+				// 计算总价（未减优惠券金额）
+				let totalPrice = baseServiceFee + distanceFee + timeLimitFee + wireFee + powerFee + extraDeviceFee + extraDistanceFee + extraWireFee + riderTip;
 
-
-				// 计算服务费用总额（未减优惠券金额，不含打赏）
-
-				const serviceAmount = baseServiceFee + distanceFee + timeLimitFee + wireFee + powerFee + extraDeviceFee + extraDistanceFee + extraWireFee;
-
-
-
-				// 【调试日志】金额计算详情
-
+				// 【调试日志】总价计算详情
 				console.log('总价计算详情:', {
-
-					主项服务费用: baseServiceFee,
-
-					主项增量费用: extraDeviceFee,
-
-					基础距离费用: distanceFee,
-
-					距离增量费用: extraDistanceFee,
-
-					时间限制费用: timeLimitFee,
-
-					线路费用: wireFee,
-
-					线路增量费用: extraWireFee,
-
-					电力费用: powerFee,
-
+					主项服务费: baseServiceFee,
+					主项增量费: extraDeviceFee,
+					基础距离费: distanceFee,
+					距离增量费: extraDistanceFee,
+					时间限制费: timeLimitFee,
+					线路费: wireFee,
+					线路增量费: extraWireFee,
+					电力费: powerFee,
 					骑手打赏: riderTip,
-
-					服务金额: serviceAmount
-
+					计算总价: totalPrice
 				});
 
-
-
-				// 6. 减去优惠券金额（仅作用于服务金额）
-
+				// 6. 减去优惠券金额
 				const couponAmount = parseFloat(this.formData.couponAmount) || 0;
-
-				let totalPrice = Math.max(1, serviceAmount - couponAmount); // 确保总价不低于1元
-
-
+				totalPrice = Math.max(1, totalPrice - couponAmount); // 确保总价不低于1元
 
 				// 更新表单数据
 				this.formData.estimatedPrice = totalPrice;
@@ -1443,7 +1283,6 @@
 					powerFee: parseFloat(powerFee),
 					riderTip: parseFloat(riderTip), // 添加骑手打赏金额
 					couponAmount: parseFloat(couponAmount), // 添加优惠券金额
-					serviceAmount: parseFloat(serviceAmount),
 					total: parseFloat(totalPrice)
 				};
 
@@ -1781,7 +1620,7 @@
 								success: (modalRes) => {
 									if (modalRes.confirm) {
 										// 跳转到购物车页面
-										uni.switchTab({
+										uni.navigateTo({
 											url: '/pages/cart/index',
 											fail: () => {
 												uni.showToast({
@@ -1905,10 +1744,10 @@
 					// 隐藏加载提示
 					uni.hideLoading();
 
-				if (res.code === 200) {
-					// 提交成功，开始微信支付
-					this.requestPayment(res.data);
-				} else {
+					if (res.code === 200) {
+						// 提交成功，开始微信支付
+						this.requestPayment(res.data);
+					} else {
 						// 提交失败
 						uni.showToast({
 							title: res.message || '提交失败',
@@ -1983,17 +1822,6 @@
 					}
 				});
 			},
-
-			// 打赏确认回调
-			handleRewardConfirm(amount) {
-				console.log('用户选择打赏金额:', amount);
-				// 可以在这里处理打赏逻辑
-				uni.showToast({
-					title: `已选择打赏¥${amount}`,
-					icon: 'success'
-				});
-			},
-
 			selectTimeType(type) {
 				// 更新timeType
 				this.formData.timeType = type;
@@ -2218,6 +2046,11 @@
 				// 关闭弹窗
 				this.closeTipModal();
 
+				// 显示成功提示
+				uni.showToast({
+					title: `已设置打赏 ¥${this.formData.riderTip}`,
+					icon: 'success'
+				});
 			},
 			// 显示打赏选择器
 			showTipPicker() {
@@ -2252,32 +2085,33 @@
 				});
 			},
 			// 显示自定义打赏金额输入
-		showCustomTipInput() {
-			uni.showModal({
-				title: '自定义打赏金额',
-				editable: true,
-				placeholderText: '请输入打赏金额',
-				success: (res) => {
-					if (res.confirm && res.content) {
-						const tipAmount = parseFloat(res.content);
-						if (isNaN(tipAmount) || tipAmount < 0) {
-							uni.showToast({
-								title: '请输入有效的金额',
-								icon: 'none'
-							});
-							return;
-						}
-						this.formData.riderTip = tipAmount;
-						this.selectedTipAmount = tipAmount;
-						// 重新计算价格
-						this.calculatePrice();
-						if (this.showTipModal) {
-							this.closeTipModal();
+			showCustomTipInput() {
+				uni.showModal({
+					title: '自定义打赏金额',
+					editable: true,
+					placeholderText: '请输入打赏金额',
+					success: (res) => {
+						if (res.confirm && res.content) {
+							const tipAmount = parseFloat(res.content);
+							if (isNaN(tipAmount) || tipAmount < 0) {
+								uni.showToast({
+									title: '请输入有效的金额',
+									icon: 'none'
+								});
+							} else if (tipAmount > 200) {
+								uni.showToast({
+									title: '打赏金额不能超过200元',
+									icon: 'none'
+								});
+							} else {
+								this.formData.riderTip = tipAmount;
+								// 重新计算价格
+								this.calculatePrice();
+							}
 						}
 					}
-				}
-			});
-		},
+				});
+			},
 			showPriceAgreement() {
 				uni.navigateTo({
 					url: '/pages/index/price-agreement/index'
@@ -2308,7 +2142,7 @@
 				const brandMap = {
 					'meituan': '美团',
 					'guaishou': '怪兽',
-					'jiedian': '街电搜电',
+					'jiedian': '街电',
 					'xiaodian': '小电'
 				};
 				return brandMap[this.selectedBrand] || '';
@@ -2723,11 +2557,26 @@
 		padding-bottom: 400rpx; /* 增加底部内边距,从180rpx改为240rpx */
 	}
 
+	.banner {
+		width: 100%;
+		height: 200rpx;
+		border-radius: 12rpx;
+		overflow: hidden;
+		margin-bottom: 30rpx;
+		padding-top: 30rpx;
+
+		image {
+			width: 100%;
+			height: 100%;
+			border-radius: 12rpx;
+		}
+	}
+
 	.info-card {
 		background-color: #ffffff;
 		border-radius: 12rpx;
 		padding: 30rpx;
-		margin-bottom: 20rpx;
+		margin-bottom: 30rpx;
 	}
 
 	.card-title {
@@ -4901,6 +4750,7 @@
 		width: 100%;
 		box-sizing: border-box;
 		padding: 80rpx 32rpx calc(80rpx + env(safe-area-inset-bottom));
+		background: linear-gradient(180deg, #0aa9ff 0%, #0b4dff 100%);
 		border-radius: 40rpx 40rpx 0 0;
 		display: flex;
 		flex-direction: column;
@@ -4908,19 +4758,6 @@
 		gap: 36rpx;
 		position: relative;
 		overflow: visible;
-	}
-
-	.tip-modal::before {
-		content: '';
-		position: absolute;
-		top: 260rpx;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		border-radius: 40rpx 40rpx 0 0;
-		background: linear-gradient(180deg, #0aa9ff 0%, #0b4dff 100%);
-		z-index: -1;
-		pointer-events: none;
 	}
 
 	.tip-close {
@@ -4941,18 +4778,49 @@
 	}
 
 	.tip-banner {
-		width: calc(100% + 64rpx);
-		margin: 0 -32rpx;
-		display: block;
-		border-radius: 0;
-		box-shadow: none;
+		width: 100%;
+		position: relative;
+		display: flex;
+		align-items: center;
+		padding: 44rpx 220rpx 44rpx 48rpx;
+		background: linear-gradient(135deg, #1fc6ff 0%, #0a6cff 100%);
+		border-radius: 32rpx;
+		color: #FFFFFF;
+		box-shadow: 0 28rpx 64rpx rgba(12, 90, 210, 0.28);
+		overflow: hidden;
+	}
+
+	.banner-text {
+		display: flex;
+		flex-direction: column;
+		gap: 12rpx;
+	}
+
+	.banner-title {
+		font-size: 44rpx;
+		font-weight: 700;
+		letter-spacing: 4rpx;
+		text-shadow: 0 8rpx 18rpx rgba(4, 58, 140, 0.35);
+	}
+
+	.banner-subtitle {
+		font-size: 24rpx;
+		opacity: 0.88;
+	}
+
+	.banner-hero {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 240rpx;
+		height: auto;
 	}
 
 	.tip-panel {
 		width: 100%;
 		background: #FFFFFF;
 		border-radius: 36rpx;
-		padding: 8rpx 18rpx 44rpx 18rpx;
+		padding: 48rpx 36rpx 44rpx;
 		box-shadow: 0 30rpx 70rpx rgba(11, 82, 189, 0.22);
 		margin-top: -24rpx;
 	}
@@ -4964,8 +4832,8 @@
 	}
 
 	.tip-option {
-		flex: none;
-		width: 130rpx;
+		flex: 1;
+		max-width: 168rpx;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -5014,7 +4882,7 @@
 	}
 
 	.option-amount {
-		margin-top: 32rpx;
+		margin-top: 12rpx;
 		width: 140rpx;
 		min-height: 98rpx;
 		padding: 16rpx 0 12rpx;
@@ -5031,7 +4899,6 @@
 	}
 
 	.option-amount .amount-label {
-		color: #BFBFBF;
 		font-size: 22rpx;
 		margin-bottom: 8rpx;
 	}
@@ -5074,7 +4941,7 @@
 	.confirm-tip-btn {
 		width: 100%;
 		height: 96rpx;
-		background: linear-gradient(135deg, #ff8b2f 0%, #ff4b47 100%);
+		background: linear-gradient(135deg, #ff7a33 0%, #ffb434 100%);
 		color: #FFFFFF;
 		font-size: 32rpx;
 		font-weight: 700;
@@ -5083,13 +4950,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 20rpx 32rpx rgba(255, 110, 64, 0.32);
+		box-shadow: 0 20rpx 32rpx rgba(255, 134, 50, 0.32);
 		transition: all 0.25s ease;
 	}
 
 	.confirm-tip-btn:active {
 		opacity: 0.9;
 		transform: translateY(2rpx);
-		box-shadow: 0 12rpx 26rpx rgba(255, 110, 64, 0.24);
+		box-shadow: 0 12rpx 26rpx rgba(255, 134, 50, 0.26);
 	}
 </style>

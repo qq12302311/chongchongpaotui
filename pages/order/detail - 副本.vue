@@ -5,20 +5,6 @@
 
 		<!-- 内容区域 -->
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
-			<!-- 订单城市平均完单时效 -->
-			<view class="city-efficiency-wrapper" v-if="orderInfo.estimated_completion_hours">
-				<view class="city-efficiency-card">
-					<view class="efficiency-content">
-						<view class="city-area">
-							<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
-							<text class="city-name">{{ orderInfo.city_name }}</text>
-						</view>
-						<text class="efficiency-label">近100单平均完单时效：</text>
-						<text class="efficiency-value">{{ orderInfo.estimated_completion_hours }}h</text>
-					</view>
-				</view>
-			</view>
-
 			<!-- 骑手状态步骤 -->
 			<view class="rider-info-card-2">
 				<view class="state-buzhou mar-bot-15 mar-top-30">
@@ -27,7 +13,7 @@
 						<!-- 步骤1: 骑手已接单/待接单 -->
 						<view class="step-item" :class="{ 'step-active': orderInfo.status !== 'waiting', 'step-working': orderInfo.status === 'waiting' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.0871.cn/djd-fz2.png" class="working-gif-2" mode="aspectFit"></image>
+								<!-- <image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
 								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status !== 'waiting' }"></view>
 							</view>
 							<view class="step-content">
@@ -111,12 +97,12 @@
 							</view>
 							<text class="entry-time">入驻时间：{{formatEntryDate()}}</text>
 						</view>
-					<view class="rider-stats-row">
-						<text class="stats-item">累积完单：{{getTotalOrdersDisplay()}}单</text>
-						<view class="reward-btn" v-if="orderInfo.status === 'assigned'" @click="openRewardModal">
-							<text class="reward-text">赏</text>
+						<view class="rider-stats-row">
+							<text class="stats-item">累积完单：{{getTotalOrdersDisplay()}}单</text>
+							<view class="reward-btn">
+								<text class="reward-text">赏</text>
+							</view>
 						</view>
-					</view>
 						<view class="rider-rating-row">
 							<text class="rating-label">历史评价：</text>
 							<view class="rating-stars">
@@ -127,7 +113,6 @@
 					</view>
 				</view>
 			</view>
-
 
 			<!-- 订单基本信息 -->
 			<view class="order-header">
@@ -174,20 +159,21 @@
 					<view class="title-info">
 						<view class="title-row">
 							<text class="task-name">{{getBrandText(orderInfo.brand)}} {{getDetailText(orderInfo.task_detail ? orderInfo.task_detail.detail : '')}} x{{orderInfo.task_detail ? orderInfo.task_detail.item_number : 0}}</text>
+							<text class="publish-time">发布时间：{{formatShortDate(orderInfo.task_date)}}</text>
 						</view>
 						<view class="title-divider"></view>
 						<view class="info-row">
 							<text class="info-label">门店 POI：</text>
 							<text class="info-value">{{orderInfo.task_detail ? orderInfo.task_detail.shop_poi : ''}}</text>
 							<view class="copy-btn" @tap="copyShopPoi">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
+								<text class="copy-text">复制</text>
 							</view>
 						</view>
 						<view class="info-row" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
 							<text class="info-label">设备编码：</text>
 							<text class="info-value">{{orderInfo.task_detail.sn_mac_code[0].value}}</text>
 							<view class="copy-btn" @tap="copyDeviceCode(orderInfo.task_detail.sn_mac_code[0].value)">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
+								<text class="copy-text">复制</text>
 							</view>
 						</view>
 					</view>
@@ -205,34 +191,33 @@
 				</view>
 				<view class="detail-list-wrapper">
 					<view class="detail-list" :style="{ maxHeight: isFullyExpanded ? 'none' : '300rpx' }">
-					<!-- 发布时间 -->
 					<view class="detail-item">
 						<view class="item-dot"></view>
-						<view class="item-label">发布时间：</view>
-						<view class="item-value">{{formatShortDate(orderInfo.task_date)}}</view>
+						<view class="item-label">设备品牌：</view>
+						<view class="item-value">{{getBrandText(orderInfo.brand)}}</view>
 					</view>
 					<view class="divider"></view>
-					<!-- 设备SN号 -->
-					<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
+					<view class="detail-item">
 						<view class="item-dot"></view>
-						<view class="item-label">设备SN号：</view>
-						<view class="item-value sn-code-container">
-							<view v-for="(code, index) in orderInfo.task_detail.sn_mac_code" :key="index" class="sn-code-item">
-								<text class="sn-code-text">{{code.value}}</text>
-								<view class="copy-code-btn" @tap="copyDeviceCode(code.value)">
-									<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
-								</view>
+						<view class="item-label">主项服务：</view>
+						<view class="item-value">
+							{{getDetailText(orderInfo.task_detail ? orderInfo.task_detail.detail : '')}}
+							x
+							{{orderInfo.task_detail ? orderInfo.task_detail.item_number : 0}}
+						</view>
+					</view>
+					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
+						<view v-for="(code, index) in orderInfo.task_detail.sn_mac_code" :key="index" class="sn-code-item">
+							<text class="sn-code-text">设备SN号：{{code.value}}</text>
+							<view class="copy-code-btn" @tap="copyDeviceCode(code.value)">
+								<text class="copy-text">复制</text>
 							</view>
 						</view>
 					</view>
-					<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0"></view>
-					<!-- 门店POI -->
-					<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
-						<view class="item-dot"></view>
-						<view class="item-label">门店POI：</view>
-						<view class="item-value">{{orderInfo.task_detail.shop_poi}}</view>
+					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
+						<text>门店POI：{{orderInfo.task_detail.shop_poi}}</text>
 					</view>
-					<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi"></view>
+					<view class="divider"></view>
 					<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.device_outside !== undefined">
 						<view class="item-dot"></view>
 						<view class="item-label">设备是否外摆：</view>
@@ -247,14 +232,14 @@
 						<view class="item-value store-name-container">
 							<text class="store-name-text">{{orderInfo.task_detail ? orderInfo.task_detail.store_name : ''}}</text>
 							<view class="copy-store-btn" @tap="copyStoreName">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
+								<text class="copy-text">复制</text>
 							</view>
 						</view>
 					</view>
 					<view class="detail-sub-item address-container">
 						<text class="address-text">{{orderInfo.province_name}}{{orderInfo.city_name}}{{orderInfo.district_name}}{{orderInfo.shop_address}}{{orderInfo.address}}</text>
 						<view class="copy-address-btn" @tap="copyAddress">
-							<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
+							<text class="copy-text">复制</text>
 						</view>
 					</view>
 					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.description">
@@ -319,27 +304,9 @@
 								<text class="label">附加服务费</text>
 								<text class="value">¥{{orderInfo.additional_service_fee}}</text>
 							</view>
-							<!-- 打赏记录 -->
-							<view class="price-item" v-if="orderInfo.reward && orderInfo.reward.length > 0">
-								<text class="label">打赏金额</text>
-								<text class="value" style="color: #FF6B00;">¥{{ getTotalRewardAmount() }}</text>
-							</view>
 							<view class="price-item total">
 								<text class="label">合计</text>
 								<text class="value">¥{{orderInfo.order_amount}}</text>
-							</view>
-						</view>
-						<!-- 打赏详情 -->
-						<view class="reward-detail" v-if="orderInfo.reward && orderInfo.reward.length > 0">
-							<view class="reward-detail-title">
-								<text class="reward-emoji">💰</text>
-								<text>打赏记录</text>
-							</view>
-							<view class="reward-list">
-								<view v-for="(item, index) in getSuccessfulRewards()" :key="index" class="reward-item">
-									<text class="reward-amount">¥{{ item.order_amount }}</text>
-									<text class="reward-time">{{ formatRewardTime(item.created_at || item.updated_at) }}</text>
-								</view>
 							</view>
 						</view>
 					</view>
@@ -481,7 +448,7 @@
 			<view class="cancel-modal-content">
 				<!-- 取消原因选择列表 -->
 				<view class="cancel-reason-list">
-					<text class="reason-list-title">取消原因：（必选）</text>
+					<text class="reason-list-title">取消原因：</text>
 					<view class="reason-options">
 						<radio-group @change="onReasonChange">
 							<label class="reason-option-item" v-for="(reason, index) in cancelReasonOptions" :key="index">
@@ -639,17 +606,17 @@
 						</view>
 					</view>
 				</view>
-		</view>
-		<view class="edit-modal-footer">
-			<view class="edit-modal-btn cancel" @click="closeEditModal">退出</view>
-			<view class="edit-modal-btn confirm" @click="saveOrderChanges" :class="{disabled: isSaving}">
-				{{ isSaving ? '保存中...' : '保存' }}
 			</view>
-		</view>
+			<view class="edit-modal-footer">
+				<view class="edit-modal-btn cancel" @click="closeEditModal">取消</view>
+				<view class="edit-modal-btn confirm" @click="saveOrderChanges" :class="{disabled: isSaving}">
+					{{ isSaving ? '保存中...' : '保存' }}
+				</view>
+			</view>
 		</view>
 
 		<!-- 底部悬浮操作按钮 -->
-		<view class="bottom-float-action" v-if="!showRewardModal && !showCancelModal && !showEditModal && !showConfirmModal && !showConfirmCancelModal && orderInfo.status !== 'completed'">
+		<view class="bottom-float-action" v-if="!showCancelModal && !showEditModal && !showConfirmModal && !showConfirmCancelModal && orderInfo.status !== 'completed'">
 			<view class="action-button" @click="handleOrderAction">
 				<text class="action-text">操作订单</text>
 			</view>
@@ -657,13 +624,6 @@
 
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
-		
-		<!-- 打赏弹窗 -->
-		<RewardModal 
-			:show="showRewardModal" 
-			@close="closeRewardModal"
-			@confirm="handleRewardConfirm"
-		/>
 	</view>
 </template>
 
@@ -671,15 +631,13 @@
 	import NavBar from '@/components/NavBar.vue'
 	import AuthModal from '@/components/AuthModal/index.vue'
 	import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
-	import RewardModal from '@/components/RewardModal/index.vue'
 	import md5 from 'md5'
 
 	export default {
 		components: {
 			NavBar,
 			AuthModal,
-			FloatingChatIconUser,
-			RewardModal
+			FloatingChatIconUser
 		},
 		data() {
 			return {
@@ -742,14 +700,16 @@
 					leftSubText: '',
 					rightSubText: ''
 				},
-				cancelReason: '', // 取消原因
+				cancelReason: '', // 取消原因（兼容旧代码）
 				selectedCancelReason: '', // 选中的取消原因
 				showConfirmCancelModal: false, // 二次确认弹窗
+				hasCancelApplication: false, // 是否已提交取消申请
 				cancelReasonOptions: [
 					{ value: '长时间无骑手接单', text: '长时间无骑手接单' },
+					{ value: '无骑手接单，如能接可继续任务', text: '无骑手接单，如能接可继续任务' },
 					{ value: '已安排人员上门完成维护', text: '已安排人员上门完成维护' },
 					{ value: '设备正常或有归还宝', text: '设备正常或有归还宝' },
-					{ value: '信息错误，重新下单', text: '信息错误，重新下单' }
+					{ value: '信息错误，重下', text: '信息错误，重下' }
 				],
 				// 修改订单相关
 				showEditModal: false,
@@ -763,9 +723,7 @@
 					deadline: '',
 					deadlineDate: '',
 					deadlineTime: ''
-				},
-				// 打赏相关
-				showRewardModal: false
+				}
 			}
 		},
 		computed: {
@@ -779,13 +737,18 @@
 			// 获取订单ID
 			if (options.id) {
 				this.orderId = options.id
+				// 检查是否已提交取消申请
+				const hasCancelApp = uni.getStorageSync(`cancelApplication_${options.id}`);
+				if (hasCancelApp) {
+					this.hasCancelApplication = true;
+				}
 				this.loadOrderDetail()
 			}
 		},
 
 		onShow() {
-			// 每次页面显示时，如果退款申请中，则弹出第二个弹窗
-			if (this.orderInfo.refund_request === 1 && this.orderId) {
+			// 每次页面显示时，如果已提交取消申请，则弹出第二个弹窗
+			if (this.hasCancelApplication && this.orderId) {
 				// 延迟显示，确保页面已完全加载
 				setTimeout(() => {
 					this.showConfirmCancelModal = true;
@@ -970,6 +933,12 @@
 				}, 100);
 			},
 
+			// 选择取消原因
+			selectCancelReason(value) {
+				this.selectedCancelReason = value;
+				this.cancelReason = value; // 同步更新旧的cancelReason字段
+			},
+
 			// 处理单选框组变化
 			onReasonChange(e) {
 				this.selectedCancelReason = e.detail.value;
@@ -1023,17 +992,7 @@
 				this.submitCancelApplication();
 			},
 
-			// 处理确认操作（右侧按钮 - 调度催派）
-			handleConfirmAction() {
-				// 调度催派
-				uni.showToast({
-					title: '已通知调度加急处理',
-					icon: 'success'
-				});
-				this.closeCancelModal();
-			},
-
-			// 提交取消申请
+			// 提交取消申请（新方法）
 			submitCancelApplication() {
 				// 获取用户信息
 				const userInfo = uni.getStorageSync('userInfo');
@@ -1062,12 +1021,13 @@
 				this.$request('task/cancel', params, 'POST').then(res => {
 					uni.hideLoading();
 					if (res.status === 'success') {
-						// 重新加载订单详情以获取最新的 refund_request 状态
-						this.loadOrderDetail().then(() => {
-							// 关闭第一个弹窗，显示第二个弹窗
-							this.showCancelModal = false;
-							this.showConfirmCancelModal = true;
-						});
+						// 标记已提交取消申请
+						this.hasCancelApplication = true;
+						// 保存到本地存储
+						uni.setStorageSync(`cancelApplication_${this.orderId}`, true);
+						// 关闭第一个弹窗，显示第二个弹窗
+						this.showCancelModal = false;
+						this.showConfirmCancelModal = true;
 					} else {
 						uni.showToast({
 							title: res.message || '提交失败',
@@ -1087,6 +1047,8 @@
 			// 关闭二次确认弹窗
 			closeConfirmCancelModal() {
 				this.showConfirmCancelModal = false;
+				// 可以选择是否重新打开第一个弹窗
+				// this.showCancelModal = true;
 			},
 
 			// 提交取消订单（最终确认）
@@ -1099,26 +1061,80 @@
 				// 不跳转，留在当前页面
 			},
 
-			// 复制微信号
-			copy_wechat() {
-				const wechatId = 'agan-24h';
-				uni.setClipboardData({
-					data: wechatId,
-					success: () => {
-						uni.showToast({
-							title: '微信号已复制',
-							icon: 'success'
-						});
-					},
-					fail: () => {
-						uni.showToast({
-							title: '复制失败',
-							icon: 'none'
-						});
-					}
-				});
+			// 处理确认操作（右侧按钮 - 调度催派）
+			handleConfirmAction() {
+				// 调度催派
+				this.dispatchUrge();
 			},
 
+			// 调度催派
+			dispatchUrge() {
+				uni.showToast({
+					title: '已通知调度加急处理',
+					icon: 'success'
+				});
+				this.closeCancelModal();
+			},
+
+			// 执行取消订单
+			performCancelOrder() {
+				// 获取用户信息
+				const userInfo = uni.getStorageSync('userInfo')
+				const openid = uni.getStorageSync('openid')
+				if (!userInfo || !userInfo.user_id || !openid) {
+					uni.showToast({
+						title: '请先登录',
+						icon: 'none'
+					})
+					return
+				}
+
+				// 构建请求参数
+				const params = {
+					task_id: this.orderId,
+					user_id: userInfo.user_id,
+					reason: this.cancelReason.trim(),
+					sign: 'chongchong'
+				}
+
+				// 调用取消订单接口
+				uni.showLoading({
+					title: '取消中...'
+				})
+
+				this.$request('task/cancel', params, 'POST').then(res => {
+					uni.hideLoading()
+					if (res.status === 'success') {
+						uni.showToast({
+							title: '申请成功 请等待平台审核!',
+							icon: 'success'
+						})
+						// 清空取消原因并关闭所有弹窗
+						this.cancelReason = ''
+						this.selectedCancelReason = ''
+						this.showConfirmCancelModal = false
+						this.showCancelModal = false
+						// 延迟跳转到订单列表页面
+						setTimeout(() => {
+							uni.switchTab({
+								url: '/pages/order/order'
+							})
+						}, 1500)
+					} else {
+						uni.showToast({
+							title: res.message || '取消失败',
+							icon: 'none'
+						})
+					}
+				}).catch(err => {
+					uni.hideLoading()
+					console.error('取消订单失败:', err)
+					uni.showToast({
+						title: '网络请求失败',
+						icon: 'none'
+					})
+				})
+			},
 
 			// 确认完成订单
 			confirmOrder() {
@@ -1637,24 +1653,42 @@
 				}
 			},
 
+			// 复制微信号
+			copy_wechat() {
+				const wechatId = 'agan-24h';
+				uni.setClipboardData({
+					data: wechatId,
+					success: () => {
+						uni.showToast({
+							title: '微信号已复制',
+							icon: 'success'
+						});
+					},
+					fail: () => {
+						uni.showToast({
+							title: '复制失败',
+							icon: 'none'
+						});
+					}
+				});
+			},
+
 			// 操作订单按钮点击事件
 			handleOrderAction() {
 				const actions = [];
 
 				// 根据订单状态添加可用操作
 				if (this.orderInfo.status === 'waiting') {
-					// 待接单状态：打赏骑手、修改信息、取消订单（退款申请中时不显示）
-					actions.push('打赏骑手');
+					// 待接单状态：修改信息、取消订单（已提交取消申请时不显示）
 					actions.push('修改信息');
-					if (this.orderInfo.refund_request !== 1) {
+					if (!this.hasCancelApplication) {
 						actions.push('取消订单');
 					}
 				} else if (this.orderInfo.status === 'assigned') {
-					// 作业中状态：联系骑手、打赏骑手、修改信息、取消订单（退款申请中时不显示）
+					// 作业中状态：联系骑手、修改信息、取消订单（已提交取消申请时不显示）
 					actions.push('联系骑手');
-					actions.push('打赏骑手');
 					actions.push('修改信息');
-					if (this.orderInfo.refund_request !== 1) {
+					if (!this.hasCancelApplication) {
 						actions.push('取消订单');
 					}
 				} else if (this.orderInfo.status === 'finished') {
@@ -1678,9 +1712,6 @@
 									phoneNumber: '10086' // 这里替换为实际骑手电话
 								});
 								break;
-							case '打赏骑手':
-								this.openRewardModal();
-								break;
 							case '确认完成':
 								this.confirmOrder();
 								break;
@@ -1702,256 +1733,6 @@
 						console.log('操作菜单取消:', err);
 					}
 				});
-			},
-
-			// 打开打赏弹窗
-			openRewardModal() {
-				this.showRewardModal = true;
-			},
-
-			// 关闭打赏弹窗
-			closeRewardModal() {
-				this.showRewardModal = false;
-				// 确保弹窗关闭后，底部操作按钮能正确显示
-				this.$nextTick(() => {
-					this.showRewardModal = false;
-				});
-			},
-
-			// 处理打赏确认
-			async handleRewardConfirm(amount) {
-				try {
-					// 获取用户信息
-					const userInfo = uni.getStorageSync('userInfo');
-					const openid = uni.getStorageSync('openid');
-					if (!userInfo || !userInfo.user_id || !openid) {
-						uni.showToast({
-							title: '请先登录',
-							icon: 'none'
-						});
-						return;
-					}
-
-					// 获取骑手和服务商ID
-					let service_member_id = null;
-					let service_provider_id = null;
-					
-					if (this.orderInfo.task_assignment) {
-						service_member_id = this.orderInfo.task_assignment.service_member_id;
-						service_provider_id = this.orderInfo.task_assignment.service_provider_id;
-					}
-					
-					// 如果是待接单状态，service_member_id 可以为空（作为订单激励金）
-					// if (!service_member_id && this.orderInfo.status !== 'waiting') {
-					// 	uni.showToast({
-					// 		title: '暂无骑手接单',
-					// 		icon: 'none'
-					// 	});
-					// 	return;
-					// }
-
-					uni.showLoading({
-						title: '处理中...'
-					});
-
-					// 构建请求参数
-					const params = {
-						task_id: this.orderId,
-						user_id: userInfo.user_id,
-						openid: openid,  // 新增openid参数
-						order_amount: amount,  // 参数名改为 order_amount
-						service_member_id: service_member_id,  // 新增骑手ID
-						service_provider_id: service_provider_id,  // 新增服务商ID
-						sign: 'chongchong'
-					};
-
-					// 调用打赏接口 - 使用完整URL
-					const res = await uni.request({
-						url: 'https://ccpt.0871.cn/api/task/reward',
-						method: 'POST',
-						data: params,
-						header: {
-							'content-type': 'application/json'
-						}
-					});
-					
-					uni.hideLoading();
-
-					if (res.data && res.data.code === 200) {
-						// 获取支付参数
-						const payRes = res.data.data.pay_res;
-						
-						// 调用微信支付
-						this.callWechatPay(payRes, amount);
-					} else {
-						uni.showToast({
-							title: (res.data && res.data.message) || '打赏失败',
-							icon: 'none'
-						});
-					}
-				} catch (error) {
-					uni.hideLoading();
-					console.error('打赏失败:', error);
-					uni.showToast({
-						title: '网络请求失败',
-						icon: 'none'
-					});
-				}
-			},
-
-			// 获取支付成功的打赏记录
-			getSuccessfulRewards() {
-				if (!this.orderInfo.reward || !Array.isArray(this.orderInfo.reward)) {
-					return [];
-				}
-				// 只返回支付成功的打赏记录
-				return this.orderInfo.reward.filter(item => item.status === 'paid');
-			},
-
-			// 计算打赏总金额
-			getTotalRewardAmount() {
-				const rewards = this.getSuccessfulRewards();
-				if (rewards.length === 0) {
-					return '0.00';
-				}
-				const total = rewards.reduce((sum, item) => {
-					return sum + parseFloat(item.order_amount || 0);
-				}, 0);
-				return total.toFixed(2);
-			},
-
-			// 格式化打赏时间
-			formatRewardTime(timeStr) {
-				if (!timeStr) return '';
-				
-				try {
-					// 处理带时区的时间格式 "2025-10-15T13:54:12.000000Z"
-					const date = new Date(timeStr);
-					const year = date.getFullYear();
-					const month = String(date.getMonth() + 1).padStart(2, '0');
-					const day = String(date.getDate()).padStart(2, '0');
-					const hours = String(date.getHours()).padStart(2, '0');
-					const minutes = String(date.getMinutes()).padStart(2, '0');
-					
-					return `${year}-${month}-${day} ${hours}:${minutes}`;
-				} catch (e) {
-					console.error('格式化打赏时间出错:', e);
-					return timeStr;
-				}
-			},
-
-			// 获取最近的打赏时间
-			getLatestRewardTime() {
-				const rewards = this.getSuccessfulRewards();
-				if (rewards.length === 0) {
-					return '';
-				}
-				
-				// 按时间排序，获取最新的一条
-				const sortedRewards = rewards.sort((a, b) => {
-					const dateA = new Date(a.created_at || a.updated_at);
-					const dateB = new Date(b.created_at || b.updated_at);
-					return dateB - dateA; // 降序排列
-				});
-				
-				const latestReward = sortedRewards[0];
-				return this.formatRewardTime(latestReward.created_at || latestReward.updated_at);
-			},
-
-			// 调用微信支付
-			callWechatPay(payParams, amount) {
-				// #ifdef MP-WEIXIN
-				// 微信小程序支付
-				uni.requestPayment({
-					provider: 'wxpay',
-					timeStamp: payParams.timestamp,
-					nonceStr: payParams.nonceStr,
-					package: payParams.package,
-					signType: payParams.signType,
-					paySign: payParams.paySign,
-					success: (res) => {
-						console.log('支付成功', res);
-						uni.showToast({
-							title: `打赏${amount}元成功`,
-							icon: 'success',
-							duration: 2000
-						});
-						
-						// 刷新订单详情
-						setTimeout(() => {
-							this.loadOrderDetail();
-						}, 2000);
-					},
-					fail: (err) => {
-						console.error('支付失败', err);
-						if (err.errMsg && err.errMsg.includes('cancel')) {
-							uni.showToast({
-								title: '已取消支付',
-								icon: 'none'
-							});
-						} else {
-							uni.showToast({
-								title: '支付失败',
-								icon: 'none'
-							});
-						}
-					}
-				});
-				// #endif
-				
-				// #ifdef H5
-				// H5微信支付（公众号支付）
-				if (typeof WeixinJSBridge !== 'undefined') {
-					WeixinJSBridge.invoke(
-						'getBrandWCPayRequest',
-						{
-							appId: payParams.appId,
-							timeStamp: payParams.timestamp,
-							nonceStr: payParams.nonceStr,
-							package: payParams.package,
-							signType: payParams.signType,
-							paySign: payParams.paySign
-						},
-						(res) => {
-							if (res.err_msg === 'get_brand_wcpay_request:ok') {
-								uni.showToast({
-									title: `打赏${amount}元成功`,
-									icon: 'success',
-									duration: 2000
-								});
-								
-								// 刷新订单详情
-								setTimeout(() => {
-									this.loadOrderDetail();
-								}, 2000);
-							} else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
-								uni.showToast({
-									title: '已取消支付',
-									icon: 'none'
-								});
-							} else {
-								uni.showToast({
-									title: '支付失败',
-									icon: 'none'
-								});
-							}
-						}
-					);
-				} else {
-					uni.showToast({
-						title: '请在微信中打开',
-						icon: 'none'
-					});
-				}
-				// #endif
-				
-				// #ifndef MP-WEIXIN || H5
-				// 其他平台暂不支持
-				uni.showToast({
-					title: '当前平台暂不支持支付',
-					icon: 'none'
-				});
-				// #endif
 			}
 		}
 	}
@@ -1985,63 +1766,6 @@
 		.content {
 			padding: 0;
 			margin: 20rpx 20rpx;
-		}
-
-		// 城市平均完单时效卡片容器
-		.city-efficiency-wrapper {
-			display: flex;
-			justify-content: center;
-			margin-bottom: 20rpx;
-
-			.city-efficiency-card {
-				background: linear-gradient(135deg, #E6F7FF 0%, #F0F9FF 100%);
-				border-radius: 50rpx;
-				padding: 20rpx 24rpx;
-				box-shadow: 0 2rpx 8rpx rgba(36, 146, 242, 0.08);
-				border: 2rpx solid rgba(24, 144, 255, 0.1);
-				display: inline-block;
-
-				.efficiency-content {
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					flex-wrap: nowrap;
-					white-space: nowrap;
-
-					.city-area {
-						display: flex;
-						align-items: center;
-						margin-right: 12rpx;
-						padding-bottom: 4rpx;
-						border-bottom: 2rpx solid #1890FF;
-
-						.location-icon {
-							width: 32rpx;
-							height: 32rpx;
-							margin-right: 8rpx;
-							flex-shrink: 0;
-						}
-
-						.city-name {
-							font-size: 28rpx;
-							color: #1890FF;
-							font-weight: 600;
-						}
-					}
-
-					.efficiency-label {
-						font-size: 26rpx;
-						color: #1890FF;
-						// margin-right: 8rpx;
-					}
-
-					.efficiency-value {
-						font-size: 30rpx;
-						color: #1890FF;
-						// font-weight: 700;
-					}
-				}
-			}
 		}
 
 		.order-header {
@@ -2349,17 +2073,6 @@
 								mix-blend-mode: multiply;
 							}
 
-							.working-gif-2 {
-								width: 126rpx;
-								height: 78rpx;
-								position: absolute;
-								top: -80rpx;
-								left: 50%;
-								transform: translateX(-50%);
-								z-index: 3;
-								mix-blend-mode: multiply;
-							}
-
 							.working-wandan {
 								width: 160rpx;
 								height: 100rpx;
@@ -2459,78 +2172,6 @@
 			}
 		}
 
-		// 打赏信息卡片样式
-		.reward-info-card {
-			background: #FFFFFF;
-			border-radius: 12rpx;
-			margin: 20rpx 0;
-			padding: 24rpx;
-			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-
-			.reward-header {
-				display: flex;
-				justify-content: space-between;
-				align-items: flex-start;
-
-				.reward-title {
-					display: flex;
-					align-items: center;
-					gap: 12rpx;
-
-					.reward-emoji {
-						font-size: 36rpx;
-						line-height: 1;
-					}
-
-					.reward-title-text {
-						font-size: 30rpx;
-						font-weight: 600;
-						color: #333;
-					}
-				}
-
-				.reward-summary {
-					display: flex;
-					flex-direction: column;
-					align-items: flex-end;
-					gap: 10rpx;
-
-					.reward-total {
-						display: flex;
-						align-items: center;
-						gap: 8rpx;
-
-						.total-label {
-							font-size: 26rpx;
-							color: #666;
-						}
-
-						.total-amount {
-							font-size: 32rpx;
-							font-weight: 600;
-							color: #FF6B00;
-						}
-					}
-
-					.reward-latest-time {
-						display: flex;
-						align-items: center;
-						gap: 8rpx;
-
-						.time-label {
-							font-size: 22rpx;
-							color: #999;
-						}
-
-						.time-value {
-							font-size: 22rpx;
-							color: #666;
-						}
-					}
-				}
-			}
-		}
-
 		.rider-info-card {
 			padding: 24rpx;
 			display: flex;
@@ -2603,13 +2244,6 @@
 						align-items: center;
 						justify-content: center;
 						flex-shrink: 0;
-						cursor: pointer;
-						transition: all 0.3s ease;
-
-						&:active {
-							transform: scale(0.95);
-							background: #1576D2;
-						}
 
 						.reward-text {
 							font-size: 28rpx;
@@ -2757,27 +2391,24 @@
 					}
 
 					.copy-btn {
-						font-size: 22rpx;
-						padding: 0rpx 4rpx;
-						background-color: #f5f5f5;
-						color: #666;
-						border: 1rpx solid #ddd;
-						border-radius: 20rpx;
-						margin-left: 4rpx;
 						display: flex;
 						align-items: center;
 						justify-content: center;
+						padding: 4rpx 12rpx;
+						background-color: #F9C561;
+						border-radius: 8rpx;
 						flex-shrink: 0;
-						transition: all 0.2s ease;
+						cursor: pointer;
 
 						&:active {
-							background-color: #e8e8e8;
-							border-color: #ccc;
+							background-color: #F0B84A;
 						}
 
-						.copy-icon {
-							width: 22rpx;
-							height: 22rpx;
+						.copy-text {
+							font-size: 22rpx;
+							color: #ffffff;
+							line-height: 1;
+							pointer-events: none;
 						}
 					}
 				}
@@ -3079,53 +2710,6 @@
 					white-space: pre-wrap;
 				}
 
-				// SN码容器样式
-				&.sn-code-container {
-					display: flex;
-					flex-direction: column;
-					align-items: flex-end;
-					gap: 8rpx;
-
-					.sn-code-item {
-						display: flex;
-						align-items: center;
-						gap: 8rpx;
-
-						.sn-code-text {
-							font-size: 26rpx;
-							color: #333;
-						}
-
-						.copy-code-btn {
-							font-size: 22rpx;
-							padding: 0rpx 4rpx;
-							background-color: #f5f5f5;
-							color: #666;
-							border: 1rpx solid #ddd;
-							border-radius: 20rpx;
-							margin-left: 4rpx;
-							display: flex;
-							align-items: center;
-							justify-content: center;
-							flex-shrink: 0;
-							transition: all 0.2s ease;
-							cursor: pointer;
-							position: relative;
-							z-index: 10;
-							
-							&:active {
-								background-color: #e8e8e8;
-								border-color: #ccc;
-							}
-
-							.copy-icon-small {
-								width: 22rpx;
-								height: 22rpx;
-							}
-						}
-					}
-				}
-
 				// 门店名称容器样式
 				&.store-name-container {
 					display: flex;
@@ -3136,33 +2720,29 @@
 						margin-right: 8rpx;
 					}
 
-						.copy-store-btn {
-							font-size: 22rpx;
-							padding: 0rpx 4rpx;
-							background-color: #f5f5f5;
-							color: #666;
-							border: 1rpx solid #ddd;
-							border-radius: 20rpx;
-							margin-left: 4rpx;
-							display: flex;
-							align-items: center;
-							justify-content: center;
-							flex-shrink: 0;
-							transition: all 0.2s ease;
-							cursor: pointer;
-							position: relative;
-							z-index: 10;
-							
-							&:active {
-								background-color: #e8e8e8;
-								border-color: #ccc;
-							}
-
-							.copy-icon-small {
-								width: 22rpx;
-								height: 22rpx;
-							}
+					.copy-store-btn {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						padding: 4rpx 8rpx;
+						background-color: #F9C561;
+						border-radius: 4rpx;
+						cursor: pointer;
+						position: relative;
+						z-index: 10;
+						flex-shrink: 0;
+						
+						&:active {
+							background-color: #F0B84A;
 						}
+						
+						.copy-text {
+							font-size: 20rpx;
+							color: #ffffff;
+							line-height: 1;
+							pointer-events: none;
+						}
+					}
 				}
 			}
 		}
@@ -3205,50 +2785,6 @@
 			background-color: #f8f9fa;
 			border-radius: 8rpx;
 			margin-left: 40rpx;
-
-			// 打赏详情样式
-			.reward-detail {
-				margin-top: 20rpx;
-				padding-top: 20rpx;
-				border-top: 2rpx solid #e8e8e8;
-
-				.reward-detail-title {
-					display: flex;
-					align-items: center;
-					gap: 8rpx;
-					margin-bottom: 12rpx;
-
-					.reward-emoji {
-						font-size: 24rpx;
-					}
-
-					text {
-						font-size: 26rpx;
-						font-weight: 600;
-						color: #333;
-					}
-				}
-
-				.reward-list {
-					.reward-item {
-						display: flex;
-						justify-content: space-between;
-						align-items: center;
-						padding: 8rpx 0;
-
-						.reward-amount {
-							font-size: 26rpx;
-							color: #FF6B00;
-							font-weight: 500;
-						}
-
-						.reward-time {
-							font-size: 24rpx;
-							color: #999;
-						}
-					}
-				}
-			}
 		}
 		
 		.price-item {
@@ -3304,33 +2840,29 @@
 					margin-right: 8rpx;
 				}
 
-							.copy-code-btn {
-								font-size: 22rpx;
-								padding: 0rpx 4rpx;
-								background-color: #f5f5f5;
-								color: #666;
-								border: 1rpx solid #ddd;
-								border-radius: 20rpx;
-								margin-left: 4rpx;
-								display: flex;
-								align-items: center;
-								justify-content: center;
-								flex-shrink: 0;
-								transition: all 0.2s ease;
-								cursor: pointer;
-								position: relative;
-								z-index: 10;
-								
-								&:active {
-									background-color: #e8e8e8;
-									border-color: #ccc;
-								}
-
-								.copy-icon-small {
-									width: 22rpx;
-									height: 22rpx;
-								}
-							}
+				.copy-code-btn {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					padding: 4rpx 8rpx;
+					background-color: #F9C561;
+					border-radius: 4rpx;
+					cursor: pointer;
+					position: relative;
+					z-index: 10;
+					flex-shrink: 0;
+					
+					&:active {
+						background-color: #F0B84A;
+					}
+					
+					.copy-text {
+						font-size: 20rpx;
+						color: #ffffff;
+						line-height: 1;
+						pointer-events: none;
+					}
+				}
 			}
 
 			// 地址容器样式
@@ -3343,33 +2875,29 @@
 					margin-right: 8rpx;
 				}
 
-					.copy-address-btn {
-						font-size: 22rpx;
-						padding: 0rpx 4rpx;
-						background-color: #f5f5f5;
-						color: #666;
-						border: 1rpx solid #ddd;
-						border-radius: 20rpx;
-						margin-left: 4rpx;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						flex-shrink: 0;
-						transition: all 0.2s ease;
-						cursor: pointer;
-						position: relative;
-						z-index: 10;
-						
-						&:active {
-							background-color: #e8e8e8;
-							border-color: #ccc;
-						}
-
-						.copy-icon-small {
-							width: 22rpx;
-							height: 22rpx;
-						}
+				.copy-address-btn {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					padding: 4rpx 8rpx;
+					background-color: #F9C561;
+					border-radius: 4rpx;
+					cursor: pointer;
+					position: relative;
+					z-index: 10;
+					flex-shrink: 0;
+					
+					&:active {
+						background-color: #F0B84A;
 					}
+					
+					.copy-text {
+						font-size: 20rpx;
+						color: #ffffff;
+						line-height: 1;
+						pointer-events: none;
+					}
+				}
 			}
 		}
 
@@ -3673,36 +3201,40 @@
 		overflow: hidden;
 		z-index: 1000;
 		animation: modalSlideIn 0.3s ease;
+		// box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
 
 		// 顶部区域带卡通人物
 		.cancel-modal-top {
 			position: relative;
 			width: 100%;
 			overflow: hidden;
-			line-height: 0;
-			font-size: 0;
 
 			.modal-character {
 				width: 100%;
 				height: auto;
 				display: block;
-				vertical-align: bottom;
 			}
 		}
 
 		// 内容区域
 		.cancel-modal-content {
-			padding: 0rpx 30rpx 30rpx 30rpx;
+			padding: 30rpx;
 			background-color: #FFFFFF;
-			margin-top: -1px;
-			margin-bottom: -1px;
+
+			.cancel-modal-text {
+				display: block;
+				font-size: 28rpx;
+				color: #666666;
+				line-height: 1.6;
+				margin-bottom: 30rpx;
+				text-align: center;
+			}
 
 			// 取消原因列表
 			.cancel-reason-list {
 				background-color: #EBF5FF;
 				border-radius: 12rpx;
 				padding: 20rpx;
-				
 				.reason-list-title {
 					display: block;
 					font-size: 30rpx;
@@ -3715,7 +3247,7 @@
 					.reason-option-item {
 						display: flex;
 						align-items: center;
-						padding: 7rpx 0;
+						padding: 16rpx 0;
 						border-bottom: 1rpx solid #f5f5f5;
 						cursor: pointer;
 
@@ -3820,66 +3352,106 @@
 		overflow: hidden;
 		z-index: 1002;
 		animation: modalSlideIn 0.3s ease;
-		display: flex;
-		flex-direction: column;
+		// background-color: #FFFFFF; // 添加统一背景色
+		display: flex; // 使用flex布局
+		flex-direction: column; // 垂直方向
+		// box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
 
 		// 顶部区域带卡通人物
 		.confirm-cancel-top {
 			position: relative;
 			width: 100%;
 			overflow: hidden;
-			margin: 0;
-			padding: 0;
-			flex-shrink: 0;
+			margin: 0; // 移除所有margin
+			padding: 0; // 移除所有padding
+			// background-color: #FFFFFF; // 确保背景一致
+			flex-shrink: 0; // 防止压缩
 
 			.modal-character {
 				width: 100%;
 				height: auto;
 				display: block;
-				vertical-align: bottom;
+				vertical-align: bottom; // 消除底部间隙
 			}
 		}
 
 		// 内容区域
 		.confirm-cancel-content {
-			padding: 0;
+			padding: 0; // 完全移除padding
 			background-color: #FFFFFF;
-			display: block;
-			margin: 0;
+			display: block; // 改为block
+			margin: 0; // 移除所有margin
 			position: relative;
 			z-index: 5;
-			flex-shrink: 0;
-			margin-bottom: -1px;
-			margin-top: -1px;
+			flex-shrink: 0; // 防止压缩
 
 			.content-image {
 				width: 100%;
 				height: auto;
 				display: block;
-				margin: 0;
-				padding: 0;
-				vertical-align: bottom;
-				user-select: none;
-				-webkit-user-select: none;
-				pointer-events: none;
-				line-height: 0;
-				font-size: 0;
+				margin: 0; // 移除所有margin
+				padding: 0; // 确保没有padding
+				vertical-align: bottom; // 消除图片默认的基线对齐间隙
+				user-select: none; // 禁止选中图片
+				-webkit-user-select: none; // 兼容WebKit内核
+				pointer-events: none; // 禁止图片交互
+				line-height: 0; // 消除行高影响
+				font-size: 0; // 消除字体大小影响
+			}
+
+			.success-icon-wrapper {
+				margin-bottom: 30rpx;
+
+				.success-icon {
+					width: 120rpx;
+					height: 120rpx;
+					border-radius: 50%;
+					background: linear-gradient(135deg, #4FB5FF 0%, #2492F2 100%);
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					box-shadow: 0 8rpx 24rpx rgba(36, 146, 242, 0.3);
+
+					.icon-check {
+						font-size: 60rpx;
+						color: #FFFFFF;
+						font-weight: bold;
+					}
+				}
+			}
+
+			.confirm-title {
+				font-size: 36rpx;
+				font-weight: 600;
+				color: #333333;
+				margin-bottom: 16rpx;
+			}
+
+			.confirm-text {
+				font-size: 30rpx;
+				color: #666666;
+				margin-bottom: 12rpx;
+			}
+
+			.confirm-subtext {
+				font-size: 26rpx;
+				color: #999999;
 			}
 		}
 
 		// 底部按钮区域
 		.confirm-cancel-footer {
 			display: flex;
-			padding: 30rpx;
+			padding: 30rpx; // 统一padding
 			gap: 0;
 			background-color: #FFFFFF;
-			margin-top: 0;
+			margin-top: 0; // 移除负margin
 			position: relative;
 			z-index: 10;
-			border-top: none;
-			line-height: 0;
-			font-size: 0;
-			flex-shrink: 0;
+			border-top: none; // 确保没有边框
+			line-height: 0; // 消除行高影响
+			font-size: 0; // 消除字体大小影响
+			flex-shrink: 0; // 防止压缩
 
 			.confirm-cancel-btn {
 				flex: 1;
@@ -3887,13 +3459,13 @@
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				font-size: 32rpx;
+				font-size: 32rpx; // 恢复字体大小
 				font-weight: 500;
 				border-radius: 44rpx;
 				cursor: pointer;
 				transition: all 0.3s ease;
 				margin: 0 12rpx;
-				line-height: normal;
+				line-height: normal; // 恢复正常行高
 
 				&.withdraw {
 					color: #FFFFFF;

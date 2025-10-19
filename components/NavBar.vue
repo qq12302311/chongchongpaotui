@@ -49,7 +49,7 @@ export default {
       statusBarHeight: 0,
       menuButtonInfo: null,
       navBarHeight: 0,
-      tabBarPages: ['/pages/index/index', '/pages/order/order', '/pages/my/my']
+      tabBarPages: ['/pages/index/index', '/pages/order/order', '/pages/cart/index', '/pages/my/my']
     }
   },
   computed: {

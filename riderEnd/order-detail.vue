@@ -832,8 +832,8 @@
 					// 从本地存储获取 referrer_id 并添加到参数中
 					const localReferrerId = uni.getStorageSync('current_referrer_id');
 					if (localReferrerId) {
-						params.referrer_id = localReferrerId;
-						console.log('接单时添加 referrer_id 参数:', localReferrerId);
+						params.task_referrer_id = localReferrerId;
+						console.log('接单时添加 task_referrer_id 参数:', localReferrerId);
 					}
 
 					const res = await this.$request('task/accept', params, 'POST');
@@ -956,7 +956,7 @@
 					const shareData = {
 						title: `${order.task_detail?.task_name || '充充跑腿'} | ${getTransferDisplayAmount(order)} | ${formatAddress(order)}`,
 						desc: `【订单转派】距离: ${order.distance || 0}km | 转单奖励: ${getTransferReward(order)}`,
-						path: `/riderEnd/index?referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
+						path: `/riderEnd/index?task_referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
 						imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
 					};
 

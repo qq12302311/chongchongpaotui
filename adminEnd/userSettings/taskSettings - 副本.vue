@@ -444,14 +444,8 @@
 
 					<view v-else class="time-fee-grid">
 						<view v-for="(time, index) in timeOptions" :key="index" class="time-fee-item">
-							<view class="time-fee-header">
-								<text class="time-label">{{time.hours}}小时内</text>
-								<switch
-									:checked="!!currentSettings[`bubao_time_limit_${time.index}_available`]"
-									@change="handleTimeLimitSwitch(time.index, $event)"
-									class="time-switch" />
-							</view>
-							<view class="fee-input-wrapper" v-if="!!currentSettings[`bubao_time_limit_${time.index}_available`]">
+							<text class="time-label">{{time.hours}}小时内</text>
+							<view class="fee-input-wrapper">
 								<input type="text" v-model="currentSettings[`bubao_time_limit_${time.index}_fee`]"
 									class="item-input fee-input" placeholder="数字/小数/负数"
 									@input="validateNumberInput($event, `bubao_time_limit_${time.index}_fee`)"
@@ -459,11 +453,6 @@
 									pattern="[-]?[0-9]*[.]?[0-9]*" />
 								<text class="fee-unit">元</text>
 							</view>
-							<view class="fee-disabled-placeholder" v-else>
-								<text class="disabled-text">已禁用</text>
-							</view>
-							<!-- 调试信息：显示时效可用性状态 -->
-							<!-- <text style="font-size: 20rpx; color: #999;">调试: {{time.index}} - {{currentSettings[`bubao_time_limit_${time.index}_available`]}}</text> -->
 						</view>
 					</view>
 				</view>
@@ -764,23 +753,11 @@
 					<!-- 服务时效 -->
 					<view class="bulk-section">
 						<text class="bulk-section-title">服务时效</text>
-						<view class="bulk-time-fee-grid">
-							<view v-for="(time, index) in timeOptions" :key="index" class="bulk-time-fee-item">
-								<view class="bulk-time-fee-header">
-									<text class="bulk-time-label">{{time.hours}}小时内</text>
-									<switch
-										:checked="!!bulkSettings[`bubao_time_limit_${time.index}_available`]"
-										@change="handleBulkTimeLimitSwitch(time.index, $event)"
-										class="bulk-time-switch" />
-								</view>
-								<view class="bulk-fee-input-wrapper" v-if="!!bulkSettings[`bubao_time_limit_${time.index}_available`]">
-									<input type="text" v-model="bulkSettings[`bubao_time_limit_${time.index}_fee`]"
-										class="bulk-fee-input" placeholder="数字/小数/负数" />
-									<text class="bulk-fee-unit">元</text>
-								</view>
-								<view class="bulk-fee-disabled-placeholder" v-else>
-									<text class="bulk-disabled-text">已禁用</text>
-								</view>
+						<view class="bulk-settings-grid">
+							<view v-for="(time, index) in timeOptions" :key="index" class="bulk-setting-item">
+								<text class="bulk-setting-label">{{time.hours}}小时内费用（元）</text>
+								<input type="text" v-model="bulkSettings[`bubao_time_limit_${time.index}_fee`]"
+									class="bulk-setting-input" placeholder="数字/小数/负数" />
 							</view>
 						</view>
 					</view>
@@ -895,9 +872,8 @@
 					bubao_base_distance: '',
 					bubao_base_distance_fee: '',
 					bubao_extra_distance: '',
-					bubao_extra_distance_fee: '',
-					// 服务时效设置（将在页面初始化时动态添加）
-					// 包括 bubao_time_limit_X_fee 和 bubao_time_limit_X_available 字段
+					bubao_extra_distance_fee: ''
+					// 服务时效设置将动态添加
 				},
 
 				// 所有服务商的设置
@@ -921,31 +897,22 @@
 						// 服务时效设置
 						bubao_time_limit_1: '1',
 						bubao_time_limit_1_fee: '1',
-						bubao_time_limit_1_available: true,
 						bubao_time_limit_2: '2',
 						bubao_time_limit_2_fee: '2',
-						bubao_time_limit_2_available: true,
 						bubao_time_limit_3: '3',
 						bubao_time_limit_3_fee: '3',
-						bubao_time_limit_3_available: true,
 						bubao_time_limit_4: '5',
 						bubao_time_limit_4_fee: '5',
-						bubao_time_limit_4_available: true,
 						bubao_time_limit_5: '7',
 						bubao_time_limit_5_fee: '7',
-						bubao_time_limit_5_available: true,
 						bubao_time_limit_6: '12',
 						bubao_time_limit_6_fee: '12',
-						bubao_time_limit_6_available: true,
 						bubao_time_limit_7: '24',
 						bubao_time_limit_7_fee: '24',
-						bubao_time_limit_7_available: true,
 						bubao_time_limit_8: '48',
 						bubao_time_limit_8_fee: '48',
-						bubao_time_limit_8_available: true,
 						bubao_time_limit_9: '72',
 						bubao_time_limit_9_fee: '-2',
-						bubao_time_limit_9_available: true,
 						bubao_time_limit_10: '0',
 						bubao_time_limit_10_fee: '0',
 
@@ -1127,91 +1094,6 @@
 					'onsite': '上门服务设置'
 				};
 				return titleMap[moduleKey] || '服务设置';
-			},
-
-			// 处理时效开关变化
-			async handleTimeLimitSwitch(timeIndex, event) {
-				const fieldName = `bubao_time_limit_${timeIndex}_available`;
-				const newValue = event.detail.value;
-
-				// 显示加载状态
-				uni.showLoading({
-					title: '更新中...'
-				});
-
-				try {
-					// 获取用户信息
-					const riderUserInfo = uni.getStorageSync('riderUserInfo') || {};
-					const userId = riderUserInfo.service_member_id || riderUserInfo.id || '';
-
-					// 获取当前服务区域ID
-					let serviceZoneId = null;
-					if (this.currentSettings.service_zone_id) {
-						serviceZoneId = this.currentSettings.service_zone_id;
-					} else if (this.currentSettings.districtInfo && this.currentSettings.districtInfo.district_id) {
-						serviceZoneId = this.currentSettings.districtInfo.district_id;
-					} else {
-						serviceZoneId = parseInt(this.currentProvider);
-					}
-
-					// 准备API参数
-					const params = {
-						service_member_id: userId,
-						service_zone_id: serviceZoneId,
-						[fieldName]: newValue,
-						sign: 'chongchong'
-					};
-
-					console.log(`更新时效开关${timeIndex}:`, newValue, '参数:', params);
-
-					// 调用API更新
-					const res = await this.$request('service/group/zone/update', params, 'POST');
-
-					if (res && res.status === 'success') {
-						// 更新成功，保存到本地状态
-						this.currentSettings[fieldName] = newValue;
-
-						// 强制更新界面以确保开关状态正确显示
-						this.$forceUpdate();
-
-						uni.showToast({
-							title: `时效${timeIndex}已${newValue ? '启用' : '禁用'}`,
-							icon: 'success',
-							duration: 1500
-						});
-					} else {
-						// 更新失败，恢复原状态
-						console.error('时效开关更新失败:', res);
-						uni.showToast({
-							title: res.msg || '更新失败，请重试',
-							icon: 'none',
-							duration: 2000
-						});
-
-						// 强制刷新页面数据以恢复正确状态
-						this.$forceUpdate();
-					}
-				} catch (error) {
-					console.error('时效开关更新网络错误:', error);
-					uni.showToast({
-						title: '网络错误，请检查网络连接',
-						icon: 'none',
-						duration: 2000
-					});
-
-					// 强制刷新页面数据以恢复正确状态
-					this.$forceUpdate();
-				} finally {
-					uni.hideLoading();
-				}
-			},
-
-			// 处理批量修改时效开关变化
-			handleBulkTimeLimitSwitch(timeIndex, event) {
-				const fieldName = `bubao_time_limit_${timeIndex}_available`;
-				const newValue = event.detail.value;
-				this.bulkSettings[fieldName] = newValue;
-				console.log(`批量修改时效开关${timeIndex}:`, newValue);
 			},
 
 			// 获取批量修改弹窗中的业务板块标题
@@ -1556,15 +1438,6 @@
 					settings.bubao_wire_device_fee = parseFloat(pricesData.bubao_wire_device_fee).toString();
 				}
 
-				// 更新时效可用性设置
-				for (let i = 1; i <= 9; i++) {
-					const availableField = `bubao_time_limit_${i}_available`;
-					if (pricesData[availableField] !== undefined) {
-						settings[availableField] = Boolean(pricesData[availableField]);
-						console.log(`更新时效${i}可用性:`, settings[availableField]);
-					}
-				}
-
 				// console.log('价格设置已更新，当前设置:', {
 				// 	bubao_base_device: settings.bubao_base_device,
 				// 	bubao_base_device_fee: settings.bubao_base_device_fee,
@@ -1586,7 +1459,6 @@
 				for (let i = 1; i <= 10; i++) {
 					const timeField = `bubao_time_limit_${i}`;
 					const feeField = `${timeField}_fee`;
-					const availableField = `${timeField}_available`;
 
 					if (pricesData[timeField] !== undefined) {
 						settings[timeField] = pricesData[timeField].toString();
@@ -1605,14 +1477,6 @@
 					if (pricesData[feeField] !== undefined) {
 						settings[feeField] = parseFloat(pricesData[feeField]).toString();
 					}
-
-					// 处理时效可用性，默认为true
-					if (pricesData[availableField] !== undefined) {
-						settings[availableField] = Boolean(pricesData[availableField]);
-						console.log(`updateTimeOptions 更新时效${i}可用性:`, settings[availableField]);
-					} else if (settings[availableField] === undefined) {
-						settings[availableField] = true;
-					}
 				}
 
 				// 按小时数排序
@@ -1628,12 +1492,6 @@
 					// 强制更新Vue的响应式数据
 					this.$forceUpdate();
 				}
-
-				console.log('时效可用性设置完成:', {
-					bubao_time_limit_1_available: settings.bubao_time_limit_1_available,
-					bubao_time_limit_2_available: settings.bubao_time_limit_2_available,
-					bubao_time_limit_3_available: settings.bubao_time_limit_3_available
-				});
 
 				// console.log('时间选项已更新:', timeOptions);
 				// console.log('时间费用字段已更新:', {
@@ -1894,7 +1752,6 @@
 						for (let i = 1; i <= 10; i++) {
 							const timeField = `bubao_time_limit_${i}`;
 							const feeField = `${timeField}_fee`;
-							const availableField = `${timeField}_available`;
 
 							if (prices[timeField] !== undefined) {
 								settings[timeField] = prices[timeField].toString();
@@ -1912,15 +1769,6 @@
 
 							if (prices[feeField] !== undefined) {
 								settings[feeField] = parseFloat(prices[feeField]).toString();
-							}
-
-							// 处理时效可用性字段
-							if (prices[availableField] !== undefined) {
-								settings[availableField] = Boolean(prices[availableField]);
-								console.log(`初始化时效${i}可用性:`, settings[availableField]);
-							} else if (settings[availableField] === undefined) {
-								// 如果API没有返回该字段，默认设置为true
-								settings[availableField] = true;
 							}
 						}
 
@@ -2246,31 +2094,22 @@
 					// 时间费用设置
 					bubao_time_limit_1: '1',
 					bubao_time_limit_1_fee: '1',
-					bubao_time_limit_1_available: true,
 					bubao_time_limit_2: '2',
 					bubao_time_limit_2_fee: '2',
-					bubao_time_limit_2_available: true,
 					bubao_time_limit_3: '3',
 					bubao_time_limit_3_fee: '3',
-					bubao_time_limit_3_available: true,
 					bubao_time_limit_4: '5',
 					bubao_time_limit_4_fee: '5',
-					bubao_time_limit_4_available: true,
 					bubao_time_limit_5: '7',
 					bubao_time_limit_5_fee: '7',
-					bubao_time_limit_5_available: true,
 					bubao_time_limit_6: '12',
 					bubao_time_limit_6_fee: '12',
-					bubao_time_limit_6_available: true,
 					bubao_time_limit_7: '24',
 					bubao_time_limit_7_fee: '24',
-					bubao_time_limit_7_available: true,
 					bubao_time_limit_8: '48',
 					bubao_time_limit_8_fee: '48',
-					bubao_time_limit_8_available: true,
 					bubao_time_limit_9: '72',
 					bubao_time_limit_9_fee: '-2',
-					bubao_time_limit_9_available: true,
 					bubao_time_limit_10: '0',
 					bubao_time_limit_10_fee: '0',
 
@@ -2600,31 +2439,22 @@
 					// 时间限制和费用
 					bubao_time_limit_1: parseInt(settings.bubao_time_limit_1 || '1'),
 					bubao_time_limit_1_fee: parseFloat(settings.bubao_time_limit_1_fee || '0'),
-					bubao_time_limit_1_available: settings.bubao_time_limit_1_available !== undefined ? settings.bubao_time_limit_1_available : true,
 					bubao_time_limit_2: parseInt(settings.bubao_time_limit_2 || '2'),
 					bubao_time_limit_2_fee: parseFloat(settings.bubao_time_limit_2_fee || '0'),
-					bubao_time_limit_2_available: settings.bubao_time_limit_2_available !== undefined ? settings.bubao_time_limit_2_available : true,
 					bubao_time_limit_3: parseInt(settings.bubao_time_limit_3 || '5'),
 					bubao_time_limit_3_fee: parseFloat(settings.bubao_time_limit_3_fee || '0'),
-					bubao_time_limit_3_available: settings.bubao_time_limit_3_available !== undefined ? settings.bubao_time_limit_3_available : true,
 					bubao_time_limit_4: parseInt(settings.bubao_time_limit_4 || '7'),
 					bubao_time_limit_4_fee: parseFloat(settings.bubao_time_limit_4_fee || '0'),
-					bubao_time_limit_4_available: settings.bubao_time_limit_4_available !== undefined ? settings.bubao_time_limit_4_available : true,
 					bubao_time_limit_5: parseInt(settings.bubao_time_limit_5 || '12'),
 					bubao_time_limit_5_fee: parseFloat(settings.bubao_time_limit_5_fee || '0'),
-					bubao_time_limit_5_available: settings.bubao_time_limit_5_available !== undefined ? settings.bubao_time_limit_5_available : true,
 					bubao_time_limit_6: parseInt(settings.bubao_time_limit_6 || '24'),
 					bubao_time_limit_6_fee: parseFloat(settings.bubao_time_limit_6_fee || '0'),
-					bubao_time_limit_6_available: settings.bubao_time_limit_6_available !== undefined ? settings.bubao_time_limit_6_available : true,
 					bubao_time_limit_7: parseInt(settings.bubao_time_limit_7 || '48'),
 					bubao_time_limit_7_fee: parseFloat(settings.bubao_time_limit_7_fee || '0'),
-					bubao_time_limit_7_available: settings.bubao_time_limit_7_available !== undefined ? settings.bubao_time_limit_7_available : true,
 					bubao_time_limit_8: parseInt(settings.bubao_time_limit_8 || '72'),
 					bubao_time_limit_8_fee: parseFloat(settings.bubao_time_limit_8_fee || '0'),
-					bubao_time_limit_8_available: settings.bubao_time_limit_8_available !== undefined ? settings.bubao_time_limit_8_available : true,
 					bubao_time_limit_9: parseInt(settings.bubao_time_limit_9 || '72'),
 					bubao_time_limit_9_fee: parseFloat(settings.bubao_time_limit_9_fee || '0'),
-					bubao_time_limit_9_available: settings.bubao_time_limit_9_available !== undefined ? settings.bubao_time_limit_9_available : true,
 					bubao_time_limit_10: parseInt(settings.bubao_time_limit_10 || '0'),
 					bubao_time_limit_10_fee: parseFloat(settings.bubao_time_limit_10_fee || '0'),
 
@@ -2685,7 +2515,7 @@
 				} else {
 					this.lastBulkSettings = null;
 				}
-				// 确保使用当前时间选项重置批量设置
+				// 重置批量设置为空
 				this.resetBulkSettings();
 				// 显示弹窗
 				this.showBulkModal = true;
@@ -2753,33 +2583,11 @@
 					bubao_extra_distance: '',
 					bubao_extra_distance_fee: ''
 				};
-
-				// 获取当前时间选项，如果为空则使用默认时间选项
-				let currentTimeOptions = this.timeOptions;
-				if (!currentTimeOptions || currentTimeOptions.length === 0) {
-					// 使用默认时间选项（与data中timeOptions一致）
-					currentTimeOptions = [
-						{ index: 3, hours: 3, fee: 3 },
-						{ index: 6, hours: 12, fee: 12 },
-						{ index: 7, hours: 24, fee: 24 },
-						{ index: 8, hours: 48, fee: 48 },
-						{ index: 9, hours: 72, fee: -2 },
-						{ index: 10, hours: 0, fee: 0 }
-					];
-					console.log('timeOptions为空，使用默认时间选项:', currentTimeOptions);
-				}
-
-				// 动态添加服务时效设置（包括可用性字段）
-				currentTimeOptions.forEach(time => {
-					defaultSettings[`bubao_time_limit_${time.index}_fee`] = '';
-					// 默认时效可用性设置为true（启用状态）
-					defaultSettings[`bubao_time_limit_${time.index}_available`] = true;
-				});
-
 				this.bulkSettings = Object.assign({}, defaultSettings, bulkSettings || {});
-				console.log('批量设置已重置，包含时效可用性字段:', this.bulkSettings);
-				console.log('使用的时间选项:', currentTimeOptions);
-
+				// 重置服务时效设置
+				this.timeOptions.forEach(time => {
+					this.bulkSettings[`bubao_time_limit_${time.index}_fee`] = (bulkSettings && bulkSettings[`bubao_time_limit_${time.index}_fee`]) || '';
+				});
 				// 重置展开状态
 				this.expandedProvinces = [];
 				this.expandedCities = [];
@@ -2972,11 +2780,8 @@
 					this.bulkSettings.bubao_base_distance_fee ||
 					this.bulkSettings.bubao_extra_distance ||
 					this.bulkSettings.bubao_extra_distance_fee ||
-					// 服务时效字段（费用和可用性）
-					this.timeOptions.some(time =>
-						this.bulkSettings[`bubao_time_limit_${time.index}_fee`] ||
-						this.bulkSettings[`bubao_time_limit_${time.index}_available`] !== undefined
-					);
+					// 服务时效字段
+					this.timeOptions.some(time => this.bulkSettings[`bubao_time_limit_${time.index}_fee`]);
 
 				if (!hasChanges) {
 					uni.showToast({
@@ -3071,12 +2876,6 @@
 						const feeValue = this.bulkSettings[`bubao_time_limit_${time.index}_fee`];
 						if (feeValue) {
 							params[`bubao_time_limit_${time.index}_fee`] = parseFloat(feeValue);
-						}
-
-						// 添加时效可用性设置
-						const availableValue = this.bulkSettings[`bubao_time_limit_${time.index}_available`];
-						if (availableValue !== undefined) {
-							params[`bubao_time_limit_${time.index}_available`] = Boolean(availableValue);
 						}
 					});
 
@@ -3235,13 +3034,6 @@
 									timeOption.fee = parseFloat(bulkSettings[feeKey]);
 								}
 							}
-						}
-
-						// 更新时效可用性设置
-						const availableKey = `bubao_time_limit_${time.index}_available`;
-						if (bulkSettings[availableKey] !== undefined) {
-							currentSettings[availableKey] = Boolean(bulkSettings[availableKey]);
-							console.log(`更新时效${time.index}可用性为:`, currentSettings[availableKey]);
 						}
 					});
 
@@ -4065,67 +3857,36 @@
 
 	.time-fee-item {
 		display: flex;
-		flex-direction: column;
+		align-items: center;
+		justify-content: space-between;
 		background-color: #f9f9f9;
 		border-radius: 10rpx;
 		padding: 16rpx 20rpx;
 		border: 1rpx solid rgba(0, 0, 0, 0.05);
 
-		.time-fee-header {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			margin-bottom: 12rpx;
-
-			.time-label {
-				font-size: 28rpx;
-				color: #333;
-				font-weight: 500;
-			}
-
-			.time-switch {
-				transform: scale(0.8);
-			}
+		.time-label {
+			font-size: 28rpx;
+			color: #333;
+			font-weight: 500;
 		}
 
 		.fee-input-wrapper {
 			display: flex;
 			align-items: center;
-			width: 100%;
 
 			.fee-input {
-				flex: 1;
+				width: 100rpx;
 				height: 60rpx;
 				background-color: #fff;
 				border: 1rpx solid #e0e0e0;
 				border-radius: 8rpx;
 				text-align: center;
-				padding: 0 16rpx;
 			}
 
 			.fee-unit {
-				font-size: 28rpx;
+				font-size: 24rpx;
 				color: #666;
-				margin-left: 12rpx;
-				font-weight: 500;
-				min-width: 40rpx;
-			}
-		}
-
-		.fee-disabled-placeholder {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: 60rpx;
-			background-color: #f5f5f5;
-			border-radius: 8rpx;
-			border: 1rpx dashed #ddd;
-			width: 100%;
-
-			.disabled-text {
-				font-size: 26rpx;
-				color: #999;
-				font-style: italic;
+				margin-left: 8rpx;
 			}
 		}
 
@@ -4158,85 +3919,6 @@
 		align-items: center;
 		justify-content: center;
 		padding: 40rpx;
-	}
-
-	// 批量修改时效费用网格
-	.bulk-time-fee-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 16rpx;
-		padding: 10rpx;
-	}
-
-	.bulk-time-fee-item {
-		display: flex;
-		flex-direction: column;
-		background-color: #f9f9f9;
-		border-radius: 10rpx;
-		padding: 16rpx 20rpx;
-		border: 1rpx solid rgba(0, 0, 0, 0.05);
-
-		.bulk-time-fee-header {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			margin-bottom: 12rpx;
-
-			.bulk-time-label {
-				font-size: 28rpx;
-				color: #333;
-				font-weight: 500;
-			}
-
-			.bulk-time-switch {
-				transform: scale(0.8);
-			}
-		}
-
-		.bulk-fee-input-wrapper {
-			display: flex;
-			align-items: center;
-			width: 100%;
-
-			.bulk-fee-input {
-				flex: 1;
-				height: 60rpx;
-				background-color: #fff;
-				border: 1rpx solid #e0e0e0;
-				border-radius: 8rpx;
-				text-align: center;
-				padding: 0 16rpx;
-			}
-
-			.bulk-fee-unit {
-				font-size: 28rpx;
-				color: #666;
-				margin-left: 12rpx;
-				font-weight: 500;
-				min-width: 40rpx;
-			}
-		}
-
-		.bulk-fee-disabled-placeholder {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: 60rpx;
-			background-color: #f5f5f5;
-			border-radius: 8rpx;
-			border: 1rpx dashed #ddd;
-			width: 100%;
-
-			.bulk-disabled-text {
-				font-size: 26rpx;
-				color: #999;
-				font-style: italic;
-			}
-		}
-
-		&:hover {
-			background-color: #f5f5f5;
-		}
 	}
 
 	.bulk-modal {

@@ -156,6 +156,87 @@ export default {
 		this.loadHistoryRecords()
 	},
 	methods: {
+		// 【新增方法】根据城市和区县名称查找并更新 district_id
+		async updateDistrictIdByAddress(cityName, districtName, publishPage) {
+			try {
+				console.log('🔍 开始查找 district_id，城市:', cityName, '区县:', districtName);
+				
+				// 获取城市列表数据
+				let cityListData = uni.getStorageSync('cityList');
+				if (!cityListData) {
+					console.log('📥 城市列表数据为空，正在获取...');
+					const res = await this.$request('service/zone', {}, 'POST');
+					if (res.code === 200 && res.data) {
+						cityListData = res.data;
+						uni.setStorageSync('cityList', cityListData);
+						console.log('✅ 城市列表数据获取成功');
+					} else {
+						console.error('❌ 获取城市列表数据失败:', res.msg);
+						return;
+					}
+				}
+
+				// 如果是字符串，尝试解析
+				if (typeof cityListData === 'string') {
+					try {
+						cityListData = JSON.parse(cityListData);
+					} catch (e) {
+						console.error('解析城市列表数据失败:', e);
+						return;
+					}
+				}
+
+				// 遍历城市列表查找匹配的 district_id
+				let foundDistrictId = null;
+				
+				for (const province of cityListData) {
+					if (province.children && Array.isArray(province.children)) {
+						for (const city of province.children) {
+							// 匹配城市名
+							if (city.name === cityName) {
+								// 在该城市下查找匹配的区县
+								if (city.children && Array.isArray(city.children)) {
+									for (const district of city.children) {
+										if (district.name === districtName) {
+											foundDistrictId = district.district_id;
+											console.log('✅ 找到匹配的区县，district_id:', foundDistrictId);
+											break;
+										}
+									}
+								}
+								
+								if (foundDistrictId) break;
+							}
+						}
+					}
+					if (foundDistrictId) break;
+				}
+
+				if (foundDistrictId) {
+					// 更新本地存储
+					uni.setStorageSync('selectedDistrictId', foundDistrictId);
+					console.log('✅ 已更新本地存储 selectedDistrictId:', foundDistrictId);
+
+					// 同步更新发布页面的 selectedDistrictId
+					if (publishPage && publishPage.$vm && publishPage.$vm.selectedDistrictId !== undefined) {
+						publishPage.$vm.selectedDistrictId = foundDistrictId;
+						console.log('✅ 已同步更新发布页面的 selectedDistrictId');
+					}
+
+					// 触发重新获取服务商信息
+					if (publishPage && publishPage.$vm && typeof publishPage.$vm.getProviderInfo === 'function') {
+						console.log('🔄 触发重新获取服务商信息');
+						await publishPage.$vm.getProviderInfo();
+						console.log('✅ 服务商信息已更新');
+					}
+				} else {
+					console.warn('⚠️ 未找到匹配的 district_id，城市:', cityName, '区县:', districtName);
+				}
+			} catch (error) {
+				console.error('❌ 更新 district_id 失败:', error);
+			}
+		},
+		
 		goBack() {
 			uni.navigateBack()
 		},
@@ -272,8 +353,8 @@ export default {
 		},
 
 		// 确认导入
-		confirmImport() {
-			this.importRecord(this.selectedRecord)
+		async confirmImport() {
+			await this.importRecord(this.selectedRecord)
 			this.closeImportModal()
 		},
 
@@ -289,19 +370,27 @@ export default {
 		},
 
 		// 导入记录
-		importRecord(record) {
+		async importRecord(record) {
 			// 发送事件到上一页，导入记录数据
 			const pages = getCurrentPages()
 			const prevPage = pages[pages.length - 2]
 
 			if (prevPage) {
-				// 更新上一页的表单数据
+				// 【调试】记录导入前的数据状态
+				console.log('=== 历史记录导入调试 ===');
+				console.log('导入前的formData:', JSON.parse(JSON.stringify(prevPage.$vm.formData)));
+				console.log('要导入的record:', record);
+
+				// 【彻底修复】创建全新的formData，只保留必要的用户输入字段
 				const formData = {
-					...prevPage.$vm.formData,
+					// 保留用户在当前页面可能设置的基本字段
+					user_id: prevPage.$vm.formData.user_id || 0,
+
+					// 从历史记录导入的门店信息
 					address: record.address,
 					detailAddress: record.shop_address || '',
-					longitude: record.longitude,
-					latitude: record.latitude,
+					longitude: parseFloat(record.longitude) || 0,
+					latitude: parseFloat(record.latitude) || 0,
 					province: record.province_name || '',
 					city: record.city_name || '',
 					district: record.district_name || '',
@@ -312,19 +401,125 @@ export default {
 						value: ''
 					}],
 					locationDesc: record.location_description || '',
-					distance: record.distance || '',
 					phone: record.phone_number,
 					contact: record.name,
-					shop_poi: record.shop_poi || '',
-					device_outside: record.device_outside || false, // 设备是否外摆
+					poiRemark: record.shop_poi || '', // 修复：正确映射门店POI字段
+					device_outside: record.device_outside !== undefined ? record.device_outside : '', // 修复：正确处理设备外摆字段
+
+					// 【重要】所有其他字段都设置为初始值，确保干净状态
+					distance: 0,
+					estimatedPrice: 0,
+					quantity: '', // 补宝数量必须重新填写
+					badItemQuantity: 0,
+					cableQuantity: 0,
+					powerQuantity: 0,
+					wiringQuantity: 0,
+					warehouseQuantity: 0,
+					timeType: 'before_deadline',
+					appointmentTime: '',
+					timeInterval: '',
+					timeRemark: '',
+					coupon: '',
+					couponId: '',
+					couponAmount: 0,
+					taskDetails: '',
+					goodsRequirement: '',
+					timeFrame: '5小时内',
+					timeSlot: '15日 12点-14点',
+					additional_notes: '',
+					recommended_service_time_start: '',
+					recommended_service_time_end: '',
 				}
 
-				// 如果有SN/MAC码，也导入
-				if (record.snMacList && record.snMacList.length > 0) {
-					formData.snMacList = record.snMacList
+				console.log('合并后的formData:', JSON.parse(JSON.stringify(formData)));
+
+				// 【优化】确保SN/MAC码数据格式正确
+				if (record.sn_mac_code && Array.isArray(record.sn_mac_code) && record.sn_mac_code.length > 0) {
+					// 确保数据格式为 [{id: xxx, value: 'xxx'}, ...]
+					formData.snMacList = record.sn_mac_code.map((item, index) => {
+						if (typeof item === 'string') {
+							return {
+								id: Date.now() + index,
+								value: item
+							}
+						} else if (item && typeof item === 'object' && item.value) {
+							return {
+								id: item.id || Date.now() + index,
+								value: item.value
+							}
+						}
+						return {
+							id: Date.now() + index,
+							value: ''
+						}
+					});
 				}
 
-				prevPage.$vm.formData = formData
+			prevPage.$vm.formData = formData
+
+			// 【关键修复】更新 selectedCity 和 selectedDistrictId
+			if (record.city_name && record.district_name) {
+				const selectedCity = `${record.city_name} · ${record.district_name}`;
+				uni.setStorageSync('selectedCity', selectedCity);
+				console.log('✅ 已更新 selectedCity:', selectedCity);
+				
+				// 同步更新发布页面的 selectedCity
+				if (prevPage.$vm.selectedCity !== undefined) {
+					prevPage.$vm.selectedCity = selectedCity;
+				}
+				
+				// 【关键】根据城市和区县查找对应的 district_id
+				await this.updateDistrictIdByAddress(record.city_name, record.district_name, prevPage);
+			}
+
+			// 【关键修复】重置价格详情，确保价格计算从干净状态开始
+			if (prevPage.$vm.priceDetails) {
+				prevPage.$vm.priceDetails = {
+					baseServiceFee: 0,
+					extraDeviceFee: 0,
+					distanceFee: 0,
+					extraDistanceFee: 0,
+					timeLimitFee: 0,
+					wireFee: 0,
+					extraWireFee: 0,
+					powerFee: 0,
+					couponAmount: 0,
+					total: 0
+				};
+			}
+
+				// 【核心修复】重置附加服务选择状态
+				if (prevPage.$vm.selectedAdditionalServices) {
+					prevPage.$vm.selectedAdditionalServices = [];
+					console.log('重置附加服务选择状态为空数组');
+				}
+
+				// 【修复价格计算问题】如果上一页是发布页面，需要重新计算价格
+				console.log('上一页页面信息:', {
+					route: prevPage.route,
+					path: prevPage.$page && prevPage.$page.path,
+					fullPath: prevPage.$page && prevPage.$page.fullPath
+				});
+
+				const isPublishPage = prevPage.route === 'pages/index/publish/index' ||
+									 (prevPage.$page && prevPage.$page.path === '/pages/index/publish/index');
+
+				if (isPublishPage && typeof prevPage.$vm.calculatePrice === 'function') {
+					// 【修复】添加强制更新，确保数据状态一致
+					prevPage.$vm.$forceUpdate();
+
+					// 使用 $nextTick 确保数据更新后再计算价格
+					prevPage.$vm.$nextTick(() => {
+						console.log('=== 历史门店导入后价格重新计算 ===');
+						console.log('计算前的formData:', JSON.parse(JSON.stringify(prevPage.$vm.formData)));
+						console.log('计算前的priceDetails:', JSON.parse(JSON.stringify(prevPage.$vm.priceDetails)));
+
+						prevPage.$vm.calculatePrice()
+
+						console.log('计算后的priceDetails:', JSON.parse(JSON.stringify(prevPage.$vm.priceDetails)));
+						console.log('=== 价格重新计算完成 ===');
+					})
+				}
 
 				uni.showToast({
 					title: '导入成功',

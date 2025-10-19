@@ -733,6 +733,16 @@ export default {
     // 计算实际金额（扣除佣金）
     getDisplayAmount(order) {
       if (!this.riderUserInfo || !this.riderUserInfo.rate) return order.price;
+
+      // 检查是否是转派订单：如果订单有转派标记或来自转派分享链接
+      const isTransferredOrder = order.isTransferOrder ||
+        (order.referrer_id && order.referrer_id !== this.riderUserInfo.id);
+
+      if (isTransferredOrder) {
+        // 这是转派订单，显示转派后的价格（原价减去转单奖励）
+        return this.getTransferDisplayAmount(order);
+      }
+
       // order.price 可能是 '¥21.00' 这样的字符串
       let amount = 0;
       if (typeof order.price === 'string') {
@@ -743,6 +753,66 @@ export default {
       const rate = Number(this.riderUserInfo.rate);
       const realAmount = amount * rate;
       return `¥${realAmount.toFixed(2)}`;
+    },
+
+    // 计算转单奖励金额
+    getTransferReward(order) {
+      if (!order || !order.price) return '￥3';
+
+      let amount = 0;
+      if (typeof order.price === 'string') {
+        amount = parseFloat(order.price.replace('¥', ''));
+      } else {
+        amount = Number(order.price);
+      }
+
+      // 根据订单金额计算转单奖励
+      if (amount <= 20) {
+        return '￥3';
+      } else if (amount <= 50) {
+        return '￥6';
+      } else {
+        return '￥9';
+      }
+    },
+
+    // 计算转单奖励数值（不带单位）
+    getTransferRewardAmount(order) {
+      if (!order || !order.price) return 3;
+
+      let amount = 0;
+      if (typeof order.price === 'string') {
+        amount = parseFloat(order.price.replace('¥', ''));
+      } else {
+        amount = Number(order.price);
+      }
+
+      // 根据订单金额计算转单奖励
+      if (amount <= 20) {
+        return 3;
+      } else if (amount <= 50) {
+        return 6;
+      } else {
+        return 9;
+      }
+    },
+
+    // 计算转单后的订单金额（原金额减去转单奖励）
+    getTransferDisplayAmount(order) {
+      if (!this.riderUserInfo || !this.riderUserInfo.rate) return order.price;
+
+      let amount = 0;
+      if (typeof order.price === 'string') {
+        amount = parseFloat(order.price.replace('¥', ''));
+      } else {
+        amount = Number(order.price);
+      }
+
+      const rate = Number(this.riderUserInfo.rate);
+      const rewardAmount = this.getTransferRewardAmount(order);
+      const finalAmount = (amount * rate) - rewardAmount;
+
+      return `¥${finalAmount.toFixed(2)}`;
     },
 
     // 处理 backgroundFetch 错误
