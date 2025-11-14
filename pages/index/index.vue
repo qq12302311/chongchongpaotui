@@ -49,7 +49,7 @@
 					:key="index"
 					class="grid-item"
 					:class="[item.type ? classMap[item.type] || 'yellow' : 'yellow']"
-					:data-upcoming="item.type !== '1' && item.type !== '2'"
+					:data-upcoming="item.type !== '1' && item.type !== '2' && item.type !== '5'"
 					@click="navigateTo(item.url, item.task_type_id)"
 				>
 					<view class="grid-content">
@@ -130,7 +130,7 @@ export default {
 				'2': 'light-blue', // 离线&异常
 				'3': 'blue',      // 装机
 				'4': 'pink',      // 撤机
-				'5': 'green',     // 回收坏宝
+				'5': 'green',     // 收宝（回收坏宝）
 				'6': 'gray',      // 送装配件
 				'7': 'orange'     // 购券充值
 			},
@@ -200,6 +200,9 @@ export default {
 		this.navBarHeight = menuButtonInfo.bottom + 8;
 	},
 	onShow() {
+		// 触发页面显示事件（通知FloatingImage组件）
+		uni.$emit('pageShow');
+		
 		// 调用任务类型接口
 		this.getTaskTypes();
 		// 调用城市列表接口
@@ -230,6 +233,10 @@ export default {
 				this.$refs.floatingIcons.getCartCount();
 			}
 		});
+	},
+	onHide() {
+		// 触发页面隐藏事件（通知FloatingImage组件）
+		uni.$emit('pageHide');
 	},
 	methods: {
 		// 注释掉强制城市选择检查
@@ -270,7 +277,7 @@ export default {
 								item.type = '3';
 							} else if (item.task_name.includes('撤机')) {
 								item.type = '4';
-							} else if (item.task_name.includes('回收')) {
+							} else if (item.task_name.includes('回收') || item.task_name.includes('收宝')) {
 								item.type = '5';
 							} else if (item.task_name.includes('配件')) {
 								item.type = '6';
@@ -297,9 +304,9 @@ export default {
 								case '4':
 									item.url = '/pages/remove/index';
 									break;
-								case '5':
-									item.url = '/pages/recycle/index';
-									break;
+							case '5':
+								item.url = '/pages/index/recycle/index';
+								break;
 								case '6':
 									item.url = '/pages/parts/index';
 									break;
@@ -318,6 +325,25 @@ export default {
 
 						return item;
 					});
+					
+					// 【排序】将高亮板块放在前面：补宝、收宝、离线&异常
+					const order = {
+						'1': 1,  // 补宝
+						'5': 2,  // 收宝
+						'2': 3,  // 离线&异常
+						'3': 4,  // 装机
+						'4': 5,  // 撤机
+						'6': 6,  // 送装配件
+						'7': 7   // 购券充值
+					};
+					
+					this.taskTypes.sort((a, b) => {
+						const orderA = order[a.type] || 999;
+						const orderB = order[b.type] || 999;
+						return orderA - orderB;
+					});
+					
+					console.log('排序后的任务类型:', this.taskTypes.map(item => `${item.task_name}(type=${item.type})`));
 				} else {
 					uni.showToast({
 						title: res.data.msg || '获取任务类型失败',
@@ -394,8 +420,8 @@ export default {
 		navigateTo(url, taskTypeId) {
 			// 检查任务类型
 			const taskType = this.taskTypes.find(item => item.task_type_id === taskTypeId);
-			// 允许补宝（type='1'）和离线&异常（type='2'）跳转，其他类型暂时不开放
-			if (taskType && taskType.type !== '1' && taskType.type !== '2') {
+			// 允许补宝（type='1'）、离线&异常（type='2'）和收宝（type='5'）跳转，其他类型暂时不开放
+			if (taskType && taskType.type !== '1' && taskType.type !== '2' && taskType.type !== '5') {
 				uni.showToast({
 					title: '即将上线，感谢您的支持',
 					icon: 'none',
@@ -656,7 +682,7 @@ export default {
 				grid-column: 1 / -1; // 从第一列跨到最后一列
 				background: #DEF0FF;
 				border-color: #F5F5F5;
-				height: 170rpx; // 更小的卡片高度
+				height: 134rpx; // 更小的卡片高度
 
 				.grid-content {
 					padding: 25rpx !important; // 更小的内边距
@@ -697,7 +723,7 @@ export default {
 				grid-column: 1 / -1; // 从第一列跨到最后一列，占满整行
 				background: #DEF0FF;
 				border-color: #F5F5F5;
-				height: 170rpx; // 和补宝一样的卡片高度
+				height: 134rpx; // 和补宝一样的卡片高度
 
 				.grid-content {
 					padding: 25rpx !important; // 和补宝一样的内边距
@@ -735,10 +761,37 @@ export default {
 			}
 
 			&.green {
+				grid-column: 1 / -1; // 从第一列跨到最后一列，占满整行
 				background: #DEF0FF;
 				border-color: #F5F5F5;
-				.title { color: #2296EA; }
-				.subtitle { color: #464646; }
+				height: 134rpx; // 和补宝、离线&异常一样的卡片高度
+
+				.grid-content {
+					padding: 25rpx !important; // 和补宝、离线&异常一样的内边距
+
+					.text-wrap {
+						.title {
+							color: #2296EA !important; // 和补宝、离线&异常一样的标题颜色
+							font-size: 46rpx !important; // 和补宝、离线&异常一样的标题文字大小
+							line-height: 54rpx !important;
+							margin-bottom: 12rpx !important; // 和补宝、离线&异常一样的间距
+							font-weight: 600 !important; // 和补宝、离线&异常一样的字重
+						}
+
+						.subtitle {
+							color: #464646 !important; // 和补宝、离线&异常一样的副标题颜色
+							font-size: 28rpx !important; // 和补宝、离线&异常一样的副标题文字大小
+							line-height: 36rpx !important;
+							font-weight: 500 !important; // 和补宝、离线&异常一样的字重
+						}
+					}
+
+					.grid-icon {
+						filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2849%) hue-rotate(190deg) brightness(97%) contrast(95%); // 和补宝、离线&异常一样的图标颜色
+						width: 100rpx !important; // 和补宝、离线&异常一样的图标尺寸
+						height: 100rpx !important;
+					}
+				}
 			}
 
 			&.gray {

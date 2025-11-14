@@ -78,6 +78,7 @@
               </view>
               <view class="service-time">服务时间：<text class="highlight">{{ order.serviceTime }}</text></view>
               <view class="service-item">服务项目：<text class="highlight">{{ order.serviceItem }}</text></view>
+              <view class="service-item" v-if="order.extraServices">附加服务：<text class="highlight">{{ order.extraServices }}</text></view>
               <view class="contact-info">联系客户：<text class="highlight">{{ order.contactName }} {{ order.contactPhone }}</text></view>
             </view>
 
@@ -271,6 +272,7 @@ export default {
               storeName: item.task_detail.store_name,
               serviceTime: this.formatServiceTime(item.task_date, item.deadline),
               serviceItem: this.formatServiceItems(item.task_detail),
+              extraServices: this.formatExtraServices(item.task_detail), // 添加附加服务
               contactName: item.name,
               contactPhone: item.phone_number,
               distance: this.calculateDistance(item.latitude, item.longitude),
@@ -422,30 +424,102 @@ export default {
 
       const items = []
 
-      // 主要服务项目
+      // 主要服务项目 - 支持多选（逗号分隔）
       if (taskDetail.detail) {
-        let itemName;
+        // 检查是否是多选（包含逗号）
+        const details = taskDetail.detail.includes(',') ? taskDetail.detail.split(',') : [taskDetail.detail];
+        
+        // 处理多选情况
+        if (details.length > 1) {
+          // 多选时，分别显示好宝回收和坏宝回收的数量
+          details.forEach(detail => {
+            detail = detail.trim();
+            let itemName;
+            let itemNumber;
+            
+            switch (detail) {
+              case 'bubao':
+                itemName = '补宝';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'goodRecycle':
+                itemName = '好宝回收';
+                itemNumber = taskDetail.shoubao_normal_item_number || 0;
+                break;
+              case 'badRecycle':
+                itemName = '坏宝回收';
+                itemNumber = taskDetail.shoubao_broken_item_number || 0;
+                break;
+              case 'offline_abnormal':
+                itemName = '离线异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'income_abnormal':
+                itemName = '收入异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'other_abnormal':
+                itemName = '其他异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              default:
+                itemName = detail;
+                itemNumber = taskDetail.item_number || 1;
+            }
+            
+            if (itemNumber > 0) {
+              items.push(`${itemName}x${itemNumber}`);
+            }
+          });
+        } else {
+          // 单选时，保持原有逻辑
+          let itemName;
 
-        // 判断服务类型
-        switch (taskDetail.detail) {
-          case 'bubao':
-            itemName = '补宝';
-            break;
-          case 'offline_abnormal':
-            itemName = '离线异常';
-            break;
-          case 'income_abnormal':
-            itemName = '收入异常';
-            break;
-          case 'other_abnormal':
-            itemName = '其他异常';
-            break;
-          default:
-            itemName = taskDetail.detail;
+          // 判断服务类型
+          switch (taskDetail.detail) {
+            case 'bubao':
+              itemName = '补宝';
+              break;
+            case 'goodRecycle':
+              itemName = '好宝回收';
+              break;
+            case 'badRecycle':
+              itemName = '坏宝回收';
+              break;
+            case 'offline_abnormal':
+              itemName = '离线异常';
+              break;
+            case 'income_abnormal':
+              itemName = '收入异常';
+              break;
+            case 'other_abnormal':
+              itemName = '其他异常';
+              break;
+            default:
+              itemName = taskDetail.detail;
+          }
+
+          items.push(`${itemName}x${taskDetail.item_number || 1}`)
         }
-
-        items.push(`${itemName}x${taskDetail.item_number || 1}`)
       }
+
+      // 附加服务项目
+      for (let i = 1; i <= 6; i++) {
+        const task = taskDetail[`extra_task_${i}`]
+        const number = taskDetail[`extra_task_${i}_item_number`]
+        if (task && number) {
+          items.push(`${task}x${number}`)
+        }
+      }
+
+      return items.join('、')
+    },
+
+    // 格式化附加服务
+    formatExtraServices(taskDetail) {
+      if (!taskDetail) return ''
+
+      const items = []
 
       // 附加服务项目
       for (let i = 1; i <= 6; i++) {
@@ -461,9 +535,16 @@ export default {
 
     // 获取服务类型CSS类名
     getServiceTypeClass(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return 'supplement';
+        case 'goodRecycle':
+          return 'recycle';
+        case 'badRecycle':
+          return 'recycle';
         case 'offline_abnormal':
           return 'offline-abnormal';
         case 'income_abnormal':
@@ -477,9 +558,16 @@ export default {
 
     // 获取服务类型显示文本（只显示前两个字符）
     getServiceTypeDisplayText(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return '补宝';
+        case 'goodRecycle':
+          return '收宝';
+        case 'badRecycle':
+          return '收宝';
         case 'offline_abnormal':
           return '离线';
         case 'income_abnormal':
@@ -488,7 +576,7 @@ export default {
           return '其他';
         default:
           // 如果是其他类型，取前两个字符
-          return detail ? detail.substring(0, 2) : '';
+          return firstDetail ? firstDetail.substring(0, 2) : '';
       }
     },
 

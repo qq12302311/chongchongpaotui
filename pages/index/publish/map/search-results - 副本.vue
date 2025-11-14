@@ -275,7 +275,7 @@ export default {
 			// uni.request({
 			// 	url: 'https://restapi.amap.com/v3/config/district',
 			// 	data: {
-			// 		key: 'e5c2acb2fc9ebc992bad7c64aeecbd3b',
+			// 		key: 'c34dee46481f77816b9980f7efd95a24',
 			// 		keywords: districtName || cityName,
 			// 		subdistrict: 0,
 			// 		extensions: 'all'
@@ -286,17 +286,17 @@ export default {
 			// 			const adcode = district.adcode;
 			// 			console.log('获取到的行政区域编码:', adcode);
 						
-					// 使用城市名称进行POI搜索
-					const searchParams = {
-						key: 'e5c2acb2fc9ebc992bad7c64aeecbd3b',
-						keywords: this.searchKeyword,
-						offset: 20,
-						page: 1,
-						extensions: 'all',
-						output: 'json',
-						citylimit: true,
-						city: cityName // 使用城市名称而不是编码
-					};
+						// 使用城市名称进行POI搜索
+						const searchParams = {
+							key: 'c34dee46481f77816b9980f7efd95a24',
+							keywords: this.searchKeyword,
+							offset: 20,
+							page: 1,
+							extensions: 'all',
+							output: 'json',
+							citylimit: true,
+							city: cityName // 使用城市名称而不是编码
+						};
 						
 						console.log('搜索参数:', searchParams);
 						
@@ -412,7 +412,7 @@ export default {
 						
 				// 		// 直接使用城市名称进行POI搜索
 				// 		const searchParams = {
-				// 			key: 'e5c2acb2fc9ebc992bad7c64aeecbd3b',
+				// 			key: 'c34dee46481f77816b9980f7efd95a24',
 				// 			keywords: this.searchKeyword,
 				// 			offset: 20,
 				// 			page: 1,
@@ -689,7 +689,7 @@ export default {
 			uni.request({
 				url: 'https://restapi.amap.com/v3/geocode/regeo',
 				data: {
-					key: 'e5c2acb2fc9ebc992bad7c64aeecbd3b',
+					key: 'c34dee46481f77816b9980f7efd95a24',
 					location: `${item.longitude},${item.latitude}`,
 					extensions: 'all',
 					output: 'json'
@@ -772,90 +772,61 @@ export default {
 					publishPage.$vm.formData.distance = item.distance; // 距离km
 					publishPage.$vm.formData.province = addressComponent.province;
 
-					// 获取用户选择的城市信息（用于备用）
+					// 获取用户选择的城市信息，用于修正区县信息
 					const selectedCity = uni.getStorageSync('selectedCity') || '';
-					console.log('用户之前选择的城市:', selectedCity);
+					console.log('用户选择的城市:', selectedCity);
 					console.log('地址组件信息:', addressComponent);
 
-					// 【修复】优先使用地址组件中的真实数据，而不是 selectedCity 中的旧数据
-					let cityValue = '';
-					let districtValue = '';
-					
-					// 1️⃣ 首先从地址组件中获取城市信息
-					// 针对重庆市这种特殊区域（city 为空数组）
-					if(Array.isArray(addressComponent.city) && addressComponent.city.length == 0) {
-						cityValue = addressComponent.province;
+					// 针对重庆市这种特殊区域
+					if(Array.isArray(addressComponent.city)&&addressComponent.city.length==0) {
+						publishPage.$vm.formData.city = addressComponent.province;
 					} else {
-						cityValue = addressComponent.city || '';
+						publishPage.$vm.formData.city = addressComponent.city;
 					}
-					
-					// 如果地址组件中没有城市信息，才使用 selectedCity 中的城市信息作为备用
-					if (!cityValue && selectedCity && selectedCity.includes(' · ')) {
-						const parts = selectedCity.split(' · ');
-						if (parts.length >= 1) {
-							cityValue = parts[0]; // 使用 selectedCity 中的城市部分作为备用
-							console.log('⚠️ 地址组件无城市信息，使用 selectedCity 中的城市:', cityValue);
-						}
-					}
-					
-					publishPage.$vm.formData.city = cityValue;
 
-					// 2️⃣ 只使用地址组件中的 district（不使用 township）
-					if(Array.isArray(addressComponent.district) && addressComponent.district.length == 0) {
-						districtValue = ''; // district 为空数组时设为空字符串
-					} else {
-						districtValue = addressComponent.district || '';
-					}
-					
-					// 只有当地址组件完全没有区县信息时，才考虑使用 selectedCity 中的区县作为备用
-					if (!districtValue && selectedCity && selectedCity.includes(' · ')) {
+					// 修复地址组件解析逻辑，确保district与用户选择的城市一致
+					let districtValue = '';
+
+					// 优先使用用户在首页选择的城市信息
+					if (selectedCity && selectedCity.includes(' · ')) {
+						// 如果selectedCity包含区县信息，提取区县部分
 						const parts = selectedCity.split(' · ');
 						if (parts.length >= 2) {
-							districtValue = parts[1]; // 使用 selectedCity 中的区县部分作为备用
-							console.log('⚠️ 地址组件无区县信息，使用 selectedCity 中的区县:', districtValue);
+							districtValue = parts[1]; // 取区县/镇名部分，如"大岭山镇"
+							console.log('从selectedCity提取的区县名:', districtValue);
 						}
 					}
 
-					publishPage.$vm.formData.district = districtValue;
-					
-					console.log('✅ 使用地址组件的真实数据:', {
-						city: cityValue,
-						district: districtValue,
-						来源: '地址组件逆地理编码'
-					});
+					// 如果没有从selectedCity获取到有效信息，使用地址组件的信息
+					if (!districtValue) {
+						if(Array.isArray(addressComponent.district)&&addressComponent.district.length==0) {
+							districtValue = addressComponent.township || '';
+						} else {
+							districtValue = addressComponent.district || '';
+						}
+					}
 
-					// 修复 万宁市属于行政区，导致无法识别系统区域的问题
-					// 当 city 为空时，district 作为地级市，township 作为区县
-					if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
-						publishPage.$vm.formData.city = addressComponent.district;      // district（万宁市）作为地级市
-						publishPage.$vm.formData.district = addressComponent.township;  // township（万城镇）作为区县
-						console.log('海南省特殊处理 - city为空，district作为地级市，township作为区县:', {
-							city: publishPage.$vm.formData.city,        // 万宁市
-							district: publishPage.$vm.formData.district // 万城镇
-						});
+					// 特殊处理：如果地址组件中有镇名信息，优先使用镇名
+					if (addressComponent.township &&
+						addressComponent.township !== addressComponent.district) {
+						// 如果township不同于district，说明有更具体的行政区划信息
+						districtValue = addressComponent.township;
+						console.log('使用township作为区县名:', districtValue);
 					}
 					
-					console.log('最终设置的城市和区县:', {
-						city: publishPage.$vm.formData.city,
-						district: publishPage.$vm.formData.district
-					});
-
-					// ========== 【修复】同步更新 selectedCity 的值 ==========
-					// 根据实际选择的地址更新 selectedCity
-					const finalCityValue = publishPage.$vm.formData.city;
-					const finalDistrictValue = publishPage.$vm.formData.district;
 					
-					if (finalCityValue && finalDistrictValue) {
-						const newSelectedCity = `${finalCityValue} · ${finalDistrictValue}`;
-						console.log('更新 selectedCity:', selectedCity, '→', newSelectedCity);
-						
-						// 更新本地存储
-						uni.setStorageSync('selectedCity', newSelectedCity);
-						
-						// 更新发布页面的 selectedCity
-						publishPage.$vm.selectedCity = newSelectedCity;
-						
-						console.log('✅ 已同步更新 selectedCity 和本地存储');
+					// 周扬加 
+					// if (addressComponent.district) {
+					// 	// 如果township不同于district，说明有更具体的行政区划信息
+					// 	districtValue = addressComponent.district;
+					// }
+
+					publishPage.$vm.formData.district = districtValue;
+
+					// 修复 万宁市属于行政区，导致无法识别系统区域的问题
+					if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
+						publishPage.$vm.formData.city = addressComponent.district;
+						publishPage.$vm.formData.district = addressComponent.township;
 					}
 				} 
 				// else if (this.addressType === 'end') {
@@ -988,72 +959,13 @@ export default {
 								publishPage.$vm.formData.longitude = item.longitude;
 								publishPage.$vm.formData.distance = item.distance; // 距离km
 								publishPage.$vm.formData.province = addressComponent.province;
-								
-								// 【修复】优先使用地址组件中的真实数据（腾讯地图）
-								const selectedCity = uni.getStorageSync('selectedCity') || '';
-								console.log('腾讯地图 - 用户之前选择的城市:', selectedCity);
-								console.log('腾讯地图 - 地址组件信息:', addressComponent);
-								
-								let cityValue = '';
-								let districtValue = '';
-								
-								// 1️⃣ 首先从地址组件中获取真实的城市和区县信息
-								cityValue = addressComponent.city || '';
-								districtValue = addressComponent.district || ''; // 只使用 district，不使用 township
-								
-								// 只有当地址组件完全没有数据时，才使用 selectedCity 作为备用
-								if (!cityValue && selectedCity && selectedCity.includes(' · ')) {
-									const parts = selectedCity.split(' · ');
-									if (parts.length >= 1) {
-										cityValue = parts[0];
-										console.log('⚠️ 腾讯地图 - 地址组件无城市信息，使用备用:', cityValue);
-									}
-								}
-								if (!districtValue && selectedCity && selectedCity.includes(' · ')) {
-									const parts = selectedCity.split(' · ');
-									if (parts.length >= 2) {
-										districtValue = parts[1];
-										console.log('⚠️ 腾讯地图 - 地址组件无区县信息，使用备用:', districtValue);
-									}
-								}
-								
-								publishPage.$vm.formData.city = cityValue;
-								publishPage.$vm.formData.district = districtValue;
-								
-								console.log('✅ 腾讯地图 - 使用地址组件的真实数据:', {
-									city: cityValue,
-									district: districtValue,
-									来源: '腾讯地图逆地理编码'
-								});
+								publishPage.$vm.formData.city = addressComponent.city;
+								publishPage.$vm.formData.district = addressComponent.district;
 								
 								// 修复 万宁市属于行政区，导致无法识别系统区域的问题
-								// 当 city 为空时，district 作为地级市，township 作为区县
 								if(publishPage.$vm.formData.province === '海南省' && publishPage.$vm.formData.city === '海南省') {
-									publishPage.$vm.formData.city = addressComponent.district;      // district（万宁市）作为地级市
-									publishPage.$vm.formData.district = addressComponent.township;  // township（万城镇）作为区县
-									console.log('腾讯地图 - 海南省特殊处理 - city为空，district作为地级市，township作为区县:', {
-										city: publishPage.$vm.formData.city,        // 万宁市
-										district: publishPage.$vm.formData.district // 万城镇
-									});
-								}
-
-								// ========== 【修复】同步更新 selectedCity 的值 ==========
-								// 根据实际选择的地址更新 selectedCity
-								const finalCityValue = publishPage.$vm.formData.city;
-								const finalDistrictValue = publishPage.$vm.formData.district;
-								
-								if (finalCityValue && finalDistrictValue) {
-									const selectedCity = uni.getStorageSync('selectedCity') || '';
-									const newSelectedCity = `${finalCityValue} · ${finalDistrictValue}`;
-									console.log('腾讯地图 - 更新 selectedCity:', selectedCity, '→', newSelectedCity);
-									
-									// 更新本地存储
-									uni.setStorageSync('selectedCity', newSelectedCity);
-									
-									// 更新发布页面的 selectedCity
-									publishPage.$vm.selectedCity = newSelectedCity;
-									
-									console.log('✅ 已同步更新 selectedCity 和本地存储（腾讯地图）');
+									publishPage.$vm.formData.city = addressComponent.district;
+									publishPage.$vm.formData.district = addressComponent.township;
 								}
 							} 
 							// else if (this.addressType === 'end') {

@@ -12,139 +12,136 @@
 
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
 
-			<!-- 选择品牌 - 独立卡片 -->
-			<view class="info-card mar-top-4">
-				<view class="form-item">
-					<view class="form-label section-title">
-						<text class="dot"></text>
-						<text>选择品牌</text>
+		<!-- 主项服务 - 独立卡片 -->
+		<view class="info-card mar-top-10">
+			<view class="form-item">
+			<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }" style="background: rgba(247, 247, 247, 1);">
+				<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
+					<image src="https://ccpt.qiniu.0871.cn/publish/meituan.png" mode="aspectFit"></image>
+				</view>
+				<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
+					<image src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" mode="aspectFit"></image>
+				</view>
+				<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
+					<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
+				</view>
+				<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
+					<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
+				</view>
+			</view>
+			<view class="form-label section-title main-service-title">
+				<view class="title-left">
+					<text class="dot"></text>
+					<text>主项服务</text>
+				</view>
+				<text class="optional-tag-red">必填</text>
+			</view>
+			<view class="service-options">
+				<!-- 离线异常选项 -->
+				<view class="service-option" :class="{'service-option-active': selectedService === 'offline_abnormal'}" @click="selectService('offline_abnormal')">
+					<view class="service-label-left">
+						<view class="option-circle" :style="{'border-color': '#2492F2', 'border-radius': '50%'}">
+							<view v-if="selectedService === 'offline_abnormal'" class="inner-circle" :style="{'background-color': '#2492F2', 'border-radius': '50%'}"></view>
+						</view>
+						<text :style="{'color': selectedService === 'offline_abnormal' ? '#2492F2' : '#333333'}">离线异常</text>
 					</view>
-					<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }">
-						<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/meituan.png" mode="aspectFit"></image>
-							<text>美团</text>
+
+					<!-- 数量选择器 -->
+					<view class="quantity-selector">
+						<view class="quantity-controls">
+							<view class="quantity-btn minus" @click.stop="decreaseOfflineQuantity">-</view>
+							<input
+								type="number"
+								v-model="formData.offlineQuantity"
+								class="quantity-input"
+								placeholder="必填"
+								@input="handleOfflineQuantityInput"
+								@click.stop
+							/>
+							<view class="quantity-btn plus" @click.stop="increaseOfflineQuantity">+</view>
 						</view>
-						<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" mode="aspectFit"></image>
-							<text>怪兽</text>
-						</view>
-						<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-							<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
-							<text>街电搜电</text>
-						</view>
-						<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
-							<text>小电</text>
-						</view>
+						<text>个</text>
 					</view>
 				</view>
 			</view>
 
-			<!-- 服务项目 - 独立卡片 -->
-			<view class="info-card">
-				<view class="form-item">
-					<view class="form-label section-title">
-						<text class="dot"></text>
-						<text>服务项目</text>
+			<!-- 附加服务 -->
+			<view class="form-label section-title additional-service-title" style="margin-top: 30rpx;">
+				<view class="title-left">
+					<text class="dot"></text>
+					<text>附加服务</text>
+				</view>
+				<text class="optional-tag-blue">选填 可选择</text>
+			</view>
+			<view class="additional-services">
+				<!-- 补宝 -->
+				<view class="service-row">
+					<view class="service-option" :class="{'service-option-active': selectedAdditionalServices.includes('bubao')}" @click="selectAdditionalService('bubao')">
+						<view class="option-circle" :style="{'border-color': selectedAdditionalServices.includes('bubao') ? '#2492F2' : '#CCCCCC'}">
+							<view v-if="selectedAdditionalServices.includes('bubao')" class="inner-circle" :style="{'background-color': '#2492F2'}">
+								<text class="check-mark">✓</text>
+							</view>
+						</view>
+						<text :style="{'color': selectedAdditionalServices.includes('bubao') ? '#2492F2' : '#333333'}">补宝</text>
 					</view>
-					<view class="service-options">
-						<!-- 离线异常选项 -->
-						<view class="service-option" :class="{'service-option-active': selectedService === 'offline_abnormal'}" @click="selectService('offline_abnormal')">
-							<view class="option-circle" :style="{'border-color': '#2492F2', 'border-radius': '50%'}">
-								<view v-if="selectedService === 'offline_abnormal'" class="inner-circle" :style="{'background-color': '#2492F2', 'border-radius': '50%'}"></view>
-							</view>
-							<view class="service-text">
-								<text :style="{'color': selectedService === 'offline_abnormal' ? '#2492F2' : '#333333'}">离线异常</text>
-								<text class="service-desc">仅处理线头脱落复插</text>
-							</view>
-							<!-- 数量选择器 -->
-							<view class="quantity-selector">
-								<view class="quantity-controls">
-									<view class="quantity-btn minus" @click.stop="decreaseOfflineQuantity" :class="{ 'disabled': formData.offlineQuantity <= 1 }">-</view>
-									<input
-										type="number"
-										v-model="formData.offlineQuantity"
-										class="quantity-input"
-										@input="handleOfflineQuantityInput"
-										@click.stop
-									/>
-									<view class="quantity-btn plus" @click.stop="increaseOfflineQuantity">+</view>
-								</view>
-								<text class="unit-text">台</text>
+					<view class="quantity-selector">
+						<view class="quantity-controls">
+							<view class="quantity-btn minus" @click="decreaseBubaoQuantity">-</view>
+							<input type="number" v-model="formData.bubaoQuantity" class="quantity-input" @focus="onBubaoQuantityFocus" @input="onBubaoQuantityInput" />
+							<view class="quantity-btn plus" @click="increaseBubaoQuantity">+</view>
+						</view>
+						<text class="unit-text">个</text>
+					</view>
+				</view>
+
+				<!-- 坏宝回收 -->
+				<view class="service-row">
+					<view class="service-option" :class="{'service-option-active': selectedAdditionalServices.includes('badItemRecycle')}" @click="selectAdditionalService('badItemRecycle')">
+						<view class="option-circle" :style="{'border-color': selectedAdditionalServices.includes('badItemRecycle') ? '#2492F2' : '#CCCCCC'}">
+							<view v-if="selectedAdditionalServices.includes('badItemRecycle')" class="inner-circle" :style="{'background-color': '#2492F2'}">
+								<text class="check-mark">✓</text>
 							</view>
 						</view>
-
-						<!-- 收益异常选项 -->
-						<view class="service-option" :class="{'service-option-active': selectedService === 'income_abnormal'}" @click="selectService('income_abnormal')">
-							<view class="option-circle" :style="{'border-color': '#2492F2', 'border-radius': '50%'}">
-								<view v-if="selectedService === 'income_abnormal'" class="inner-circle" :style="{'background-color': '#2492F2', 'border-radius': '50%'}"></view>
-							</view>
-							<view class="service-text">
-								<text :style="{'color': selectedService === 'income_abnormal' ? '#2492F2' : '#333333'}">收益异常</text>
-								<text class="service-desc">流水异常骤降查看</text>
-							</view>
-						</view>
-
-						<!-- 其他异常选项 -->
-						<view class="service-option" :class="{'service-option-active': selectedService === 'other_abnormal'}" @click="selectService('other_abnormal')">
-							<view class="option-circle" :style="{'border-color': '#2492F2', 'border-radius': '50%'}">
-								<view v-if="selectedService === 'other_abnormal'" class="inner-circle" :style="{'background-color': '#2492F2', 'border-radius': '50%'}"></view>
-							</view>
-							<view class="service-text">
-								<text :style="{'color': selectedService === 'other_abnormal' ? '#2492F2' : '#333333'}">其他异常</text>
-								<text class="service-desc">请自填 仅到店查看反馈信息</text>
-							</view>
+						<view class="service-label-container">
+							<text :style="{'color': selectedAdditionalServices.includes('badItemRecycle') ? '#2492F2' : '#333333'}">坏宝回收</text>
+							<text class="service-note">骑手收走报修返厂</text>
 						</view>
 					</view>
-
-					<!-- 其他异常的额外选项 -->
-					<view v-if="selectedService === 'other_abnormal'" class="other-abnormal-options">
-						<view class="feedback-title">
-							<text>是否需要现场其他信息反馈</text>
+					<view class="quantity-selector">
+						<view class="quantity-controls">
+							<view class="quantity-btn minus" @click="decreaseBadItemRecycleQuantity">-</view>
+							<input type="number" v-model="formData.badItemRecycleQuantity" class="quantity-input" @focus="onBadItemRecycleQuantityFocus" @input="onBadItemRecycleQuantityInput" />
+							<view class="quantity-btn plus" @click="increaseBadItemRecycleQuantity">+</view>
 						</view>
-						<view class="feedback-checkboxes">
-							<!-- 是否被共存 -->
-							<view class="checkbox-item" @click="toggleFeedbackOption('coexist')">
-								<view class="checkbox" :class="{ 'checked': formData.feedbackOptions.coexist }">
-									<view v-if="formData.feedbackOptions.coexist" class="checkbox-inner">
-										<text class="check-mark">✓</text>
-									</view>
-								</view>
-								<text class="checkbox-label">是否被共存</text>
-							</view>
-
-							<!-- 设备是否污损 -->
-							<view class="checkbox-item" @click="toggleFeedbackOption('damage')">
-								<view class="checkbox" :class="{ 'checked': formData.feedbackOptions.damage }">
-									<view v-if="formData.feedbackOptions.damage" class="checkbox-inner">
-										<text class="check-mark">✓</text>
-									</view>
-								</view>
-								<text class="checkbox-label">设备是否污损</text>
-							</view>
-
-							<!-- 机位疑似异常 拍照反馈 -->
-							<view class="checkbox-item" @click="toggleFeedbackOption('position')">
-								<view class="checkbox" :class="{ 'checked': formData.feedbackOptions.position }">
-									<view v-if="formData.feedbackOptions.position" class="checkbox-inner">
-										<text class="check-mark">✓</text>
-									</view>
-								</view>
-								<text class="checkbox-label">机位疑似异常 拍照反馈</text>
-							</view>
-						</view>
+						<text class="unit-text">个</text>
 					</view>
+				</view>
 
-					<!-- 服务说明 -->
-					<view class="service-note">
-						<!-- <text class="time-note">骑手在约定时间内任意时间点完成</text> -->
-						<text class="time-note">注：仅提供断电 收入骤降 仓内异物等现场图文反馈服务</text>
+				<!-- 加电源线 -->
+				<view class="service-row">
+					<view class="service-option" :class="{'service-option-active': selectedAdditionalServices.includes('addPowerCable')}" @click="selectAdditionalService('addPowerCable')">
+						<view class="option-circle" :style="{'border-color': selectedAdditionalServices.includes('addPowerCable') ? '#2492F2' : '#CCCCCC'}">
+							<view v-if="selectedAdditionalServices.includes('addPowerCable')" class="inner-circle" :style="{'background-color': '#2492F2'}">
+								<text class="check-mark">✓</text>
+							</view>
+						</view>
+						<text :style="{'color': selectedAdditionalServices.includes('addPowerCable') ? '#2492F2' : '#333333'}">加电源线</text>
+					</view>
+					<view class="quantity-selector">
+						<view class="quantity-controls">
+							<view class="quantity-btn minus" @click="decreasePowerCableQuantity">-</view>
+							<input type="number" v-model="formData.powerCableQuantity" class="quantity-input" @focus="onPowerCableQuantityFocus" @input="onPowerCableQuantityInput" />
+							<view class="quantity-btn plus" @click="increasePowerCableQuantity">+</view>
+						</view>
+						<text class="unit-text">条</text>
 					</view>
 				</view>
 			</view>
+		</view>
+		</view>
 
-			<!-- 服务门店信息-->
-			<store-info
+		<!-- 服务门店信息-->
+		<store-info
 				:formData.sync="formData"
 				@address-select="handleAddressSelect"
 				@remove-sn-mac="removeSnMacInput"
@@ -364,13 +361,14 @@
 							</view>
 						</view>
 					</view>
-					<button
+					<!-- 加入购物车按钮已隐藏 -->
+					<!-- <button
 						class="cart-btn"
 						:style="{
 							'background-color': isLoggedIn ? '#52C41A' : '#52C41A',
 							'color': '#2492F2'
 						}"
-						@click="isLoggedIn ? addToCart() : goToLogin()">{{ isLoggedIn ? '加入购物车' : '去登录' }}</button>
+						@click="isLoggedIn ? addToCart() : goToLogin()">{{ isLoggedIn ? '加入购物车' : '去登录' }}</button> -->
 					<button
 						class="submit-btn"
 						:style="{
@@ -576,23 +574,26 @@
 					couponId: '', // 添加优惠券ID字段
 					couponAmount: 0, // 添加优惠券金额字段
 					estimatedPrice: 0.01,
-					quantity: 1, // 默认数量为1
-					offlineQuantity: 1, // 离线异常数量，默认为1
-					feedbackOptions: { // 其他异常的反馈选项
-						coexist: false,    // 是否被共存
-						damage: false,     // 设备是否污损
-						position: false    // 机位疑似异常 拍照反馈
-					},
-					badItemQuantity: 0, // 修改为默认数量0
-					cableQuantity: 0, // 修改为默认数量0
-					wiringQuantity: 0, // 添加接线数量字段
-					timeType: 'before_deadline', // 默认选择约定时间内完成
-					appointmentTime: '', // 约定时间
-					timeInterval: '', // 指定时间区间
-					timeRemark: '', // 添加时间备注字段
-					powerQuantity: 0,
-					warehouseQuantity: 0,
-					phone: '', // 添加联系电话字段
+				quantity: 1, // 默认数量为1
+				offlineQuantity: 1, // 离线异常数量，默认为1
+				feedbackOptions: { // 其他异常的反馈选项
+					coexist: false,    // 是否被共存
+					damage: false,     // 设备是否污损
+					position: false    // 机位疑似异常 拍照反馈
+				},
+				badItemQuantity: 0, // 修改为默认数量0
+				cableQuantity: 0, // 修改为默认数量0
+				wiringQuantity: 0, // 添加接线数量字段
+				bubaoQuantity: 0, // 补宝数量
+				badItemRecycleQuantity: 0, // 坏宝回收数量
+				powerCableQuantity: 0, // 加电源线数量
+				timeType: 'before_deadline', // 默认选择约定时间内完成
+				appointmentTime: '', // 约定时间
+				timeInterval: '', // 指定时间区间
+				timeRemark: '', // 添加时间备注字段
+			powerQuantity: 0,
+			warehouseQuantity: 0,
+			phone: '', // 添加联系电话字段
 					distance: 0, // 选中地址后与服务点位测算的距离
 					shop_poi: '', // 新增POI字段
 					device_outside: false, // 设备是否外摆，默认为否
@@ -1054,15 +1055,46 @@
 					}
 				}
 
-				// 4. 离线&异常服务不需要电源线和通电费用
-				let wireFee = 0;
-				let extraWireFee = 0;
-				let powerFee = 0;
+			// 4. 计算附加服务费用
+			// 4.1 补宝费用
+			let bubaoFee = 0;
+			let bubaoExtraFee = 0;
+			if (this.selectedAdditionalServices.includes('bubao') && this.formData.bubaoQuantity > 0) {
+				bubaoFee = parseFloat(info.bubao_exception_base_fee) || 0;
+				// 如果设备数量超过基础数量，计算额外费用
+				if (this.formData.bubaoQuantity > (info.bubao_exception_base_device || 1)) {
+					const extraDevices = Math.ceil((this.formData.bubaoQuantity - (info.bubao_exception_base_device || 1)) / (info.bubao_exception_extra_device || 1));
+					bubaoExtraFee = extraDevices * (parseFloat(info.bubao_exception_extra_device_fee) || 0);
+				}
+			}
 
-				// 离线&异常服务暂时不包含额外的电源线和通电服务
+			// 4.2 坏宝回收费用
+			let badItemRecycleFee = 0;
+			let badItemRecycleExtraFee = 0;
+			if (this.selectedAdditionalServices.includes('badItemRecycle') && this.formData.badItemRecycleQuantity > 0) {
+				badItemRecycleFee = parseFloat(info.bubao_exception_base_fee) || 0;
+				// 如果设备数量超过基础数量，计算额外费用
+				if (this.formData.badItemRecycleQuantity > (info.bubao_exception_base_device || 1)) {
+					const extraDevices = Math.ceil((this.formData.badItemRecycleQuantity - (info.bubao_exception_base_device || 1)) / (info.bubao_exception_extra_device || 1));
+					badItemRecycleExtraFee = extraDevices * (parseFloat(info.bubao_exception_extra_device_fee) || 0);
+				}
+			}
 
-				// 计算总价（未减优惠券金额）
-				let totalPrice = baseServiceFee + distanceFee + timeLimitFee + wireFee + powerFee + extraDeviceFee + extraDistanceFee + extraWireFee;
+			// 4.3 加电源线费用
+			let powerCableFee = 0;
+			let powerCableExtraFee = 0;
+			if (this.selectedAdditionalServices.includes('addPowerCable') && this.formData.powerCableQuantity > 0) {
+				powerCableFee = parseFloat(info.bubao_exception_base_fee) || 0;
+				// 如果设备数量超过基础数量，计算额外费用
+				if (this.formData.powerCableQuantity > (info.bubao_exception_base_device || 1)) {
+					const extraDevices = Math.ceil((this.formData.powerCableQuantity - (info.bubao_exception_base_device || 1)) / (info.bubao_exception_extra_device || 1));
+					powerCableExtraFee = extraDevices * (parseFloat(info.bubao_exception_extra_device_fee) || 0);
+				}
+			}
+
+			// 计算总价（未减优惠券金额）
+			let totalPrice = baseServiceFee + distanceFee + timeLimitFee + extraDeviceFee + extraDistanceFee + 
+				bubaoFee + bubaoExtraFee + badItemRecycleFee + badItemRecycleExtraFee + powerCableFee + powerCableExtraFee;
 
 				// 6. 减去优惠券金额
 				const couponAmount = parseFloat(this.formData.couponAmount) || 0;
@@ -1071,19 +1103,22 @@
 				// 更新表单数据
 				this.formData.estimatedPrice = totalPrice;
 
-				// 更新价格详情
-				this.priceDetails = {
-					baseServiceFee: parseFloat(baseServiceFee),
-					extraDeviceFee: parseFloat(extraDeviceFee),
-					distanceFee: parseFloat(distanceFee),
-					extraDistanceFee: parseFloat(extraDistanceFee),
-					timeLimitFee: parseFloat(timeLimitFee),
-					wireFee: parseFloat(wireFee),
-					extraWireFee: parseFloat(extraWireFee),
-					powerFee: parseFloat(powerFee),
-					couponAmount: parseFloat(couponAmount), // 添加优惠券金额
-					total: parseFloat(totalPrice)
-				};
+			// 更新价格详情
+			this.priceDetails = {
+				baseServiceFee: parseFloat(baseServiceFee),
+				extraDeviceFee: parseFloat(extraDeviceFee),
+				distanceFee: parseFloat(distanceFee),
+				extraDistanceFee: parseFloat(extraDistanceFee),
+				timeLimitFee: parseFloat(timeLimitFee),
+				bubaoFee: parseFloat(bubaoFee),
+				bubaoExtraFee: parseFloat(bubaoExtraFee),
+				badItemRecycleFee: parseFloat(badItemRecycleFee),
+				badItemRecycleExtraFee: parseFloat(badItemRecycleExtraFee),
+				powerCableFee: parseFloat(powerCableFee),
+				powerCableExtraFee: parseFloat(powerCableExtraFee),
+				couponAmount: parseFloat(couponAmount), // 添加优惠券金额
+				total: parseFloat(totalPrice)
+			};
 
 				console.log('✅ 离线&异常服务价格计算完成:', {
 					selectedService: this.selectedService,
@@ -1217,15 +1252,170 @@
 				}
 			},
 
-			// 切换反馈选项
-			toggleFeedbackOption(option) {
-				this.formData.feedbackOptions[option] = !this.formData.feedbackOptions[option];
-				console.log('反馈选项更新:', this.formData.feedbackOptions);
+		// 切换反馈选项
+		toggleFeedbackOption(option) {
+			this.formData.feedbackOptions[option] = !this.formData.feedbackOptions[option];
+			console.log('反馈选项更新:', this.formData.feedbackOptions);
 
-				// 如果反馈选项影响价格，重新计算价格
-				// this.calculatePrice();
-			},
-			increaseBadItemQuantity() {
+			// 如果反馈选项影响价格，重新计算价格
+			// this.calculatePrice();
+		},
+		// 选择附加服务
+		selectAdditionalService(service) {
+			const index = this.selectedAdditionalServices.indexOf(service)
+			if (index === -1) {
+				this.selectedAdditionalServices.push(service)
+				// 选中时设置默认数量为1
+				if (service === 'bubao') {
+					this.formData.bubaoQuantity = 1
+				} else if (service === 'badItemRecycle') {
+					this.formData.badItemRecycleQuantity = 1
+				} else if (service === 'addPowerCable') {
+					this.formData.powerCableQuantity = 1
+				}
+			} else {
+				this.selectedAdditionalServices.splice(index, 1)
+				// 取消选中时设置数量为0
+				if (service === 'bubao') {
+					this.formData.bubaoQuantity = 0
+				} else if (service === 'badItemRecycle') {
+					this.formData.badItemRecycleQuantity = 0
+				} else if (service === 'addPowerCable') {
+					this.formData.powerCableQuantity = 0
+				}
+			}
+			this.calculatePrice() // 更新价格
+		},
+		// 补宝数量增加
+		increaseBubaoQuantity() {
+			if (!this.selectedAdditionalServices.includes('bubao')) {
+				this.selectedAdditionalServices.push('bubao')
+				this.formData.bubaoQuantity = 1
+			} else {
+				this.formData.bubaoQuantity++
+			}
+			this.calculatePrice()
+		},
+		// 补宝数量减少
+		decreaseBubaoQuantity() {
+			if (this.formData.bubaoQuantity > 0) {
+				this.formData.bubaoQuantity--
+				if (this.formData.bubaoQuantity === 0) {
+					this.selectedAdditionalServices = this.selectedAdditionalServices.filter(s => s !== 'bubao')
+				}
+				this.calculatePrice()
+			}
+		},
+		// 坏宝回收数量增加
+		increaseBadItemRecycleQuantity() {
+			if (!this.selectedAdditionalServices.includes('badItemRecycle')) {
+				this.selectedAdditionalServices.push('badItemRecycle')
+				this.formData.badItemRecycleQuantity = 1
+			} else {
+				this.formData.badItemRecycleQuantity++
+			}
+			this.calculatePrice()
+		},
+		// 坏宝回收数量减少
+		decreaseBadItemRecycleQuantity() {
+			if (this.formData.badItemRecycleQuantity > 0) {
+				this.formData.badItemRecycleQuantity--
+				if (this.formData.badItemRecycleQuantity === 0) {
+					this.selectedAdditionalServices = this.selectedAdditionalServices.filter(s => s !== 'badItemRecycle')
+				}
+				this.calculatePrice()
+			}
+		},
+		// 加电源线数量增加
+		increasePowerCableQuantity() {
+			if (!this.selectedAdditionalServices.includes('addPowerCable')) {
+				this.selectedAdditionalServices.push('addPowerCable')
+				this.formData.powerCableQuantity = 1
+			} else {
+				this.formData.powerCableQuantity++
+			}
+			this.calculatePrice()
+		},
+		// 加电源线数量减少
+		decreasePowerCableQuantity() {
+			if (this.formData.powerCableQuantity > 0) {
+				this.formData.powerCableQuantity--
+				if (this.formData.powerCableQuantity === 0) {
+					this.selectedAdditionalServices = this.selectedAdditionalServices.filter(s => s !== 'addPowerCable')
+				}
+				this.calculatePrice()
+			}
+		},
+		// 补宝输入框聚焦事件
+		onBubaoQuantityFocus() {
+			if (!this.selectedAdditionalServices.includes('bubao')) {
+				this.selectedAdditionalServices.push('bubao')
+				if (this.formData.bubaoQuantity === 0) {
+					this.formData.bubaoQuantity = 1
+				}
+				this.calculatePrice()
+			}
+		},
+		// 坏宝回收输入框聚焦事件
+		onBadItemRecycleQuantityFocus() {
+			if (!this.selectedAdditionalServices.includes('badItemRecycle')) {
+				this.selectedAdditionalServices.push('badItemRecycle')
+				if (this.formData.badItemRecycleQuantity === 0) {
+					this.formData.badItemRecycleQuantity = 1
+				}
+				this.calculatePrice()
+			}
+		},
+		// 加电源线输入框聚焦事件
+		onPowerCableQuantityFocus() {
+			if (!this.selectedAdditionalServices.includes('addPowerCable')) {
+				this.selectedAdditionalServices.push('addPowerCable')
+				if (this.formData.powerCableQuantity === 0) {
+					this.formData.powerCableQuantity = 1
+				}
+				this.calculatePrice()
+			}
+		},
+		// 补宝输入框输入事件
+		onBubaoQuantityInput(e) {
+			const value = parseInt(e.detail.value) || 0
+			this.formData.bubaoQuantity = value
+			if (value > 0) {
+				if (!this.selectedAdditionalServices.includes('bubao')) {
+					this.selectedAdditionalServices.push('bubao')
+				}
+			} else {
+				this.selectedAdditionalServices = this.selectedAdditionalServices.filter(s => s !== 'bubao')
+			}
+			this.calculatePrice()
+		},
+		// 坏宝回收输入框输入事件
+		onBadItemRecycleQuantityInput(e) {
+			const value = parseInt(e.detail.value) || 0
+			this.formData.badItemRecycleQuantity = value
+			if (value > 0) {
+				if (!this.selectedAdditionalServices.includes('badItemRecycle')) {
+					this.selectedAdditionalServices.push('badItemRecycle')
+				}
+			} else {
+				this.selectedAdditionalServices = this.selectedAdditionalServices.filter(s => s !== 'badItemRecycle')
+			}
+			this.calculatePrice()
+		},
+		// 加电源线输入框输入事件
+		onPowerCableQuantityInput(e) {
+			const value = parseInt(e.detail.value) || 0
+			this.formData.powerCableQuantity = value
+			if (value > 0) {
+				if (!this.selectedAdditionalServices.includes('addPowerCable')) {
+					this.selectedAdditionalServices.push('addPowerCable')
+				}
+			} else {
+				this.selectedAdditionalServices = this.selectedAdditionalServices.filter(s => s !== 'addPowerCable')
+			}
+			this.calculatePrice()
+		},
+		increaseBadItemQuantity() {
 				this.formData.badItemQuantity++
 				if (this.formData.badItemQuantity > 0 && !this.selectedAdditionalServices.includes('badItem')) {
 					this.selectedAdditionalServices.push('badItem')
@@ -1962,29 +2152,29 @@
 					this.formData.snMacList.splice(index, 1)
 				}
 			},
-			// 保存门店历史记录
-			saveStoreHistory() {
-				// 获取当前表单数据
-				const record = {
-					address: this.formData.address,
-					detailAddress: this.formData.detailAddress,
-					longitude: this.formData.longitude,
-					latitude: this.formData.latitude,
-					province: this.formData.province || '',
-					city: this.formData.city || '',
-					district: this.formData.district || '',
-					storeName: this.formData.storeName,
-					doorImages: this.formData.doorImages,
-					snMacList: this.formData.snMacList || [],
-					locationDesc: this.formData.locationDesc || '',
-					createTime: new Date().getTime(),
-					phone: this.formData.phone,
-					contact: this.formData.contact,
-					shop_poi: this.formData.shop_poi || '', // 新增POI字段
-					device_outside: this.formData.device_outside || false, // 设备是否外摆
-					recommended_service_time_start: this.formData.recommended_service_time_start || '', // 建议骑手上门开始时间
-					recommended_service_time_end: this.formData.recommended_service_time_end || '', // 建议骑手上门结束时间
-				}
+		// 保存门店历史记录
+		saveStoreHistory() {
+			// 获取当前表单数据
+			const record = {
+				address: this.formData.address,
+				detailAddress: this.formData.detailAddress,
+				longitude: this.formData.longitude,
+				latitude: this.formData.latitude,
+				province: this.formData.province || '',
+				city: this.formData.city || '',
+				district: this.formData.district || '',
+				storeName: this.formData.storeName,
+				doorImages: this.formData.doorImages,
+				snMacList: this.formData.snMacList || [],
+				locationDesc: this.formData.locationDesc || '',
+				createTime: new Date().getTime(),
+				phone: this.formData.phone,
+				contact: this.formData.contact,
+				shop_poi: this.formData.shop_poi || '', // 新增POI字段
+				device_outside: this.formData.device_outside || false, // 设备是否外摆
+				recommended_service_time_start: this.formData.recommended_service_time_start || '', // 建议骑手上门开始时间
+				recommended_service_time_end: this.formData.recommended_service_time_end || '', // 建议骑手上门结束时间
+			}
 
 				// 从本地存储获取现有记录
 				let records = uni.getStorageSync('storeHistoryRecords') || []
@@ -2038,26 +2228,14 @@
 					return false;
 				}
 
-			// 验证数量 - 根据服务类型验证对应的数量字段
-			if (this.selectedService === 'offline_abnormal') {
-				// 离线异常服务验证 offlineQuantity
-				if (!this.formData.offlineQuantity || this.formData.offlineQuantity < 1) {
+				// 验证数量
+				if (this.formData.quantity < 1) {
 					uni.showToast({
 						title: '请选择正确的数量',
 						icon: 'none'
 					});
 					return false;
 				}
-			} else {
-				// 其他服务验证 quantity
-				if (!this.formData.quantity || this.formData.quantity < 1) {
-					uni.showToast({
-						title: '请选择正确的数量',
-						icon: 'none'
-					});
-					return false;
-				}
-			}
 
 				// 验证门店名称
 				if (!this.formData.storeName) {
@@ -2241,6 +2419,7 @@
 	.form-label {
 		display: flex;
 		align-items: center;
+		margin-top: 20px;
 		margin-bottom: 20rpx;
 
 		.dot {
@@ -2276,6 +2455,46 @@
 				height: 12rpx;
 				background-color: #f00;
 				margin-right: 12rpx;
+			}
+		}
+
+		&.main-service-title {
+			display: flex;
+			align-items: center;
+
+			.title-left {
+				display: flex;
+				align-items: center;
+				margin-right: 10px;
+			}
+
+			.optional-tag-red {
+				background: #FF0000;
+				color: #FFFFFF;
+				font-size: 20rpx;
+				padding: 4rpx 12rpx;
+				border-radius: 4rpx;
+				font-weight: normal;
+			}
+		}
+
+		&.additional-service-title {
+			display: flex;
+			align-items: center;
+
+			.title-left {
+				display: flex;
+				align-items: center;
+				margin-right: 10px;
+			}
+
+			.optional-tag-blue {
+				background: #2492F2;
+				color: #FFFFFF;
+				font-size: 20rpx;
+				padding: 4rpx 12rpx;
+				border-radius: 8rpx;
+				font-weight: normal;
 			}
 		}
 	}
@@ -2330,8 +2549,8 @@
 				image {
 					border-color: #FFD100;
 					box-shadow: 0 0 10rpx rgba(255, 209, 0, 0.3);
-					width: 100rpx;
-					height: 100rpx;
+					width: 70rpx;
+					height: 70rpx;
 				}
 
 				text {
@@ -2347,8 +2566,8 @@
 				image {
 					border-color: #0FB269;
 					box-shadow: 0 0 10rpx rgba(15, 178, 105, 0.3);
-					width: 100rpx;
-					height: 100rpx;
+					width: 70rpx;
+					height: 70rpx;
 				}
 
 				text {
@@ -2364,8 +2583,8 @@
 				image {
 					border-color: #16C2C2;
 					box-shadow: 0 0 10rpx rgba(22, 194, 194, 0.3);
-					width: 100rpx;
-					height: 100rpx;
+					width: 70rpx;
+					height: 70rpx;
 				}
 
 				text {
@@ -2381,8 +2600,8 @@
 				image {
 					border-color: #61CA87;
 					box-shadow: 0 0 10rpx rgba(97, 202, 135, 0.3);
-					width: 100rpx;
-					height: 100rpx;
+					width: 70rpx;
+					height: 70rpx;
 				}
 
 				text {
@@ -2403,6 +2622,7 @@
 		.service-option {
 			display: flex;
 			align-items: center;
+			justify-content: space-between;
 			padding: 20rpx;
 			border: 2rpx solid #f0f0f0;
 			border-radius: 12rpx;
@@ -2412,6 +2632,11 @@
 			&.service-option-active {
 				border-color: #2492F2;
 				background-color: rgba(36, 146, 242, 0.05);
+			}
+
+			.service-label-left {
+				display: flex;
+				align-items: center;
 			}
 
 			.option-circle {
@@ -2507,6 +2732,129 @@
 					text-align: center;
 					font-size: 28rpx;
 					color: #333;
+				}
+			}
+		}
+	}
+
+	/* 附加服务样式 */
+	.additional-services {
+		display: flex;
+		flex-direction: column;
+
+		.service-row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20rpx;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+
+			.service-option {
+				display: flex;
+				align-items: center;
+				padding: 10rpx 0;
+
+				.option-circle {
+					width: 36rpx;
+					height: 36rpx;
+					border-radius: 4rpx;
+					border: 2rpx solid #CCCCCC;
+					margin-right: 20rpx;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+
+					.inner-circle {
+						width: 24rpx;
+						height: 24rpx;
+						border-radius: 2rpx;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+
+						.check-mark {
+							color: white;
+							font-size: 20rpx;
+							font-weight: bold;
+							line-height: 20rpx;
+						}
+					}
+				}
+
+				text {
+					font-size: 28rpx;
+					color: #333;
+				}
+
+				.service-label-container {
+					display: flex;
+					flex-direction: column;
+
+					text {
+						font-size: 28rpx;
+						color: #333;
+					}
+
+					.service-note {
+						font-size: 22rpx;
+						color: #FF6B6B;
+						margin-top: 4rpx;
+					}
+				}
+			}
+
+			.quantity-selector {
+				display: flex;
+				align-items: center;
+
+				text {
+					font-size: 28rpx;
+					color: #333;
+					margin-left: 20rpx;
+				}
+
+				.unit-text {
+					font-size: 28rpx;
+					color: #333;
+					margin-left: 20rpx;
+				}
+
+				.quantity-controls {
+					display: flex;
+					align-items: center;
+
+					.quantity-btn {
+						width: 60rpx;
+						height: 60rpx;
+						border: 1rpx solid #EEEEEE;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						font-size: 32rpx;
+						color: #333;
+						background-color: #F8F8F8;
+					}
+
+					.minus {
+						border-radius: 8rpx 0 0 8rpx;
+					}
+
+					.plus {
+						border-radius: 0 8rpx 8rpx 0;
+					}
+
+					.quantity-input {
+						width: 80rpx;
+						height: 60rpx;
+						border-top: 1rpx solid #EEEEEE;
+						border-bottom: 1rpx solid #EEEEEE;
+						text-align: center;
+						font-size: 28rpx;
+						color: #333;
+					}
 				}
 			}
 		}

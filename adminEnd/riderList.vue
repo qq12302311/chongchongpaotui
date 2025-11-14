@@ -836,9 +836,10 @@ export default {
       // 服务区域筛选
       showCascade: false, // 是否显示级联选择器
       currentLevel: 'province', // 当前级联选择器层级
-      selectedProvince: null, // 选中的省份ID
-      selectedCity: null, // 选中的城市ID
-      selectedDistrict: null, // 选中的区县ID
+      selectedProvince: '', // 选中的省份ID
+      selectedCity: '', // 选中的城市ID
+      selectedDistrict: '', // 选中的区县ID
+      cascadeData: [], // 原始级联数据
       provinceList: [], // 省份列表
       cityList: [], // 城市列表
       districtList: [], // 区县列表
@@ -944,10 +945,21 @@ export default {
           params.submit_certification = this.currentCertStatus;
         }
 
-        // 添加服务区域筛选
-        if (this.zoneOptions.length > 0 && this.zoneOptions[0].value !== 'all') {
-          params.district_id = this.zoneOptions[0].value;
+        // 根据区域选择情况添加相应的参数
+        if (this.selectedDistrict) {
+          // 选择了具体区县
+          params.district_id = this.selectedDistrict;
+          console.log('📍 选择了具体区县，district_id:', this.selectedDistrict);
+        } else if (this.selectedCity) {
+          // 在区县里点击了"全部"，传city_id
+          params.city_id = this.selectedCity;
+          console.log('🏙️ 区县中点击全部，传city_id:', this.selectedCity);
+        } else if (this.selectedProvince) {
+          // 在地级市里点击了"全部"，传province_id
+          params.province_id = this.selectedProvince;
+          console.log('🏛️ 地级市中点击全部，传province_id:', this.selectedProvince);
         }
+        // 如果都没选择，则不传任何区域参数（查询全部）
 
         // 添加排序参数
         if (this.currentSortField && this.currentSortOrder) {
@@ -1161,8 +1173,8 @@ export default {
     showCascadeSelector() {
       this.showCascade = true;
 
-      // 如果省份列表为空，则获取省份列表
-      if (this.provinceList.length === 0) {
+      // 如果省份列表为空或级联数据为空，则获取省份列表
+      if (this.provinceList.length === 0 || this.cascadeData.length === 0) {
         this.getProvinceList();
       }
     },
@@ -1175,34 +1187,29 @@ export default {
     // 获取省份列表
     async getProvinceList() {
       try {
-        // 从本地存储获取城市列表
-        // const cityList = uni.getStorageSync('cityList');
-        // if (cityList) {
-        //   let parsedCityList;
-        //   try {
-        //     // 尝试解析 JSON 字符串
-        //     parsedCityList = typeof cityList === 'string' ? JSON.parse(cityList) : cityList;
+        // 如果本地存储没有城市列表，则从接口获取
+        const res = await this.$request('service/zone', {
+          service_member_id: this.adminInfo.id,
+          type: "manager",
+          sign: "chongchong"
+        }, 'POST');
 
-        //     // 设置省份列表
-        //     this.provinceList = parsedCityList;
-        //   } catch (error) {
-        //     console.error('解析城市列表失败:', error);
-        //   }
-        // } else {
-          // 如果本地存储没有城市列表，则从接口获取
-          const res = await this.$request('service/zone', {
-            // service_member_id: this.adminInfo && this.adminInfo.id ? this.adminInfo.id : '',
-			service_member_id: this.adminInfo.id, // 使用固定值，根据接口要求
-			type: "manager",
-            sign: "chongchong"
-          }, 'POST');
-
-          if (res.code === 200 && res.data) {
-            this.provinceList = res.data;
-            // 保存到本地存储
-            uni.setStorageSync('cityList', JSON.stringify(res.data));
-          }
-        // }
+        if (res.code === 200 && res.data) {
+          // 保存原始数据
+          this.cascadeData = res.data || [];
+          
+          // 处理省份列表，在开头添加"全部"选项
+          this.provinceList = [{ name: '全部', province_id: '' }];
+          this.cascadeData.forEach(province => {
+            this.provinceList.push({
+              name: province.name,
+              province_id: province.province_id
+            });
+          });
+          
+          // 保存到本地存储
+          uni.setStorageSync('cityList', JSON.stringify(res.data));
+        }
       } catch (err) {
         console.error('获取省份列表失败:', err);
       }
@@ -1210,66 +1217,165 @@ export default {
 
     // 选择省份
     selectProvince(provinceId) {
-      this.selectedProvince = provinceId;
-      this.selectedCity = null;
-      this.selectedDistrict = null;
-
-      // 获取城市列表
-      const province = this.provinceList.find(p => p.province_id === provinceId);
-      if (province && province.children) {
-        this.cityList = province.children;
-      } else {
-        this.cityList = [];
+      // 如果点击的是已选中的省份，直接应用选择并关闭
+      if (provinceId && this.selectedProvince === provinceId) {
+        this.updateZoneDisplay();
+        this.hideCascadeSelector();
+        this.page = 1;
+        this.riderList = [];
+        this.hasMore = true;
+        this.getRiderList();
+        return;
       }
 
-      // 切换到城市层级
-      this.currentLevel = 'city';
+      this.selectedProvince = provinceId;
+      this.selectedCity = '';
+      this.selectedDistrict = '';
+
+      if (provinceId) {
+        // 查找对应的省份数据
+        const province = this.cascadeData.find(p => p.province_id === provinceId);
+        if (province && province.children) {
+          // 更新城市列表，在开头添加"全部"选项
+          this.cityList = [{ name: '全部', city_id: '' }];
+          province.children.forEach(city => {
+            this.cityList.push({
+              name: city.name,
+              city_id: city.city_id
+            });
+          });
+
+          // 自动切换到城市选择
+          this.currentLevel = 'city';
+        } else {
+          // 没有子城市，直接应用选择
+          this.updateZoneDisplay();
+          this.hideCascadeSelector();
+          this.page = 1;
+          this.riderList = [];
+          this.hasMore = true;
+          this.getRiderList();
+        }
+      } else {
+        // 选择了"全部"，直接应用选择
+        this.updateZoneDisplay();
+        this.hideCascadeSelector();
+        this.page = 1;
+        this.riderList = [];
+        this.hasMore = true;
+        this.getRiderList();
+      }
     },
 
     // 选择城市
     selectCity(cityId) {
-      this.selectedCity = cityId;
-      this.selectedDistrict = null;
-
-      // 获取区县列表
-      const city = this.cityList.find(c => c.city_id === cityId);
-      if (city && city.children) {
-        this.districtList = city.children;
-      } else {
-        this.districtList = [];
+      // 如果点击的是已选中的城市，直接应用选择并关闭
+      if (cityId && this.selectedCity === cityId) {
+        this.updateZoneDisplay();
+        this.hideCascadeSelector();
+        this.page = 1;
+        this.riderList = [];
+        this.hasMore = true;
+        this.getRiderList();
+        return;
       }
 
-      // 切换到区县层级
-      this.currentLevel = 'district';
+      this.selectedCity = cityId;
+      this.selectedDistrict = '';
+
+      if (cityId) {
+        // 查找对应的省份数据
+        const province = this.cascadeData.find(p => p.province_id === this.selectedProvince);
+        if (province && province.children) {
+          // 查找对应的城市数据
+          const city = province.children.find(c => c.city_id === cityId);
+          if (city && city.children) {
+            // 更新区县列表，在开头添加"全部"选项
+            this.districtList = [{ name: '全部', district_id: '' }];
+            city.children.forEach(district => {
+              this.districtList.push({
+                name: district.name,
+                district_id: district.district_id
+              });
+            });
+
+            // 自动切换到区县选择
+            this.currentLevel = 'district';
+          } else {
+            // 没有子区县，直接应用选择
+            this.updateZoneDisplay();
+            this.hideCascadeSelector();
+            this.page = 1;
+            this.riderList = [];
+            this.hasMore = true;
+            this.getRiderList();
+          }
+        }
+      } else {
+        // 选择了地级市中的"全部"，直接应用选择
+        console.log('🏙️ 地级市中点击全部，province_id:', this.selectedProvince);
+        this.updateZoneDisplay();
+        this.hideCascadeSelector();
+        this.page = 1;
+        this.riderList = [];
+        this.hasMore = true;
+        this.getRiderList();
+      }
     },
 
     // 选择区县
     selectDistrict(districtId) {
       this.selectedDistrict = districtId;
 
-      // 获取区县名称
-      const district = this.districtList.find(d => d.district_id === districtId);
-      const city = this.cityList.find(c => c.city_id === this.selectedCity);
-      const province = this.provinceList.find(p => p.province_id === this.selectedProvince);
-
-      // 更新区域选项
-      if (district && city && province) {
-        this.zoneOptions = [{
-          label: `${province.name} ${city.name} ${district.name}`,
-          value: districtId
-        }];
+      if (!districtId) {
+        // 选择了区县中的"全部"
+        console.log('🏘️ 区县中点击全部，city_id:', this.selectedCity);
       }
 
-      // 隐藏级联选择器
+      this.updateZoneDisplay();
       this.hideCascadeSelector();
-
+      
       // 刷新列表
       this.page = 1;
       this.riderList = [];
       this.hasMore = true;
-
-      // 添加区县ID筛选参数
       this.getRiderList();
+    },
+
+    // 更新区域显示
+    updateZoneDisplay() {
+      // 构建显示文本
+      let displayText = '全部区域';
+
+      if (this.selectedProvince) {
+        const province = this.provinceList.find(p => p.province_id === this.selectedProvince);
+        if (province) {
+          displayText = province.name;
+
+          if (this.selectedCity) {
+            const city = this.cityList.find(c => c.city_id === this.selectedCity);
+            if (city) {
+              displayText = city.name;
+
+              if (this.selectedDistrict) {
+                const district = this.districtList.find(d => d.district_id === this.selectedDistrict);
+                if (district) {
+                  displayText = district.name;
+                }
+              } else {
+                // 在区县中选择了"全部"，显示城市名 + "全部区县"
+                displayText = city.name + ' 全部区县';
+              }
+            }
+          } else {
+            // 在地级市中选择了"全部"，显示省份名 + "全部城市"
+            displayText = province.name + ' 全部城市';
+          }
+        }
+      }
+
+      // 更新区域选项
+      this.zoneOptions = [{ label: displayText, value: 'zone' }];
     },
 
     // 获取服务区域数据
@@ -1299,7 +1405,18 @@ export default {
           }, 'POST');
 
           if (res.code === 200 && res.data) {
-            this.provinceList = res.data;
+            // 保存原始级联数据
+            this.cascadeData = res.data || [];
+
+            // 处理省份列表，在开头添加"全部"选项
+            this.provinceList = [{ name: '全部', province_id: '' }];
+            this.cascadeData.forEach(province => {
+              this.provinceList.push({
+                name: province.name,
+                province_id: province.province_id
+              });
+            });
+
             this.allZones = res.data;
             // 保存到本地存储
             uni.setStorageSync('cityList', JSON.stringify(res.data));

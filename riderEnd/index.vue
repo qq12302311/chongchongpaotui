@@ -69,6 +69,11 @@
 
     <!-- 订单列表 -->
     <view class="order-list">
+      <!-- 推广条 -->
+      <view class="promotion-bar">
+        <image src="https://ccpt.qiniu.0871.cn/riderEnd/index/tuiguangtiao.svg" mode="widthFix" class="promotion-image"></image>
+      </view>
+      
       <!-- 订单列表 -->
       <view>
         <view class="order-item pos-rel" :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }" v-for="(order, index) in orderList" :key="index" @click="goToOrderDetail(order)">
@@ -97,31 +102,24 @@
           </view> -->
 
           <!-- 广告横幅 -->
-          <view class="ad-banner" v-if="!order.reward">
+          <!-- <view class="ad-banner" v-if="!order.reward">
             <view class="ad-content">
-             <!-- <view class="ad-icon">
-                <text class="ad-emoji">⚡</text>
-              </view> -->
               <view class="ad-text">
                 <text class="ad-promotion-text" style="margin-right: 5px;">推广 </text>
                 <text class="ad-main-text">不管您是哪家"充"，我们都在用</text>
                 <text class="ad-brand-text">充充</text>
                 <text class="ad-sub-text">！推荐骑手有奖金！</text>
               </view>
-              <!-- <view class="ad-decoration">
-                <view class="ad-sparkle">✨</view>
-                <view class="ad-sparkle ad-sparkle-delay">✨</view>
-              </view> -->
             </view>
             <view class="ad-gradient-overlay"></view>
-          </view>
+          </view> -->
           
           <!-- 打赏信息横幅 -->
-		  <view class="reward-badge" v-if="order.reward">
+		 <!-- <view class="reward-badge" v-if="order.reward">
 			<image src="https://ccpt.qiniu.0871.cn/dstb.png" class="reward-badge-image" mode="aspectFit"></image>
-			<text class="reward-badge-amount">{{ parseInt(order.reward.amount) }}</text>
-		  </view>
-          <view class="reward-banner" v-if="order.reward">
+			<text class="reward-badge-amount">{{ parseInt(getRewardAmount(order)) }}</text>
+		  </view> -->
+          <!-- <view class="reward-banner" v-if="order.reward">
             <view class="reward-banner-content">
               <view class="reward-banner-text">
                 <text class="reward-promotion-text">推广 </text>
@@ -130,9 +128,9 @@
                 <text class="reward-sub-text">！推荐骑手有奖金！</text>
               </view>
             </view>
-          </view>
+          </view> -->
 
-          <view class="order-time"></view>
+          <!-- <view class="order-time"></view> -->
           <!-- <view class="order-time">发单时间：{{ order.orderTime }}</view> -->
 
           <view class="order-content">
@@ -150,13 +148,14 @@
                 <text class="distance-text"><text class="highlight">{{ order.distance || 0 }}km</text></text>
               </view>
               <view class="service-item" :data-content="order.serviceItem">任务：</view>
+              <view class="service-item" v-if="getAdditionalServices(order)" :data-content="getAdditionalServices(order)">附加：</view>
             </view>
 
             <view class="price-info-wrapper">
               <view class="service-time" :data-content="getTotalAmountWithReward(order)"></view>
               <!-- 订单金额+打赏金额 -->
               <view class="order-total-amount" v-if="order.reward">
-                <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ order.reward.amount }}）</text>
+                <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
               </view>
             </view>
             <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons" @click.stop="goToOrderDetail(order)">
@@ -257,14 +256,18 @@
 				  <text class="info-label">发单时间：</text>
 				  <text class="info-value">{{ currentOrderInfo.orderTime }}</text>
 				</view> -->
-				<view class="info-row">
-				  <text class="info-label">服务项目：</text>
-				  <text class="info-value service-item-value">{{ currentOrderInfo.serviceItem }}</text>
-				</view>
-				<view class="info-row">
-				  <text class="info-label">服务佣金：</text>
-				  <text class="info-value amount">{{ getDisplayAmount(currentOrderInfo) }}</text>
-				</view>
+			<view class="info-row">
+			  <text class="info-label">服务项目：</text>
+			  <text class="info-value service-item-value">{{ currentOrderInfo.serviceItem }}</text>
+			</view>
+			<view class="info-row" v-if="getAdditionalServices(currentOrderInfo)">
+			  <text class="info-label">附加服务：</text>
+			  <text class="info-value service-item-value">{{ getAdditionalServices(currentOrderInfo) }}</text>
+			</view>
+			<view class="info-row">
+			  <text class="info-label">服务佣金：</text>
+			  <text class="info-value amount">{{ getDisplayAmount(currentOrderInfo) }}</text>
+			</view>
 			   <!-- <view class="info-row">
 				  <text class="info-label">时效：</text>
 				  <text class="info-value service-time-value">{{ currentOrderInfo.serviceTime }}</text>
@@ -334,6 +337,11 @@
 			  </button>
 			</view>
 		</view>
+      </view>
+      
+      <!-- 剩余接单配额 -->
+      <view class="order-quota-bar" @click.stop>
+        <text class="quota-text">剩余接单配额数：18次</text>
       </view>
     </view>
 
@@ -501,7 +509,7 @@ export default {
         },
         {
           id: 3,
-          image: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+          image: 'https://ccpt.qiniu.0871.cn/qs-bn.png',
           title: 'Banner 2',
           url: ''
         }
@@ -518,7 +526,7 @@ export default {
       // 分享统计数据缓存
       shareCountData: {},
       // 分享图片路径
-      shareImageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+      shareImageUrl: 'https://ccpt.qiniu.0871.cn/qs-bn.png',
       // 分享参数
       shareParams: null,
       // 当前要转派的订单
@@ -638,7 +646,7 @@ export default {
         title: `${order.serviceItem} | ${this.getTransferDisplayAmount(order)} | ${this.formatAddress(order)}`,
         desc: `【订单转派】距离: ${order.distance}km | 转单奖励: ${this.getTransferReward(order)}`,
         path: `/riderEnd/index?task_referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
-        imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+        imageUrl: 'https://ccpt.qiniu.0871.cn/qs-bn.png'
       };
 
       // 延迟清除转派订单信息，确保分享完成
@@ -683,7 +691,7 @@ export default {
         title: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
         desc: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
         path: '/riderEnd/index',
-        imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+        imageUrl: 'https://ccpt.qiniu.0871.cn/qs-bn.png'
       }
     }
   },
@@ -692,7 +700,7 @@ export default {
     return {
       title: '充充跑腿骑手端 - 接单大厅',
       query: 'from=timeline',
-      imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+      imageUrl: 'https://ccpt.qiniu.0871.cn/qs-bn.png'
     }
   },
   methods: {
@@ -916,7 +924,9 @@ export default {
 
         if (res.code === 200) {
           // 处理主要数据（data数组）
-          const mainOrders = (res.data || []).map(order => this.formatOrderData(order, false))
+          const mainOrders = (res.data || []).map(order => {
+            return this.formatOrderData(order, false);
+          })
 
           // 处理最近任务数据（recent_tasks数组）- 根据状态判断，标记为recent_tasks来源
           const recentOrders = (res.recent_tasks || []).map(order => {
@@ -1032,7 +1042,8 @@ export default {
         isRecentTask: isRecentTask, // 是否来自recent_tasks数组
         refundRequest: order.refund_request === 1 || order.refund_request === '1', // 是否为退款中订单
         assigned_at: this.extractDeadlineTime(order.assigned_at), // 从时效中提取时间
-        reward: rewardInfo // 打赏信息
+        reward: rewardInfo, // 打赏信息
+        task_detail: taskDetail // 任务详情，包含附加服务信息
       }
     },
     // 获取服务类型文本
@@ -1069,9 +1080,16 @@ export default {
 
     // 获取服务类型CSS类名
     getServiceTypeClass(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return 'supplement';
+        case 'goodRecycle':
+          return 'recycle';
+        case 'badRecycle':
+          return 'recycle';
         case 'offline_abnormal':
           return 'offline-abnormal';
         case 'income_abnormal':
@@ -1085,9 +1103,16 @@ export default {
 
     // 获取服务类型显示文本（只显示前两个字符）
     getServiceTypeDisplayText(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return '补宝';
+        case 'goodRecycle':
+          return '收宝';
+        case 'badRecycle':
+          return '收宝';
         case 'offline_abnormal':
           return '离线';
         case 'income_abnormal':
@@ -1096,7 +1121,7 @@ export default {
           return '其他';
         default:
           // 如果是其他类型，取前两个字符
-          return detail ? detail.substring(0, 2) : '';
+          return firstDetail ? firstDetail.substring(0, 2) : '';
       }
     },
     // 提取截止时间（仅时间部分）
@@ -1172,35 +1197,95 @@ export default {
         'xiaodian': '小电'
       };
 
-      // 主要服务项目
+      // 主要服务项目 - 支持多选（逗号分隔）
       if (taskDetail.detail) {
-        let itemName;
+        // 检查是否是多选（包含逗号）
+        const details = taskDetail.detail.includes(',') ? taskDetail.detail.split(',') : [taskDetail.detail];
+        
+        // 处理多选情况
+        if (details.length > 1) {
+          // 多选时，分别显示好宝回收和坏宝回收的数量
+          details.forEach(detail => {
+            detail = detail.trim();
+            let itemName;
+            let itemNumber;
+            
+            switch (detail) {
+              case 'bubao':
+                itemName = '补宝';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'goodRecycle':
+                itemName = '好宝回收';
+                itemNumber = taskDetail.shoubao_normal_item_number || 0;
+                break;
+              case 'badRecycle':
+                itemName = '坏宝回收';
+                itemNumber = taskDetail.shoubao_broken_item_number || 0;
+                break;
+              case 'offline_abnormal':
+                itemName = '离线异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'income_abnormal':
+                itemName = '收入异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'other_abnormal':
+                itemName = '其他异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              default:
+                itemName = detail;
+                itemNumber = taskDetail.item_number || 1;
+            }
+            
+            // 添加品牌信息（如果存在）
+            if (order.brand) {
+              const brandName = brandMap[order.brand] || order.brand;
+              itemName = `${brandName} ${itemName}`;
+            }
+            
+            if (itemNumber > 0) {
+              items.push(`${itemName}x${itemNumber}`);
+            }
+          });
+        } else {
+          // 单选时，保持原有逻辑
+          let itemName;
 
-        // 判断服务类型
-        switch (taskDetail.detail) {
-          case 'bubao':
-            itemName = '补宝';
-            break;
-          case 'offline_abnormal':
-            itemName = '离线异常';
-            break;
-          case 'income_abnormal':
-            itemName = '收入异常';
-            break;
-          case 'other_abnormal':
-            itemName = '其他异常';
-            break;
-          default:
-            itemName = taskDetail.detail;
+          // 判断服务类型
+          switch (taskDetail.detail) {
+            case 'bubao':
+              itemName = '补宝';
+              break;
+            case 'goodRecycle':
+              itemName = '好宝回收';
+              break;
+            case 'badRecycle':
+              itemName = '坏宝回收';
+              break;
+            case 'offline_abnormal':
+              itemName = '离线异常';
+              break;
+            case 'income_abnormal':
+              itemName = '收入异常';
+              break;
+            case 'other_abnormal':
+              itemName = '其他异常';
+              break;
+            default:
+              itemName = taskDetail.detail;
+          }
+
+          // 添加品牌信息（如果存在）
+          if (order.brand) {
+              const brandName = brandMap[order.brand] || order.brand;
+              itemName = `${brandName} ${itemName}`;
+          }
+
+          items.push(`${itemName}x${taskDetail.item_number || 1}`);
         }
-
-        // 添加品牌信息（如果存在）
-        if (order.brand) {
-            const brandName = brandMap[order.brand] || order.brand;
-            itemName = `${brandName} ${itemName}`;
-        }
-
-        items.push(`${itemName}x${taskDetail.item_number || 1}`);
       }
 
       // 设备是否外摆
@@ -1502,7 +1587,7 @@ export default {
             title: `${order.serviceItem} | ${this.getTransferDisplayAmount(order)} | ${this.formatAddress(order)}`,
             desc: `【订单转派】距离: ${order.distance}km | 转单奖励: ${this.getTransferReward(order)}`,
             path: `/riderEnd/index?task_referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
-            imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+            imageUrl: 'https://ccpt.qiniu.0871.cn/qs-bn.png',
             success: (res) => {
               console.log('订单转派分享成功', res);
               uni.showToast({
@@ -1632,6 +1717,26 @@ export default {
       const realAmount = amount * rate;
       return `¥${realAmount.toFixed(2)}`;
     },
+    // 获取附加服务
+    getAdditionalServices(order) {
+      if (!order || !order.task_detail) return '';
+      
+      const taskDetail = order.task_detail;
+      const additionalServices = [];
+      
+      // 遍历 extra_task_1 到 extra_task_6
+      for (let i = 1; i <= 6; i++) {
+        const taskKey = `extra_task_${i}`;
+        const taskNumberKey = `extra_task_${i}_item_number`;
+        
+        if (taskDetail[taskKey]) {
+          const itemNumber = taskDetail[taskNumberKey] || 1;
+          additionalServices.push(`${taskDetail[taskKey]}x${itemNumber}`);
+        }
+      }
+      
+      return additionalServices.join('、');
+    },
     // 获取订单金额+打赏金额的总和
     getTotalAmountWithReward(order) {
       // 获取基础订单金额
@@ -1641,13 +1746,21 @@ export default {
       if (order.reward && order.reward.amount) {
         // 提取数字部分
         const baseValue = parseFloat(baseAmount.replace('¥', ''));
-        const rewardValue = parseFloat(order.reward.amount);
+        // 打赏金额乘以费率
+        const rewardValue = parseFloat(order.reward.amount) * (this.riderUserInfo && this.riderUserInfo.rate ? Number(this.riderUserInfo.rate) : 1);
         const total = baseValue + rewardValue;
         return `¥${total.toFixed(2)}`;
       }
       
       // 没有打赏，返回原金额
       return baseAmount;
+    },
+
+    // 获取打赏金额（乘以费率）
+    getRewardAmount(order) {
+      if (!order.reward || !order.reward.amount) return '0.00';
+      const rewardValue = parseFloat(order.reward.amount) * (this.riderUserInfo && this.riderUserInfo.rate ? Number(this.riderUserInfo.rate) : 1);
+      return rewardValue.toFixed(2);
     },
 
     // 计算转单奖励金额
@@ -2189,7 +2302,7 @@ export default {
               },
               fail: (err) => {
                 console.error('生成分享图片失败:', err);
-                this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
+                this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/qs-bn.png';
                 resolve(this.shareImageUrl);
               }
             }, this);
@@ -2197,7 +2310,7 @@ export default {
         });
         } catch (error) {
           console.error('生成分享图片异常:', error);
-          this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
+          this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/qs-bn.png';
           resolve(this.shareImageUrl);
         }
       });
@@ -2222,19 +2335,19 @@ export default {
 							resolve(res.path);
 						} else {
 							console.error('上传响应中没有path字段:', res);
-							this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
-							resolve('https://ccpt.qiniu.0871.cn/rider/banner4.png');
+							this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/qs-bn.png';
+							resolve('https://ccpt.qiniu.0871.cn/qs-bn.png');
 						}
 					} catch (error) {
 						console.error('解析上传响应失败:', error);
-						this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
-						resolve('https://ccpt.qiniu.0871.cn/rider/banner4.png');
+						this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/qs-bn.png';
+						resolve('https://ccpt.qiniu.0871.cn/qs-bn.png');
 					}
 				},
 				fail: (uploadFileErr) => {
 					console.error('图片上传失败', uploadFileErr);
-					this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
-					resolve('https://ccpt.qiniu.0871.cn/rider/banner4.png');
+					this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/qs-bn.png';
+					resolve('https://ccpt.qiniu.0871.cn/qs-bn.png');
 				}
 			});
 		});
@@ -2805,15 +2918,38 @@ export default {
   width: 100%;
   box-sizing: border-box;
 
+  // 推广条样式
+  .promotion-bar {
+    width: 730rpx;
+    height: 58rpx;
+    padding: 10rpx 10rpx;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+  }
+
+  .promotion-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
   .order-item {
     background-color: #fff;
-    margin: 20rpx 10rpx;
+    margin: 10rpx 10rpx;
     border-radius: 12rpx;
     padding: 20rpx;
     width: calc(100% - 20rpx);
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
+
+    // 第一个订单项的特殊样式
+    &:first-child {
+      margin: 0rpx 10rpx 10rpx 10rpx;
+    }
 
     .order-header {
       display: flex;
@@ -3049,13 +3185,16 @@ export default {
     
     // 订单金额+打赏金额样式
     .order-total-amount {
+      right: -10px;
+      top: 9px;
+      position: absolute;
+      width: 241rpx;
       text-align: right;
-      line-height: 1.2;
       
       .total-amount-text {
-        font-size: 20rpx;
-        color: #999;
-        line-height: 1.2;
+        font-size: 18rpx;
+        background: rgba(255, 246, 245, 1);
+        color: rgba(255, 87, 51, 1);
       }
     }
 
@@ -3128,19 +3267,23 @@ export default {
 
         // 品牌颜色样式
         &.brand-meituan {
-          background-color: #F9E34F !important;
+          background-color: rgba(255, 195, 0, 1) !important;
 
           .brand-text, .service-text {
-            color: #333 !important;
+            color: rgba(0, 0, 0, 1) !important;
           }
         }
 
         &.brand-guaishou {
-          background-color: #27BFC0 !important;
+          background-color: rgba(42, 193, 194, 1) !important;
+
+          .brand-text, .service-text {
+            color: rgba(255, 255, 255, 1) !important;
+          }
         }
 
         &.brand-jiedian {
-          background-color: #2492F2 !important;
+          background-color: rgba(37, 196, 67, 1) !important;
         }
 
         &.brand-xiaodian {
@@ -3159,7 +3302,7 @@ export default {
       .order-details {
         flex: 1;
         min-width: 0;
-        max-width: calc(100% - 250rpx);
+        max-width: calc(100% - 323rpx);
         padding-right: 10rpx;
 
         .address {
@@ -3224,7 +3367,7 @@ export default {
       .price-info-wrapper {
         position: absolute;
         right: 10rpx;
-        top: 10rpx;
+        top: 0rpx;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
@@ -3410,7 +3553,7 @@ export default {
   .completed-stamp-image-gray {
 	  transform: rotate(60deg);
     position: absolute;
-    top: 85rpx;
+    top: 13rpx;
     right: 166rpx;
     width: 115rpx;
     height: 150rpx;
@@ -3421,14 +3564,16 @@ export default {
 
   // 进行中订单盖章图片样式
   .assigned-stamp-image {
-	  transform: rotate(60deg);
+    -webkit-transform: rotate(60deg);
+    transform: rotate(60deg);
     position: absolute;
-    top: 85rpx;
-	right: 166rpx;
-	width: 115rpx;
+    top: 11rpx;
+    right: 166rpx;
+    width: 115rpx;
     height: 150rpx;
     z-index: 10;
     pointer-events: none;
+    -webkit-filter: brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(1234%) hue-rotate(201deg) brightness(96%) contrast(95%);
     filter: brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(1234%) hue-rotate(201deg) brightness(96%) contrast(95%);
   }
 }
@@ -3554,6 +3699,7 @@ export default {
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 1000;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.3s ease;
@@ -3862,7 +4008,22 @@ export default {
   }
 }
 
+.order-quota-bar {
+  width: 85%;
+  max-width: 550rpx;
+  background-color: #fff;
+  padding: 20rpx 30rpx;
+  border-radius: 20rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
 
+  .quota-text {
+    font-size: 26rpx;
+    color: rgba(97, 97, 97, 1);
+  }
+}
 
 // 广告横幅动画效果
 @keyframes pulse {

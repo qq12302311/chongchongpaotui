@@ -97,8 +97,8 @@ export default {
       }
     },
     goToChat() {
-      // 跳转到用户端聊天列表（tab页面）
-      uni.switchTab({
+      // 跳转到用户端聊天列表（普通页面）
+      uni.navigateTo({
         url: '/pages/chat/chat-list',
         fail: (err) => {
           console.error('跳转到聊天列表失败:', err);
@@ -158,20 +158,29 @@ export default {
     },
     // 触摸结束
     handleTouchEnd(e) {
+      const currentTime = Date.now();
+      const duration = currentTime - this.dragStartTime;
+      const wasDragging = this.isDragging;
+      
+      // 立即重置拖拽状态
+      this.isDragging = false;
+      
       // 如果是拖拽，保存位置
-      if (this.isDragging) {
+      if (wasDragging) {
         // 保存位置到本地存储
         this.savePosition();
-        // 延迟重置拖拽状态，避免触发点击事件
-        setTimeout(() => {
-          this.isDragging = false;
-        }, 100);
+      } else {
+        // 如果不是拖拽，判断是否是点击（触摸时间小于300ms）
+        if (duration < 300) {
+          console.log('检测到点击事件，跳转到聊天列表');
+          this.goToChat();
+        }
       }
-      // 点击事件由 handleClick 单独处理
     },
-    // 处理点击事件
+    // 处理点击事件（作为备用）
     handleClick(e) {
-      // 只有在非拖拽状态下才执行跳转
+      // 如果 touchend 没有触发跳转，这里作为备用
+      console.log('click 事件触发');
       if (!this.isDragging) {
         this.goToChat();
       }

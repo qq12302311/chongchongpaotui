@@ -26,6 +26,10 @@
           <view class="stats-value completed">{{ analysisData.completed || 0 }}</view>
         </view>
         <view class="stats-card">
+          <view class="stats-title">收宝订单</view>
+          <view class="stats-value shoubao">{{ analysisData.shoubao || 0 }}</view>
+        </view>
+        <view class="stats-card">
           <view class="stats-title">补宝订单</view>
           <view class="stats-value processing">{{ analysisData.processing || 0 }}</view>
         </view>
@@ -634,10 +638,25 @@ export default {
           数据一致: Math.abs(totalCheck - todayTotal) <= 1
         });
 
+        // 查找收宝系列（支持多种可能的名称）
+        let shoubaoSeries = data.countData.series.find(s =>
+          s.name === '收宝' ||
+          s.name.includes('收宝') ||
+          s.name.includes('待收') ||
+          s.name.includes('收货')
+        );
+
+        const todayShoubao = shoubaoSeries && shoubaoSeries.data && shoubaoSeries.data.length > 0 ? shoubaoSeries.data[0] : 0;
+
+        console.log('📈 收宝数据:', {
+          收宝订单: todayShoubao
+        });
+
         this.analysisData = {
           total: todayTotal,
           todayAmount: todayAmount,
           completed: finalCompleted, // 完单数
+          shoubao: todayShoubao, // 收宝订单
           processing: todayBubao, // 进行中（补宝）
           canceled: finalException // 已取消（异常）
         };
@@ -646,6 +665,7 @@ export default {
           total: 0,
           todayAmount: '0.00',
           completed: 0,
+          shoubao: 0,
           processing: 0,
           canceled: 0
         };
@@ -684,6 +704,10 @@ export default {
             {
               name: "补宝订单",
               data: [100, 98, 80, 90, 56, 120, 110]
+            },
+            {
+              name: "收宝订单",
+              data: [20, 18, 15, 20, 12, 35, 30]
             },
             {
               name: "异常订单",
@@ -747,6 +771,22 @@ export default {
           data: bubaoSeries.data.slice(0, 15)
         });
         console.log('✅ 找到补宝订单系列:', bubaoSeries.name);
+      }
+
+      // 查找收宝系列（支持多种可能的名称）
+      let shoubaoSeries = data.countData.series.find(s =>
+        s.name === '收宝' ||
+        s.name.includes('收宝') ||
+        s.name.includes('待收') ||
+        s.name.includes('收货')
+      );
+
+      if (shoubaoSeries && shoubaoSeries.data) {
+        series.push({
+          name: "收宝订单",
+          data: shoubaoSeries.data.slice(0, 15)
+        });
+        console.log('✅ 找到收宝订单系列:', shoubaoSeries.name);
       }
 
       // 查找完单系列（支持多种可能的名称）
@@ -833,6 +873,10 @@ export default {
               data: [100, 98, 80, 90, 56, 120, 110]
             },
             {
+              name: "收宝订单",
+              data: [20, 18, 15, 20, 12, 35, 30]
+            },
+            {
               name: "完单",
               data: [25, 34, 21, 44, 34, 110, 100]
             },
@@ -887,6 +931,10 @@ export default {
             {
               name: "异常金额",
               data: [250.20, 300.40, 320.60, 350.80, 270.30, 400.90, 380.70]
+            },
+            {
+              name: "退款金额",
+              data: [120.10, 150.20, 80.10, 100.30, 50.10, 180.40, 130.20]
             }
           ]
         };
@@ -961,6 +1009,25 @@ export default {
         console.log('✅ 找到异常金额系列:', exceptionSeries.name);
       }
 
+      // 查找退款系列（支持多种可能的名称）
+      let refundSeries = data.amountData.series.find(s =>
+        s.name === '退款' ||
+        s.name === '退款金额' ||
+        s.name === '退单' ||
+        s.name.includes('退款') ||
+        s.name.includes('退单') ||
+        s.name.includes('退回') ||
+        s.name.includes('撤销')
+      );
+
+      if (refundSeries && refundSeries.data) {
+        series.push({
+          name: "退款金额",
+          data: refundSeries.data.slice(0, 15)
+        });
+        console.log('✅ 找到退款金额系列:', refundSeries.name);
+      }
+
       // 如果没有找到任何匹配的系列，尝试使用前几个系列
       if (series.length === 0 && data.amountData.series.length > 0) {
         console.log('⚠️ 未找到匹配的金额系列名称，使用前几个系列');
@@ -993,6 +1060,10 @@ export default {
             {
               name: "异常金额",
               data: [250.20, 300.40, 320.60, 350.80, 270.30, 400.90, 380.70]
+            },
+            {
+              name: "退款金额",
+              data: [120.10, 150.20, 80.10, 100.30, 50.10, 180.40, 130.20]
             }
           ]
         };
@@ -1192,8 +1263,8 @@ export default {
     initializeLegendState() {
       if (this.countChartData && this.countChartData.series) {
         this.countChartData.series.forEach((series, index) => {
-          if (series.name === "补宝订单" || series.name === "异常订单" || series.name === "退款订单") {
-            // 模拟点击图例来隐藏补宝订单、异常订单和退款订单，保持总订单和完单显示
+          if (series.name === "收宝订单" || series.name === "补宝订单" || series.name === "异常订单") {
+            // 模拟点击图例来隐藏收宝订单、补宝订单、异常订单，保持总订单、完单和退款订单显示
             this.getCountLegendIndex({ currentIndex: index });
           }
         });
@@ -1205,7 +1276,7 @@ export default {
       if (this.amountChartData && this.amountChartData.series) {
         this.amountChartData.series.forEach((series, index) => {
           if (series.name === "补宝金额" || series.name === "异常金额") {
-            // 模拟点击图例来隐藏补宝金额和异常金额
+            // 模拟点击图例来隐藏补宝金额和异常金额，保持总金额和退款金额显示
             this.getAmountLegendIndex({ currentIndex: index });
           }
         });
@@ -1576,14 +1647,11 @@ export default {
     grid-column: span 1;
   }
 
-  // 第二行：补宝订单、异常订单 (2个卡片居中)
-  .stats-card:nth-child(4) {
-    grid-column: 1 / span 1;
-    grid-row: 2;
-  }
-
-  .stats-card:nth-child(5) {
-    grid-column: 3 / span 1;
+  // 第二行：收宝订单、补宝订单、异常订单 (3个卡片)
+  .stats-card:nth-child(4),
+  .stats-card:nth-child(5),
+  .stats-card:nth-child(6) {
+    grid-column: span 1;
     grid-row: 2;
   }
 }
@@ -1621,6 +1689,10 @@ export default {
 
     &.completed {
       color: #52c41a;
+    }
+
+    &.shoubao {
+      color: #722ed1;
     }
 
     &.processing {

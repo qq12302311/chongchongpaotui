@@ -59,6 +59,23 @@
 					confirm-type="send" />
 				<button class="send-btn" @click="sendMessage" :disabled="connectionStatus !== 'connected'">发送</button>
 			</view>
+
+			<!-- 快捷回复区域 -->
+			<view class="quick-reply-area">
+				<view class="quick-reply-header">
+					<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="header-icon"></image>
+					<text class="header-text">快捷回复</text>
+				</view>
+				<view class="quick-reply-list">
+					<view 
+						v-for="(item, index) in quickReplies" 
+						:key="index" 
+						class="quick-reply-item" 
+						@click="selectQuickReply(item)">
+						<text>{{ item }}</text>
+					</view>
+				</view>
+			</view>
 		</view>
 	</view>
 </template>
@@ -98,7 +115,14 @@
 					'加', '加我', '转钱'
 				],
 				// 手机号码正则表达式
-				phoneRegex: /1[3-9]\d{9}/g
+				phoneRegex: /1[3-9]\d{9}/g,
+				// 快捷回复列表
+				quickReplies: [
+					'您好！请问我的订单什么时候去完成？',
+					'定位不太准，poi对的可以搜索导航前往！',
+					'订单有特别要求，请小哥注意查看备注哦！',
+					'请在订单说明的作业时段上门，以免空跑'
+				]
 			}
 		},
 		onLoad(options) {
@@ -139,6 +163,14 @@
 			// }
 		},
 		methods: {
+			// 选择快捷回复
+			selectQuickReply(message) {
+				this.messageInput = message;
+				// 可以选择自动发送或只填充到输入框
+				// 如果需要自动发送，取消下面这行的注释
+				// this.sendMessage();
+			},
+
 			// 敏感词过滤方法
 			filterSensitiveWords(message) {
 				// 检查手机号码
@@ -419,7 +451,7 @@
 				if (type === 'self') {
 					return 'https://ccpt.qiniu.0871.cn/duihua/qishou.png'
 				} else {
-					return 'https://ccpt.qiniu.0871.cn/my/avatar.png'
+					return 'https://ccpt.qiniu.0871.cn/112lbtx.png'
 				}
 			},
 
@@ -485,7 +517,7 @@
 								if (item.messageable_type === 'App\\Models\\ServiceMember') {
 									avatar = 'https://ccpt.qiniu.0871.cn/duihua/qishou.png'
 								} else if (item.messageable_type === 'App\\Models\\User') {
-									avatar = 'https://ccpt.qiniu.0871.cn/my/avatar.png'
+									avatar = 'https://ccpt.qiniu.0871.cn/112lbtx.png'
 								} else {
 									avatar = null
 								}
@@ -532,6 +564,8 @@
 		display: flex;
 		flex-direction: column;
 		padding: 20rpx;
+		padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+		padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 		width: 100%;
 		box-sizing: border-box;
 		overflow-x: hidden;
@@ -589,10 +623,10 @@
 		background-color: white;
 		border-radius: 12rpx;
 		padding: 20rpx;
-		margin-bottom: 20rpx;
 		width: 100%;
 		box-sizing: border-box;
 		overflow-x: hidden;
+		min-height: 200rpx;
 	}
 
 	.message {
@@ -715,24 +749,84 @@
 		}
 	}
 
+	// 快捷回复区域
+	.quick-reply-area {
+		background-color: white;
+		border-radius: 12rpx;
+		padding: 20rpx;
+		margin-top: 16rpx;
+		width: 100%;
+		box-sizing: border-box;
+
+		.quick-reply-header {
+			display: flex;
+			align-items: center;
+			margin-bottom: 16rpx;
+
+			.header-icon {
+				width: 32rpx;
+				height: 32rpx;
+				margin-right: 8rpx;
+			}
+
+			.header-text {
+				font-size: 28rpx;
+				color: #2492F2;
+				font-weight: 500;
+			}
+		}
+
+		.quick-reply-list {
+			display: flex;
+			flex-direction: column;
+			gap: 12rpx;
+
+			.quick-reply-item {
+				background-color: #F0F9FF;
+				border: 1rpx solid #E6F4FF;
+				border-radius: 8rpx;
+				padding: 16rpx 20rpx;
+				transition: all 0.3s ease;
+
+				text {
+					font-size: 26rpx;
+					color: #333333;
+					line-height: 1.5;
+				}
+
+				&:active {
+					background-color: #E6F4FF;
+					transform: scale(0.98);
+				}
+			}
+		}
+	}
+
 	.input-area {
 		display: flex;
 		gap: 16rpx;
+		margin-top: 20rpx;
+		align-items: center;
 
 		.message-input {
 			flex: 1;
-			padding: 16rpx 20rpx;
+			height: 70rpx;
+			padding: 0 20rpx;
 			border: 1rpx solid #ddd;
-			border-radius: 24rpx;
+			border-radius: 35rpx;
 			background-color: white;
+			font-size: 28rpx;
 		}
 
 		.send-btn {
-			padding: 16rpx 32rpx;
+			height: 70rpx;
+			line-height: 70rpx;
+			padding: 0 32rpx;
 			background-color: #007bff;
 			color: white;
 			border: none;
-			border-radius: 24rpx;
+			border-radius: 35rpx;
+			font-size: 28rpx;
 
 			&:disabled {
 				background-color: #ccc;

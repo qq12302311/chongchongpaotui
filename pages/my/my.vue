@@ -10,7 +10,8 @@
 
 				<!-- 头像区域 - 独立定位 -->
 				<view class="avatar-container">
-					<image class="avatar" :src="isLogin ? userInfo.avatar : 'https://ccpt.qiniu.0871.cn/my/avatar.png'" mode="aspectFill" @click="goToLogin"></image>
+					<!-- <image class="avatar" :src="isLogin ? userInfo.avatar : 'https://ccpt.qiniu.0871.cn/112lbtx.png'" mode="aspectFill" @click="goToLogin"></image> -->
+					<image class="avatar" src="https://ccpt.qiniu.0871.cn/112lbtx.png" mode="aspectFill" @click="goToLogin"></image>
 				</view>
 
 				<!-- 用户信息卡片 -->
@@ -169,6 +170,7 @@
 	import FloatingImage from '@/components/FloatingImage/index.vue'
 	// import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import userMixin from '@/mixins/userMixin.js'
+	import floatingImageMixin from '@/mixins/floatingImageMixin.js'
 
 	export default {
 		components: {
@@ -177,7 +179,7 @@
 			FloatingImage,
 			// FloatingChatIconUser
 		},
-		mixins: [userMixin],
+		mixins: [userMixin, floatingImageMixin],
 		data() {
 			return {
 				navBarHeight: 0,

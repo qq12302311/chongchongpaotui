@@ -51,31 +51,45 @@
 			<view v-else class="withdraw-list-content">
 				<view class="withdraw-item" v-for="(withdraw, index) in withdrawList" :key="index"
 					@click="showWithdrawDetail(withdraw)">
-					<view class="withdraw-header">
-						<view class="withdraw-info">
-							<text
-								class="rider-name">{{ withdraw.real_name || (withdraw.applicant && withdraw.applicant.contact_person) || '未知骑手' }}</text>
-							<text class="withdraw-time">{{ formatDateTime(withdraw.created_at) }}</text>
+				<view class="withdraw-header">
+					<view class="withdraw-info">
+						<text
+							class="rider-name">{{ withdraw.real_name || (withdraw.applicant && withdraw.applicant.contact_person) || '未知骑手' }}</text>
+						<view class="withdraw-stats" v-if="withdraw.status === 'pending'">
+							<text class="stat-item">累计完单: ¥{{ parseFloat(withdraw.total_commission_amount || 0).toFixed(2) }}</text>
+							<text class="stat-divider">|</text>
+							<text class="stat-item">累计提现: ¥{{ parseFloat(withdraw.total_withdrawal_amount || 0).toFixed(2) }}</text>
+							<text class="stat-divider">|</text>
+							<text class="stat-item">提现比例: {{ (parseFloat(withdraw.withdraw_rate || 0) * 100).toFixed(0) }}%</text>
 						</view>
-						<view class="withdraw-status" :class="withdraw.status">
-							{{ getStatusText(withdraw.status) }}
-						</view>
+						<text class="withdraw-time">{{ formatDateTime(withdraw.created_at) }}</text>
 					</view>
+					<view class="withdraw-status" :class="withdraw.status">
+						{{ getStatusText(withdraw.status) }}
+					</view>
+				</view>
 
 					<view class="withdraw-content">
 						<view class="info-row">
 							<text class="info-label">提现金额：</text>
 							<text class="info-value amount">¥{{ parseFloat(withdraw.amount || 0).toFixed(2) }}</text>
 						</view>
-						<view class="info-row">
-							<text class="info-label">提现方式：</text>
-							<text class="info-value">{{ getPaymentMethodText(withdraw.payment_method) }}</text>
-						</view>
+					<view class="info-row">
+						<text class="info-label">提现方式：</text>
+						<text class="info-value">
+							{{ getPaymentMethodText(withdraw.payment_method) }}
+							<template v-if="withdraw.status === 'pending' && withdraw.payment_method === 'alipay' && withdraw.withdraw_info">
+								<text class="extra-info"> | {{ withdraw.withdraw_info.real_name || '未填写' }}</text>
+								<text class="extra-info"> | {{ withdraw.withdraw_info.alipay_id || '未填写' }}</text>
+								<text class="extra-info"> | 提现比例: {{ (parseFloat(withdraw.withdraw_rate || 0) * 100).toFixed(0) }}%</text>
+							</template>
+						</text>
+					</view>
 
 						<!-- 银行卡信息展示 -->
 						<template v-if="withdraw.payment_method === 'bank' && withdraw.withdraw_info && (withdraw.status !== 'completed' || isExpanded(withdraw.id))">
 							<view class="bank-info-section">
-								<view class="bank-info-title">银行卡信息</view>
+								<!-- <view class="bank-info-title">银行卡信息</view> -->
 								<view class="info-row" v-if="withdraw.withdraw_info.account_holder">
 									<text class="info-label">持卡人：</text>
 									<text class="info-value">{{ withdraw.withdraw_info.account_holder }}</text>
@@ -116,7 +130,7 @@
 						</template>
 
 						<!-- 支付宝信息展示 -->
-						<template v-if="withdraw.payment_method === 'alipay' && withdraw.withdraw_info && withdraw.withdraw_info.alipay_id && (withdraw.status !== 'completed' || isExpanded(withdraw.id))">
+						<!-- <template v-if="withdraw.payment_method === 'alipay' && withdraw.withdraw_info && withdraw.withdraw_info.alipay_id && (withdraw.status !== 'completed' || isExpanded(withdraw.id))">
 							<view class="payment-info-section">
 								<view class="payment-info-title">支付宝信息</view>
 								<view class="info-row">
@@ -131,16 +145,16 @@
 									<text class="info-value">{{ withdraw.withdraw_info.real_name }}</text>
 								</view>
 							</view>
-						</template>
+						</template> -->
 
-						<view class="info-row" v-if="withdraw.phone">
+						<!-- <view class="info-row" v-if="withdraw.phone">
 							<text class="info-label">联系电话：</text>
 							<text class="info-value">{{ withdraw.phone }}</text>
 						</view>
 						<view class="info-row" v-if="withdraw.owner_type">
 							<text class="info-label">申请类型：</text>
 							<text class="info-value">{{ getOwnerTypeText(withdraw.owner_type) }}</text>
-						</view>
+						</view> -->
 
 						<!-- 已完成状态的展开/收起按钮 -->
 						<view v-if="withdraw.status === 'completed' && hasWithdrawInfo(withdraw)" class="expand-toggle" @click.stop="toggleExpand(withdraw.id)">
@@ -254,20 +268,22 @@
 						value: 'completed'
 					}
 				],
-				withdrawList: [],
-				loading: false,
-				page: 1,
-				pageSize: 50, // 增加每页数量，一次性加载更多数据
-				riderUserInfo: null,
-				// 弹窗相关
-				showReject: false,
-				showComplete: false,
-				currentWithdraw: {},
-				rejectReason: '',
-				transactionNo: '',
-				processing: false,
-				// 展开状态管理
-				expandedItems: new Set() // 使用Set来存储展开的项目ID
+			withdrawList: [],
+			loading: false,
+			page: 1,
+			pageSize: 50, // 增加每页数量，一次性加载更多数据
+			riderUserInfo: null,
+			// 弹窗相关
+			showReject: false,
+			showComplete: false,
+			currentWithdraw: {},
+			rejectReason: '',
+			transactionNo: '',
+			processing: false,
+			// 展开状态管理
+			expandedItems: new Set(), // 使用Set来存储展开的项目ID
+			// 调试模式
+			debugMode: false // 设置为true启用虚拟数据调试
 			}
 		},
 		onShow() {
@@ -284,6 +300,277 @@
 			this.getWithdrawList();
 		},
 		methods: {
+			// 生成待审核虚拟数据（用于调试）
+			generateMockPendingData() {
+				const now = new Date();
+				return [
+					{
+						id: 9001,
+						service_provider_id: 1,
+						applicant_id: 1001,
+						owner_type: 'App\\Models\\ServiceMember',
+						owner_id: 1001,
+						actual_amount: '500.00',
+						amount: '500.00',
+						completed_at: null,
+						created_at: new Date(now.getTime() - 1000 * 60 * 30).toISOString(), // 30分钟前
+						updated_at: new Date(now.getTime() - 1000 * 60 * 30).toISOString(),
+						deleted_at: null,
+						fee: '0.00',
+						id_number: null,
+						payment_account: null,
+						payment_method: 'bank',
+						phone: '13800138001',
+						processed_at: null,
+						real_name: '张三',
+						rejected_reason: null,
+						status: 'pending',
+						total_commission_amount: '500.00',
+						total_withdrawal_amount: '500.00',
+						transaction_no: null,
+						withdraw_rate: 1,
+						withdraw_info: {
+							id: 5001,
+							owner_type: 'App\\Models\\ServiceMember',
+							owner_id: 1001,
+							alipay_id: null,
+							real_name: '张三',
+							account_holder: '张三',
+							bank_name: '中国工商银行',
+							bank_branch: '北京分行营业部',
+							bank_card_number: '6222021234567890123',
+							bank_province: '北京市',
+							bank_city: '朝阳区',
+							bank_reserved_phone: '13800138001'
+						},
+						owner: {
+							service_member_id: 1001,
+							service_provider_id: 1
+						}
+					},
+					{
+						id: 9002,
+						service_provider_id: 1,
+						applicant_id: 1002,
+						owner_type: 'App\\Models\\ServiceMember',
+						owner_id: 1002,
+						actual_amount: '1200.50',
+						amount: '1200.50',
+						completed_at: null,
+						created_at: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(), // 2小时前
+						updated_at: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(),
+						deleted_at: null,
+						fee: '0.00',
+						id_number: null,
+						payment_account: null,
+						payment_method: 'alipay',
+						phone: '13900139002',
+						processed_at: null,
+						real_name: '李四',
+						rejected_reason: null,
+						status: 'pending',
+						total_commission_amount: '1200.50',
+						total_withdrawal_amount: '1200.50',
+						transaction_no: null,
+						withdraw_rate: 1,
+						withdraw_info: {
+							id: 5002,
+							owner_type: 'App\\Models\\ServiceMember',
+							owner_id: 1002,
+							alipay_id: 'lisi@example.com',
+							real_name: '李四',
+							account_holder: null,
+							bank_name: null,
+							bank_branch: null,
+							bank_card_number: null,
+							bank_province: null,
+							bank_city: null,
+							bank_reserved_phone: null
+						},
+						owner: {
+							service_member_id: 1002,
+							service_provider_id: 1
+						}
+					},
+					{
+						id: 9003,
+						service_provider_id: 1,
+						applicant_id: 1003,
+						owner_type: 'App\\Models\\ServiceMember',
+						owner_id: 1003,
+						actual_amount: '800.00',
+						amount: '800.00',
+						completed_at: null,
+						created_at: new Date(now.getTime() - 1000 * 60 * 60 * 5).toISOString(), // 5小时前
+						updated_at: new Date(now.getTime() - 1000 * 60 * 60 * 5).toISOString(),
+						deleted_at: null,
+						fee: '0.00',
+						id_number: null,
+						payment_account: null,
+						payment_method: 'bank',
+						phone: '13700137003',
+						processed_at: null,
+						real_name: '王五',
+						rejected_reason: null,
+						status: 'pending',
+						total_commission_amount: '800.00',
+						total_withdrawal_amount: '800.00',
+						transaction_no: null,
+						withdraw_rate: 1,
+						withdraw_info: {
+							id: 5003,
+							owner_type: 'App\\Models\\ServiceMember',
+							owner_id: 1003,
+							alipay_id: null,
+							real_name: '王五',
+							account_holder: '王五',
+							bank_name: '中国建设银行',
+							bank_branch: '上海分行陆家嘴支行',
+							bank_card_number: '6217001234567890456',
+							bank_province: '上海市',
+							bank_city: '浦东新区',
+							bank_reserved_phone: '13700137003'
+						},
+						owner: {
+							service_member_id: 1003,
+							service_provider_id: 1
+						}
+					},
+					{
+						id: 9004,
+						service_provider_id: 1,
+						applicant_id: 1004,
+						owner_type: 'App\\Models\\ServiceProvider',
+						owner_id: 1004,
+						actual_amount: '2500.00',
+						amount: '2500.00',
+						completed_at: null,
+						created_at: new Date(now.getTime() - 1000 * 60 * 60 * 10).toISOString(), // 10小时前
+						updated_at: new Date(now.getTime() - 1000 * 60 * 60 * 10).toISOString(),
+						deleted_at: null,
+						fee: '0.00',
+						id_number: null,
+						payment_account: null,
+						payment_method: 'alipay',
+						phone: '13600136004',
+						processed_at: null,
+						real_name: '赵六',
+						rejected_reason: null,
+						status: 'pending',
+						total_commission_amount: '2500.00',
+						total_withdrawal_amount: '2500.00',
+						transaction_no: null,
+						withdraw_rate: 1,
+						withdraw_info: {
+							id: 5004,
+							owner_type: 'App\\Models\\ServiceProvider',
+							owner_id: 1004,
+							alipay_id: '13600136004',
+							real_name: '赵六',
+							account_holder: null,
+							bank_name: null,
+							bank_branch: null,
+							bank_card_number: null,
+							bank_province: null,
+							bank_city: null,
+							bank_reserved_phone: null
+						},
+						owner: {
+							service_member_id: 1004,
+							service_provider_id: 1
+						}
+					},
+					{
+						id: 9005,
+						service_provider_id: 1,
+						applicant_id: 1005,
+						owner_type: 'App\\Models\\ServiceMember',
+						owner_id: 1005,
+						actual_amount: '350.80',
+						amount: '350.80',
+						completed_at: null,
+						created_at: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(), // 1天前
+						updated_at: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(),
+						deleted_at: null,
+						fee: '0.00',
+						id_number: null,
+						payment_account: null,
+						payment_method: 'bank',
+						phone: '13500135005',
+						processed_at: null,
+						real_name: '孙七',
+						rejected_reason: null,
+						status: 'pending',
+						total_commission_amount: '350.80',
+						total_withdrawal_amount: '350.80',
+						transaction_no: null,
+						withdraw_rate: 1,
+						withdraw_info: {
+							id: 5005,
+							owner_type: 'App\\Models\\ServiceMember',
+							owner_id: 1005,
+							alipay_id: null,
+							real_name: '孙七',
+							account_holder: '孙七',
+							bank_name: '中国农业银行',
+							bank_branch: '广州分行天河支行',
+							bank_card_number: '6228481234567890789',
+							bank_province: '广东省',
+							bank_city: '广州市',
+							bank_reserved_phone: '13500135005'
+						},
+						owner: {
+							service_member_id: 1005,
+							service_provider_id: 1
+						}
+					},
+					{
+						id: 9006,
+						service_provider_id: 1,
+						applicant_id: 1006,
+						owner_type: 'App\\Models\\ServiceMember',
+						owner_id: 1006,
+						actual_amount: '688.88',
+						amount: '688.88',
+						completed_at: null,
+						created_at: new Date(now.getTime() - 1000 * 60 * 15).toISOString(), // 15分钟前
+						updated_at: new Date(now.getTime() - 1000 * 60 * 15).toISOString(),
+						deleted_at: null,
+						fee: '0.00',
+						id_number: null,
+						payment_account: null,
+						payment_method: 'alipay',
+						phone: '13400134006',
+						processed_at: null,
+						real_name: '周八',
+						rejected_reason: null,
+						status: 'pending',
+						total_commission_amount: '688.88',
+						total_withdrawal_amount: '688.88',
+						transaction_no: null,
+						withdraw_rate: 1,
+						withdraw_info: {
+							id: 5006,
+							owner_type: 'App\\Models\\ServiceMember',
+							owner_id: 1006,
+							alipay_id: 'zhouba888@qq.com',
+							real_name: '周八',
+							account_holder: null,
+							bank_name: null,
+							bank_branch: null,
+							bank_card_number: null,
+							bank_province: null,
+							bank_city: null,
+							bank_reserved_phone: null
+						},
+						owner: {
+							service_member_id: 1006,
+							service_provider_id: 1
+						}
+					}
+				];
+			},
+
 			// 获取提现记录列表
 			async getWithdrawList() {
 				if (this.loading) return;
@@ -319,20 +606,26 @@
 						params.status = this.currentStatus;
 					}
 
-					const res = await this.$request('withdraw/group/list', params, 'POST');
+				const res = await this.$request('withdraw/group/list', params, 'POST');
 
-					if (res.status === 'success') {
-						const responseData = res.data || {};
-						const newList = responseData.data || [];
+				if (res.status === 'success') {
+					const responseData = res.data || {};
+					let newList = responseData.data || [];
 
-						// 直接替换列表数据
-						this.withdrawList = newList;
-					} else {
-						uni.showToast({
-							title: res.msg || '获取提现记录失败',
-							icon: 'none'
-						});
+					// 调试模式：如果是待审核状态，添加虚拟数据
+					if (this.debugMode && this.currentStatus === 'pending') {
+						const mockData = this.generateMockPendingData();
+						newList = [...mockData, ...newList];
 					}
+
+					// 直接替换列表数据
+					this.withdrawList = newList;
+				} else {
+					uni.showToast({
+						title: res.msg || '获取提现记录失败',
+						icon: 'none'
+					});
+				}
 				} catch (err) {
 					console.error('获取提现记录失败:', err);
 					uni.showToast({
@@ -854,7 +1147,6 @@
 		.withdraw-info {
 			flex: 1;
 			min-width: 0; // 允许flex项目收缩
-			margin-right: 20rpx;
 
 			.rider-name {
 				font-size: 32rpx;
@@ -865,6 +1157,28 @@
 				overflow: hidden;
 				text-overflow: ellipsis;
 				white-space: nowrap;
+			}
+
+			.withdraw-stats {
+				display: flex;
+				align-items: center;
+				margin-bottom: 8rpx;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+
+				.stat-item {
+					font-size: 22rpx;
+					color: #666;
+					flex-shrink: 0;
+				}
+
+				.stat-divider {
+					font-size: 22rpx;
+					color: #ddd;
+					margin: 0 8rpx;
+					flex-shrink: 0;
+				}
 			}
 
 			.withdraw-time {
@@ -961,7 +1275,7 @@
 
 		.info-row {
 			display: flex;
-			align-items: center;
+			align-items: flex-start;
 			margin-bottom: 12rpx;
 			width: 100%;
 			position: relative;
@@ -976,6 +1290,7 @@
 				margin-right: 16rpx;
 				min-width: 140rpx;
 				flex-shrink: 0;
+				padding-top: 2rpx;
 			}
 
 			.info-value {
@@ -983,15 +1298,18 @@
 				color: #333;
 				flex: 1;
 				min-width: 0;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
 				margin-right: 8rpx;
+				word-wrap: break-word;
+				word-break: break-all;
+				line-height: 1.5;
 
 				&.amount {
 					font-size: 30rpx;
 					font-weight: 500;
 					color: #2492F2;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
 				}
 
 				&.bank-card {
@@ -999,6 +1317,14 @@
 					letter-spacing: 1rpx;
 					color: #2492F2;
 					font-weight: 500;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+
+				.extra-info {
+					color: #1890ff;
+					font-size: 24rpx;
 				}
 			}
 

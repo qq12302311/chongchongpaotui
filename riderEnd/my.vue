@@ -9,7 +9,7 @@
     <!-- 用户信息区域 -->
     <view class="user-info" @click="navigateToUserInfo">
       <view class="avatar-container">
-        <image class="avatar" :src="isLoggedIn ? 'https://ccpt.qiniu.0871.cn/my/avatar.png' : 'https://ccpt.qiniu.0871.cn/my/avatar.png'" mode="aspectFill"></image>
+        <image class="avatar" :src="isLoggedIn ? 'https://ccpt.qiniu.0871.cn/riderEnd/touxiang.svg' : 'https://ccpt.qiniu.0871.cn/riderEnd/touxiang.svg'" mode="aspectFill"></image>
         <!-- 认证状态徽章 -->
         <template v-if="isLoggedIn">
           <view v-if="userInfo.submit_certification === '已通过'" class="verify-badge passed no-bg">
@@ -35,18 +35,34 @@
     <!-- 账户信息卡片 -->
     <view class="account-card">
       <view class="account-item-wrapper">
-        <view class="account-item" @click="navigateToAccount">
-          <view class="account-title">我的账户</view>
-          <view class="account-value">{{userInfo.balance}}</view>
-          <view class="account-detail">今日佣金: {{ userInfo.today_commission || 0 }}</view>
-          <view class="account-detail">本月佣金: {{ userInfo.month_commission || 0 }}</view>
+        <view class="account-item">
+          <view class="account-title">
+            <text>接单配额</text>
+            <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
+          </view>
+          <view class="account-value"><text style="font-size: 10px;">剩余</text><text style="font-size: 18px;">{{ userInfo.task_quota || 18 }}</text></view>
+          <view class="account-detail">本月基础配额: {{ userInfo.quota_base || 20 }}</view>
+          <view class="account-detail">本月任务加额: {{ userInfo.quota_bonus || 8 }}</view>
         </view>
         <view class="divider"></view>
         <view class="account-item">
-          <view class="account-title">接单统计</view>
-          <view class="account-value">0</view>
+          <view class="account-title">
+            <text>接单统计</text>
+            <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
+          </view>
+          <view class="account-value">{{ userInfo.month_completed_tasks_count || 0 }}</view>
           <view class="account-detail">今日完单: {{ userInfo.today_completed_tasks_count || 0 }}</view>
           <view class="account-detail">本月完单: {{ userInfo.month_completed_tasks_count || 0 }}</view>
+        </view>
+        <view class="divider"></view>
+        <view class="account-item" @click="navigateToAccount">
+          <view class="account-title">
+            <text>我的账户</text>
+            <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
+          </view>
+          <view class="account-value">{{userInfo.balance}}</view>
+          <view class="account-detail">今日佣金: {{ userInfo.today_commission || 0 }}</view>
+          <view class="account-detail">本月佣金: {{ userInfo.month_commission || 0 }}</view>
         </view>
       </view>
     </view>
@@ -64,7 +80,7 @@
 
       <view class="menu-item" @click="navigateTo('/riderEnd/manual')">
         <view class="menu-icon blue-light">
-          <text class="emoji-icon">📖</text>
+          <image src="https://ccpt.qiniu.0871.cn/riderEnd/1.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>接单手册</text>
@@ -76,7 +92,7 @@
 
       <view class="menu-item" @click="navigateTo('/riderEnd/verify')">
         <view class="menu-icon orange">
-          <image src="https://ccpt.qiniu.0871.cn/rider/renzheng.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.0871.cn/riderEnd/2.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>骑手认证</text>
@@ -88,7 +104,7 @@
 
       <view class="menu-item" @click="navigateTo('/riderEnd/settings')">
         <view class="menu-icon blue-light">
-          <image src="https://ccpt.qiniu.0871.cn/rider/shezhi.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.0871.cn/riderEnd/3.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>骑手设置</text>
@@ -101,7 +117,7 @@
       <!-- 服务商合同签署按钮 -->
       <view v-if="userInfo.level>=5" class="menu-item" @click="navigateTo('/riderEnd/contract')">
         <view class="menu-icon orange">
-          <text class="emoji-icon">📄</text>
+          <image src="https://ccpt.qiniu.0871.cn/riderEnd/4.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content switch-role">
           <!-- <text>服务商合同签署</text> -->
@@ -134,7 +150,7 @@
       <!-- 分享推荐按钮 -->
       <view class="menu-item" @click="sharePromotion" v-if="isLoggedIn">
         <view class="menu-icon green">
-          <image src="https://ccpt.qiniu.0871.cn/rider/banner4.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.0871.cn/riderEnd/5.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>分享推荐</text>
@@ -150,7 +166,7 @@
       <!-- 运维端入口按钮 (仅管理员可见) -->
       <view class="menu-item" @click="goToAdmin" v-if="isLoggedIn && isAdmin">
         <view class="menu-icon purple">
-          <image src="https://ccpt.qiniu.0871.cn/rider/shezhi.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.0871.cn/riderEnd/6.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>运维管理</text>
@@ -163,7 +179,7 @@
 
     <!-- 退出登录按钮 -->
     <view class="logout-btn" @click="handleLogout" v-if="isLoggedIn">
-      <text>退出登录</text>
+      <text style="color: rgba(153, 153, 153, 1);">退出登录</text>
     </view>
 
     <!-- 切换至客户角色 -->
@@ -422,7 +438,10 @@ export default {
             rate: res.data.rate || 1,
             zone: res.data.zone || null,
 			latest_certification: res.data.latest_certification || null,
-			submit_certification: res.data.submit_certification || '待审核'
+			submit_certification: res.data.submit_certification || '待审核',
+			quota_remaining: res.data.quota_remaining || 18,
+			quota_base: res.data.quota_base || 20,
+			quota_bonus: res.data.quota_bonus || 8
           };
 
           // 保存到本地存储
@@ -609,8 +628,8 @@ export default {
     margin-right: 30rpx;
 
     .avatar {
-      width: 100rpx;
-      height: 100rpx;
+      width: 130rpx;
+      height: 130rpx;
       border-radius: 50rpx;
       background-color: #f0f0f0;
     }
@@ -716,7 +735,7 @@ export default {
 
     .account-item {
       flex: 1;
-      padding: 30rpx;
+      padding: 30rpx 15rpx;
       color: #fff;
       text-align: center;
       display: flex;
@@ -725,18 +744,28 @@ export default {
       justify-content: center;
 
       .account-title {
-        font-size: 28rpx;
+        font-size: 26rpx;
         margin-bottom: 10rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4rpx;
+        
+        .title-arrow {
+          width: 20rpx;
+          height: 20rpx;
+		  margin-left: 6rpx;
+        }
       }
 
       .account-value {
-        font-size: 48rpx;
+        font-size: 36rpx;
         font-weight: bold;
         margin-bottom: 20rpx;
       }
 
       .account-detail {
-        font-size: 24rpx;
+        font-size: 22rpx;
         opacity: 0.8;
         margin-bottom: 6rpx;
       }
@@ -799,28 +828,28 @@ export default {
         margin-right: 20rpx;
 
         &.blue-light {
-          background-color: rgba(36, 146, 242, 0.1);
+          // background-color: rgba(36, 146, 242, 0.1);
         }
 
         &.orange {
-          background-color: rgba(255, 153, 0, 0.1);
+          // background-color: rgba(255, 153, 0, 0.1);
         }
 
         &.gray {
-          background-color: rgba(153, 153, 153, 0.1);
+          // background-color: rgba(153, 153, 153, 0.1);
         }
 
         &.purple {
-          background-color: rgba(155, 89, 182, 0.1);
+          // background-color: rgba(155, 89, 182, 0.1);
         }
 
         &.green {
-          background-color: rgba(46, 213, 115, 0.1);
+          // background-color: rgba(46, 213, 115, 0.1);
         }
 
         image {
-          width: 30rpx;
-          height: 30rpx;
+          width: 40rpx;
+          height: 40rpx;
         }
 
         .emoji-icon {

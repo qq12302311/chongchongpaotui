@@ -1,0 +1,18 @@
+{
+  "name": "save-price-details",
+  "version": "1.0.0",
+  "description": "保存订单价格明细",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {}
+}
+
+
+
+
+
+

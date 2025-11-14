@@ -105,6 +105,7 @@
               <view class="address">{{ formatAddress(order) }}</view>
               <view class="service-time" :data-content="order.serviceTime">服务时效：</view>
               <view class="service-item" :data-content="order.serviceItem">服务项目：</view>
+              <view class="service-item" v-if="order.extraServices" :data-content="order.extraServices">附加服务：</view>
             </view>
 
             <view class="distance-info">
@@ -201,6 +202,9 @@
             <view class="info-row">
               <view class="service-item-modal" :data-content="currentOrderInfo.serviceItem">服务项目：</view>
             </view>
+            <view class="info-row" v-if="currentOrderInfo.extraServices">
+              <view class="service-item-modal" :data-content="currentOrderInfo.extraServices">附加服务：</view>
+            </view>
             <view class="info-row">
               <text class="info-label">距离：</text>
               <text class="info-value">{{ currentOrderInfo.distance || 0 }}km</text>
@@ -229,7 +233,8 @@ import NavBar from '@/components/NavBar.vue'
 import TabBar from '@/components/rider/tab-bar/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
-	import md5 from 'md5'
+import md5 from 'md5'
+import floatingImageMixin from '@/mixins/floatingImageMixin.js'
 
 export default {
   components: {
@@ -238,6 +243,7 @@ export default {
     PosterModal,
     FloatingImage
   },
+  mixins: [floatingImageMixin],
   data() {
     return {
       currentCity: '海南',
@@ -545,6 +551,7 @@ export default {
         storeName: taskDetail.store_name || '未知店铺',
         serviceTime: this.formatServiceTime(order.start_date, order.deadline, order.time_limit),
         serviceItem: this.formatServiceItems(taskDetail, order),
+        extraServices: this.formatExtraServices(taskDetail), // 添加附加服务
         contactName: order.name,
         contactPhone: order.phone_number,
         distance: this.userLocation ?
@@ -574,6 +581,7 @@ export default {
         timeLimit: order.time_limit, // 服务时效（小时）
         deadline: order.deadline,    // 截止时间
         brand: taskDetail.brand || '', // 品牌信息
+        task_detail: taskDetail, // 任务详情，用于获取附加服务
         isCompleted: isCompleted, // 是否为已完结订单
         isAssigned: isAssigned, // 是否为进行中订单（assigned状态）
         isRecentTask: isRecentTask // 是否来自recent_tasks数组
@@ -590,9 +598,16 @@ export default {
 
     // 获取服务类型CSS类名
     getServiceTypeClass(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return 'supplement';
+        case 'goodRecycle':
+          return 'recycle';
+        case 'badRecycle':
+          return 'recycle';
         case 'offline_abnormal':
           return 'offline-abnormal';
         case 'income_abnormal':
@@ -606,9 +621,16 @@ export default {
 
     // 获取服务类型显示文本（只显示前两个字符）
     getServiceTypeDisplayText(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return '补宝';
+        case 'goodRecycle':
+          return '收宝';
+        case 'badRecycle':
+          return '收宝';
         case 'offline_abnormal':
           return '离线';
         case 'income_abnormal':
@@ -617,7 +639,7 @@ export default {
           return '其他';
         default:
           // 如果是其他类型，取前两个字符
-          return detail ? detail.substring(0, 2) : '';
+          return firstDetail ? firstDetail.substring(0, 2) : '';
       }
     },
     // 格式化服务时间
@@ -653,35 +675,95 @@ export default {
         'xiaodian': '小电'
       };
 
-      // 主要服务项目
+      // 主要服务项目 - 支持多选（逗号分隔）
       if (taskDetail.detail) {
-        let itemName;
+        // 检查是否是多选（包含逗号）
+        const details = taskDetail.detail.includes(',') ? taskDetail.detail.split(',') : [taskDetail.detail];
+        
+        // 处理多选情况
+        if (details.length > 1) {
+          // 多选时，分别显示好宝回收和坏宝回收的数量
+          details.forEach(detail => {
+            detail = detail.trim();
+            let itemName;
+            let itemNumber;
+            
+            switch (detail) {
+              case 'bubao':
+                itemName = '补宝';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'goodRecycle':
+                itemName = '好宝回收';
+                itemNumber = taskDetail.shoubao_normal_item_number || 0;
+                break;
+              case 'badRecycle':
+                itemName = '坏宝回收';
+                itemNumber = taskDetail.shoubao_broken_item_number || 0;
+                break;
+              case 'offline_abnormal':
+                itemName = '离线异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'income_abnormal':
+                itemName = '收入异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'other_abnormal':
+                itemName = '其他异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              default:
+                itemName = detail;
+                itemNumber = taskDetail.item_number || 1;
+            }
+            
+            // 添加品牌信息（如果存在）
+            if (order.brand) {
+              const brandName = brandMap[order.brand] || order.brand;
+              itemName = `${brandName} ${itemName}`;
+            }
+            
+            if (itemNumber > 0) {
+              items.push(`${itemName}x${itemNumber}`);
+            }
+          });
+        } else {
+          // 单选时，保持原有逻辑
+          let itemName;
 
-        // 判断服务类型
-        switch (taskDetail.detail) {
-          case 'bubao':
-            itemName = '补宝';
-            break;
-          case 'offline_abnormal':
-            itemName = '离线异常';
-            break;
-          case 'income_abnormal':
-            itemName = '收入异常';
-            break;
-          case 'other_abnormal':
-            itemName = '其他异常';
-            break;
-          default:
-            itemName = taskDetail.detail;
+          // 判断服务类型
+          switch (taskDetail.detail) {
+            case 'bubao':
+              itemName = '补宝';
+              break;
+            case 'goodRecycle':
+              itemName = '好宝回收';
+              break;
+            case 'badRecycle':
+              itemName = '坏宝回收';
+              break;
+            case 'offline_abnormal':
+              itemName = '离线异常';
+              break;
+            case 'income_abnormal':
+              itemName = '收入异常';
+              break;
+            case 'other_abnormal':
+              itemName = '其他异常';
+              break;
+            default:
+              itemName = taskDetail.detail;
+          }
+
+          // 添加品牌信息（如果存在）
+          if (order.brand) {
+              const brandName = brandMap[order.brand] || order.brand;
+              itemName = `${brandName} ${itemName}`;
+          }
+
+          items.push(`${itemName}x${taskDetail.item_number || 1}`);
         }
-
-        // 添加品牌信息（如果存在）
-        if (order.brand) {
-            const brandName = brandMap[order.brand] || order.brand;
-            itemName = `${brandName} ${itemName}`;
-        }
-
-        items.push(`${itemName}x${taskDetail.item_number || 1}`);
       }
 
       // 设备是否外摆
@@ -691,6 +773,25 @@ export default {
 
       return items.join('、') || '未知服务项目';
     },
+
+    // 格式化附加服务
+    formatExtraServices(taskDetail) {
+      if (!taskDetail) return ''
+
+      const items = []
+
+      // 附加服务项目
+      for (let i = 1; i <= 6; i++) {
+        const task = taskDetail[`extra_task_${i}`]
+        const number = taskDetail[`extra_task_${i}_item_number`]
+        if (task && number) {
+          items.push(`${task}x${number}`)
+        }
+      }
+
+      return items.join('、')
+    },
+
     goToOrderDetail(order) {
       // 如果是recent_tasks的订单，不跳转页面
       if (order.isRecentTask) {

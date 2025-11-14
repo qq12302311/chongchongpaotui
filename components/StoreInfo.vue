@@ -16,35 +16,35 @@
 			</view>
 		</view>
 
-		<!-- 门店信息概览 -->
-		<view class="store-overview" @click="navigateToStoreInfo">
-			<view class="store-info-row">
-				<text class="label">门店名称：</text>
-				<text class="value">{{ formData.storeName || '点击填写门店信息' }}</text>
+	<!-- 门店信息概览 -->
+	<view class="store-overview" @click="navigateToStoreInfo">
+		<view class="store-info-row">
+			<text class="label">门店名称：</text>
+			<text class="value">{{ formData.storeName || '点击填写门店信息' }}</text>
+		</view>
+		<!-- <view class="store-info-row">
+			<text class="label">门店地址：</text>
+			<view class="address-content">
+				<text class="value">{{ formData.address || '未选择地址' }}</text>
+				<text class="detail-value" v-if="formData.detailAddress">{{ formData.detailAddress }}</text>
 			</view>
-			<view class="store-info-row">
-				<text class="label">门店地址：</text>
-				<view class="address-content">
-					<text class="value">{{ formData.address || '未选择地址' }}</text>
-					<text class="detail-value" v-if="formData.detailAddress">{{ formData.detailAddress }}</text>
-				</view>
+		</view>
+		<view class="store-info-row contact-row">
+			<view class="contact-item">
+				<text class="label">联系电话：</text>
+				<text class="value">{{ formData.phone || '未填写' }}</text>
 			</view>
-			<view class="store-info-row contact-row">
-				<view class="contact-item">
-					<text class="label">联系电话：</text>
-					<text class="value">{{ formData.phone || '未填写' }}</text>
-				</view>
-				<view class="contact-item right">
-					<text class="label">联系人：</text>
-					<text class="value">{{ formData.contact || '未填写' }}</text>
-				</view>
+			<view class="contact-item right">
+				<text class="label">联系人：</text>
+				<text class="value">{{ formData.contact || '未填写' }}</text>
 			</view>
-			<view class="store-info-row" v-if="hasValidMac">
-				<text class="label">MAC码：</text>
-				<text class="value">{{ formatSnMacList }}</text>
-			</view>
+		</view>
+		<view class="store-info-row" v-if="hasValidMac">
+			<text class="label">MAC码：</text>
+			<text class="value">{{ formatSnMacList }}</text>
+		</view> -->
 
-			<!-- 地图预览区域 -->
+		<!-- 地图预览区域 -->
 			<view class="map-preview" v-if="formData.latitude && formData.longitude" @click.stop="navigateToLocation">
 				<map
 					:latitude="parseFloat(formData.latitude)"
@@ -133,6 +133,7 @@
 					updatedData.doorImages = record.doorImages || [];
 					updatedData.locationDesc = record.locationDesc || '';
 					updatedData.device_outside = record.device_outside || false; // 设备是否外摆
+					updatedData.shop_poi = record.shop_poi || ''; // 门店POI字段
 
 					// 如果有SN/MAC码，也导入
 					if (record.snMacList && record.snMacList.length > 0) {
@@ -148,14 +149,18 @@
 					url: '/pages/index/history-records/index'
 				});
 			},
-			navigateToStoreInfo() {
-				// 保存当前表单数据到本地存储
-				uni.setStorageSync('storeInfo', this.formData);
-				// 跳转到门店信息详情页
-				uni.navigateTo({
-					url: '/pages/index/publish/store-info/index'
-				});
-			},
+		navigateToStoreInfo() {
+			// 保存当前表单数据到本地存储，需要将 shop_poi 映射为 poiRemark
+			const storeInfoData = {
+				...this.formData,
+				poiRemark: this.formData.shop_poi || '' // 将 shop_poi 映射为 poiRemark，供门店信息页面读取
+			};
+			uni.setStorageSync('storeInfo', storeInfoData);
+			// 跳转到门店信息详情页
+			uni.navigateTo({
+				url: '/pages/index/publish/store-info/index'
+			});
+		},
 			// 导航到门店位置
 			navigateToLocation() {
 				if (!this.formData.latitude || !this.formData.longitude) {

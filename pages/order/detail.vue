@@ -9,18 +9,72 @@
 			<view class="city-efficiency-wrapper" v-if="orderInfo.estimated_completion_hours">
 				<view class="city-efficiency-card">
 					<view class="efficiency-content">
-						<view class="city-area">
-							<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
-							<text class="city-name">{{ orderInfo.city_name }}</text>
-						</view>
+					<view class="city-area">
+						<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
+						<text class="city-name">{{ orderInfo.city_name }} · {{ orderInfo.district_name }}</text>
+					</view>
 						<text class="efficiency-label">近100单平均完单时效：</text>
 						<text class="efficiency-value">{{ orderInfo.estimated_completion_hours }}h</text>
 					</view>
+		</view>
+	</view>
+
+	<!-- 骑手完成反馈卡片 - 只在状态为finished时显示 -->
+	<view class="feedback-card" v-if="orderInfo.status === 'finished' && orderInfo.task_assignment">
+		<view class="card-title">
+			<text>骑手完成反馈</text>
+		</view>
+		<view class="detail-list-wrapper">
+			<view class="feedback-content" :style="{ maxHeight: isFeedbackExpanded ? 'none' : '300rpx' }">
+				<view class="feedback-info">
+					<view class="remark" v-if="orderInfo.task_assignment.finished_at">
+						<text class="label">完成时间：</text>
+						<text class="content">{{ orderInfo.task_assignment.finished_at }}</text>
+					</view>
+					<view class="remark" v-if="orderInfo.task_assignment.after_detail">
+						<text class="label">完成反馈：</text>
+						<text class="content">{{ orderInfo.task_assignment.after_detail }}</text>
+					</view>
+					<view class="remark" v-if="orderInfo.task_assignment.additional_feedback">
+						<text class="label">其他备注：</text>
+						<text class="content">{{ orderInfo.task_assignment.additional_feedback }}</text>
+					</view>
+					<view class="images-section" v-if="orderInfo.task_assignment.after_pic_url && orderInfo.task_assignment.after_pic_url.length > 0">
+						<text class="section-title">反馈图片：</text>
+						<view class="images">
+							<view
+								v-for="(url, index) in orderInfo.task_assignment.after_pic_url"
+								:key="index"
+								class="feedback-image-item">
+								<image
+									:src="url"
+									mode="aspectFill"
+									@click="previewFeedbackImage(index)"
+									class="feedback-image">
+								</image>
+								<text class="image-label">{{ getFeedbackImageLabel(index) }}</text>
+							</view>
+						</view>
+					</view>
 				</view>
 			</view>
+			<!-- 模糊效果层 -->
+			<view class="blur-mask" v-if="!isFeedbackExpanded"></view>
+		</view>
 
-			<!-- 骑手状态步骤 -->
-			<view class="rider-info-card-2">
+		<!-- 展开/收起按钮 -->
+		<view class="expand-btn" @click="toggleFeedbackExpand">
+			<view class="expand-btn-content">
+				<text class="expand-text">{{ isFeedbackExpanded ? '收起' : '展开' }}</text>
+				<view class="expand-icon" :class="{ 'expanded': isFeedbackExpanded }">
+					<uni-icons type="bottom" size="16" color="#2492F2"></uni-icons>
+				</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 骑手状态步骤 -->
+	<view class="rider-info-card-2">
 				<view class="state-buzhou mar-bot-15 mar-top-30">
 					<!-- 步骤条容器 -->
 					<view class="steps-container">
@@ -45,7 +99,7 @@
 						<!-- 步骤2: 作业中 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'assigned' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image>
+								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.0871.cn/1112.gif" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
 									'step-dot-half': orderInfo.status === 'assigned',
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
@@ -66,7 +120,7 @@
 						<!-- 步骤3: 完单反馈 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'finished' }">
 							<view class="step-icon-wrapper">
-								<!-- <image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
+								<image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.0871.cn/1112.gif" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
 								}"></view>
@@ -100,6 +154,44 @@
 						</view>
 					</view>
 				</view>
+				
+				<!-- 地图导航卡片 -->
+				<view class="map-card" v-if="orderInfo.shop_address || orderInfo.address">
+					<view class="map-container" @tap="openNavigation">
+						<map 
+							v-if="orderInfo.latitude && orderInfo.longitude"
+							:latitude="orderInfo.latitude" 
+							:longitude="orderInfo.longitude"
+							:markers="mapMarkers"
+							:show-location="false"
+							:enable-zoom="false"
+							:enable-scroll="false"
+							:enable-rotate="false"
+							:scale="15"
+							class="map-view"
+						>
+						</map>
+						<view v-else class="map-placeholder">
+							<view class="map-icon-wrapper">
+								<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="map-icon" mode="aspectFit"></image>
+							</view>
+							<text class="map-text">点击打开地图导航</text>
+							<view class="map-arrow">→</view>
+						</view>
+						<!-- 门店名称覆盖层 -->
+						<view class="map-store-name-overlay">
+							<view class="store-name-tag">
+								<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="tag-icon" mode="aspectFit"></image>
+								<text class="tag-text">{{orderInfo.task_detail ? orderInfo.task_detail.store_name : '服务门店'}}</text>
+							</view>
+						</view>
+						<!-- 导航按钮 -->
+						<view class="map-nav-button">
+							<text class="nav-text">导航</text>
+						</view>
+					</view>
+				</view>
+				
 				<!-- 骑手信息卡片 -->
 				<view class="rider-info-card" v-if="orderInfo.task_assignment && orderInfo.task_assignment.service_member_id && orderInfo.status !== 'waiting'">
 					<image :src="getRiderAvatar()" class="rider-avatar-large" mode="aspectFill"></image>
@@ -127,7 +219,6 @@
 					</view>
 				</view>
 			</view>
-
 
 			<!-- 订单基本信息 -->
 			<view class="order-header">
@@ -158,7 +249,7 @@
 								<view class="status-gif" v-if="orderInfo.status === 'completed'">
 									<image src="https://ccpt.qiniu.0871.cn/order/wancheng.png" mode="aspectFit" class="gif-image"></image>
 								</view>
-								<view class="status-tag">{{getStatusText(orderInfo.status)}} <text class="arrow"></text></view>
+								<view class="status-tag" :class="[(orderInfo.status === 'finished' || orderInfo.status === 'completed') && orderInfo.payment_status === 'refunded' ? 'status-refunded' : '']">{{getStatusText(orderInfo)}} <text class="arrow"></text></view>
 							</view>
 						</view>
 					</view>
@@ -168,77 +259,111 @@
 					<view class="order-basic-logo" :class="[getServiceTypeClass(orderInfo.task_detail ? orderInfo.task_detail.detail : ''), getBrandClass(orderInfo.brand)]">
 						<view class="icon-content">
 							<text class="brand-text">{{getBrandText(orderInfo.brand)}}</text>
-							<text class="service-text">{{getDetailText(orderInfo.task_detail ? orderInfo.task_detail.detail : '')}}</text>
+							<text class="service-text">{{getSimplifiedDetailText(orderInfo.task_detail ? orderInfo.task_detail.detail : '')}}</text>
 						</view>
 					</view>
 					<view class="title-info">
 						<view class="title-row">
-							<text class="task-name">{{getBrandText(orderInfo.brand)}} {{getDetailText(orderInfo.task_detail ? orderInfo.task_detail.detail : '')}} x{{orderInfo.task_detail ? orderInfo.task_detail.item_number : 0}}</text>
+							<text class="task-name">{{getBrandText(orderInfo.brand)}} {{formatServiceItemsWithNumber(orderInfo.task_detail)}}</text>
 						</view>
 						<view class="title-divider"></view>
 						<view class="info-row">
 							<text class="info-label">门店 POI：</text>
-							<text class="info-value">{{orderInfo.task_detail ? orderInfo.task_detail.shop_poi : ''}}</text>
+							<text class="info-value">{{orderInfo.task_detail.shop_poi ? orderInfo.task_detail.shop_poi : '无'}}</text>
 							<view class="copy-btn" @tap="copyShopPoi">
 								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
 							</view>
 						</view>
-						<view class="info-row" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
+						<view class="info-row device-code-row" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
 							<text class="info-label">设备编码：</text>
-							<text class="info-value">{{orderInfo.task_detail.sn_mac_code[0].value}}</text>
-							<view class="copy-btn" @tap="copyDeviceCode(orderInfo.task_detail.sn_mac_code[0].value)">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
+							<view class="device-code-list">
+								<view v-for="(code, index) in orderInfo.task_detail.sn_mac_code" :key="index" class="device-code-item">
+									<text class="info-value">{{code.value}}</text>
+									<view class="copy-btn" @tap="copyDeviceCode(code.value)">
+										<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
+									</view>
+								</view>
 							</view>
 						</view>
+					</view>
+				</view>
+
+				<!-- 附加服务展示 -->
+				<view class="extra-services" v-if="hasExtraServices">
+					<view class="extra-services-label">附加服务：</view>
+					<view class="extra-services-content">
+						<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_1">
+							<text class="service-name">{{ orderInfo.task_detail.extra_task_1 }}</text>
+							<text class="service-count">x{{ orderInfo.task_detail.extra_task_1_item_number }}</text>
+							<text v-if="orderInfo.task_detail.extra_task_2 || orderInfo.task_detail.extra_task_3 || orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+						</template>
+						<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_2">
+							<text class="service-name">{{ orderInfo.task_detail.extra_task_2 }}</text>
+							<text class="service-count">x{{ orderInfo.task_detail.extra_task_2_item_number }}</text>
+							<text v-if="orderInfo.task_detail.extra_task_3 || orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+						</template>
+						<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_3">
+							<text class="service-name">{{ orderInfo.task_detail.extra_task_3 }}</text>
+							<text class="service-count">x{{ orderInfo.task_detail.extra_task_3_item_number }}</text>
+							<text v-if="orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+						</template>
+						<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_4">
+							<text class="service-name">{{ orderInfo.task_detail.extra_task_4 }}</text>
+							<text class="service-count">x{{ orderInfo.task_detail.extra_task_4_item_number }}</text>
+							<text v-if="orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+						</template>
+						<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_5">
+							<text class="service-name">{{ orderInfo.task_detail.extra_task_5 }}</text>
+							<text class="service-count">x{{ orderInfo.task_detail.extra_task_5_item_number }}</text>
+							<text v-if="orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+						</template>
+						<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_6">
+							<text class="service-name">{{ orderInfo.task_detail.extra_task_6 }}</text>
+							<text class="service-count">x{{ orderInfo.task_detail.extra_task_6_item_number }}</text>
+						</template>
 					</view>
 				</view>
 
 			</view>
 
-			<!-- 订单详情卡片（含展开/收起） -->
-			<view class="order-detail-card">
-				<view class="detail-list-toggle">
-					<view class="toggle-title">
+		<!-- 订单详情卡片（含展开/收起） -->
+		<view class="order-detail-card">
+			<view class="detail-list-toggle">
+				<view class="toggle-title">
+					<view class="title-left">
 						<image class="header-icon" src="https://ccpt.qiniu.0871.cn/order/order.png" mode="aspectFit"></image>
 						<text class="header-title">订单详情</text>
 					</view>
-				</view>
-				<view class="detail-list-wrapper">
-					<view class="detail-list" :style="{ maxHeight: isFullyExpanded ? 'none' : '300rpx' }">
-					<!-- 发布时间 -->
-					<view class="detail-item">
-						<view class="item-dot"></view>
-						<view class="item-label">发布时间：</view>
-						<view class="item-value">{{formatShortDate(orderInfo.task_date)}}</view>
-					</view>
-					<view class="divider"></view>
-					<!-- 设备SN号 -->
-					<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
-						<view class="item-dot"></view>
-						<view class="item-label">设备SN号：</view>
-						<view class="item-value sn-code-container">
-							<view v-for="(code, index) in orderInfo.task_detail.sn_mac_code" :key="index" class="sn-code-item">
-								<text class="sn-code-text">{{code.value}}</text>
-								<view class="copy-code-btn" @tap="copyDeviceCode(code.value)">
-									<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
-								</view>
-							</view>
+					<view class="order-no-right" v-if="orderInfo.task_no">
+						<text class="order-no-text">订单编号：{{orderInfo.task_no}}</text>
+						<view class="copy-order-no-btn" @tap="copyOrderNumber">
+							<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
 						</view>
 					</view>
-					<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0"></view>
+				</view>
+			</view>
+		<view class="detail-list-wrapper">
+			<view class="detail-list" :style="{ maxHeight: isFullyExpanded ? 'none' : '300rpx' }">
+			<!-- 发布时间 -->
+				<view class="detail-item">
+					<view class="item-dot"></view>
+					<view class="item-label">发布时间：</view>
+					<view class="item-value">{{formatShortDate(orderInfo.task_date)}}</view>
+				</view>
+				<view class="divider"></view>
 					<!-- 门店POI -->
-					<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
+					<!-- <view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
 						<view class="item-dot"></view>
 						<view class="item-label">门店POI：</view>
 						<view class="item-value">{{orderInfo.task_detail.shop_poi}}</view>
-					</view>
+					</view> -->
 					<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi"></view>
-					<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.device_outside !== undefined">
-						<view class="item-dot"></view>
-						<view class="item-label">设备是否外摆：</view>
-						<view class="item-value">
-							{{ orderInfo.task_detail.device_outside ? '是' : '否' }}
-						</view>
+				<view class="detail-item" v-if="orderInfo.task_detail && orderInfo.task_detail.device_outside !== undefined">
+					<view class="item-dot"></view>
+					<view class="item-label">设备位置：</view>
+					<view class="item-value">
+						{{ orderInfo.task_detail.device_outside ? '外摆' : '非外摆' }}
+					</view>
 					</view>
 					<view class="divider" v-if="orderInfo.task_detail && orderInfo.task_detail.device_outside !== undefined"></view>
 					<view class="detail-item">
@@ -257,9 +382,9 @@
 							<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
 						</view>
 					</view>
-					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.description">
+					<!-- <view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.description">
 						<text>{{orderInfo.task_detail.description}}</text>
-					</view>
+					</view> -->
 					<view class="store-images" v-if="orderInfo.task_detail && orderInfo.task_detail.pic_url && orderInfo.task_detail.pic_url.length > 0">
 						<image v-for="(img, index) in orderInfo.task_detail.pic_url" :key="index" :src="img" mode="aspectFill" @click="previewImage(index)"></image>
 					</view>
@@ -324,28 +449,58 @@
 								<text class="label">打赏金额</text>
 								<text class="value" style="color: #FF6B00;">¥{{ getTotalRewardAmount() }}</text>
 							</view>
+							<!-- 退款信息 -->
+							<view class="price-item refund" v-if="orderInfo.payment_status === 'refunded'">
+								<text class="label">退款金额</text>
+								<text class="value" style="color: #E74C3C;">-¥{{orderInfo.refund_amount || orderInfo.order_amount}}</text>
+							</view>
 							<view class="price-item total">
 								<text class="label">合计</text>
 								<text class="value">¥{{orderInfo.order_amount}}</text>
 							</view>
 						</view>
-						<!-- 打赏详情 -->
-						<view class="reward-detail" v-if="orderInfo.reward && orderInfo.reward.length > 0">
-							<view class="reward-detail-title">
-								<text class="reward-emoji">💰</text>
-								<text>打赏记录</text>
-							</view>
-							<view class="reward-list">
-								<view v-for="(item, index) in getSuccessfulRewards()" :key="index" class="reward-item">
-									<text class="reward-amount">¥{{ item.order_amount }}</text>
-									<text class="reward-time">{{ formatRewardTime(item.created_at || item.updated_at) }}</text>
-								</view>
+					<!-- 打赏详情 -->
+					<view class="reward-detail" v-if="orderInfo.reward && orderInfo.reward.length > 0">
+						<view class="reward-detail-title">
+							<text class="reward-emoji">💰</text>
+							<text>打赏记录</text>
+						</view>
+						<view class="reward-list">
+							<view v-for="(item, index) in getSuccessfulRewards()" :key="index" class="reward-item">
+								<text class="reward-amount">¥{{ item.order_amount }}</text>
+								<text class="reward-time">{{ formatRewardTime(item.created_at || item.updated_at) }}</text>
 							</view>
 						</view>
 					</view>
-					
-					<view class="divider"></view>
+					<!-- 退款详情 -->
+					<view class="refund-detail" v-if="orderInfo.payment_status === 'refunded'">
+						<view class="refund-detail-title">
+							<text class="refund-emoji">💸</text>
+							<text>退款信息</text>
+						</view>
+						<view class="refund-info">
+							<view class="refund-info-item">
+								<text class="info-label">退款状态：</text>
+								<text class="info-value refund-status">{{ orderInfo.refund_status === 'full' ? '全额退款' : orderInfo.refund_status === 'partial' ? '部分退款' : '已退款' }}</text>
+							</view>
+							<view class="refund-info-item">
+								<text class="info-label">退款金额：</text>
+								<text class="info-value refund-amount">¥{{ orderInfo.refund_amount || orderInfo.order_amount }}</text>
+							</view>
+							<view class="refund-info-item" v-if="orderInfo.refund_time">
+								<text class="info-label">退款时间：</text>
+								<text class="info-value">{{ orderInfo.refund_time }}</text>
+							</view>
+							<view class="refund-info-item" v-if="orderInfo.refund_reason">
+								<text class="info-label">退款原因：</text>
+								<text class="info-value">{{ orderInfo.refund_reason }}</text>
+							</view>
+						</view>
 					</view>
+				</view>
+				
+				<view class="divider"></view>
+				</view>
 					<!-- 模糊效果层 -->
 					<view class="blur-mask" v-if="!isFullyExpanded"></view>
 				</view>
@@ -365,49 +520,9 @@
 						</view>
 					</view>
 				</view>
-			</view>
+		</view>
 
-			<!-- 完成反馈卡片 -->
-			<view class="feedback-card" v-if="orderInfo.task_assignment && (orderInfo.task_assignment.status === 'finished' || orderInfo.status === 'completed')">
-				<view class="card-title">
-					<text>骑手完成反馈</text>
-				</view>
-				<view class="feedback-content">
-					<view class="feedback-info">
-						<view class="remark" v-if="orderInfo.task_assignment.finished_at">
-							<text class="label">完成时间：</text>
-							<text class="content">{{ orderInfo.task_assignment.finished_at }}</text>
-						</view>
-						<view class="remark" v-if="orderInfo.task_assignment.after_detail">
-							<text class="label">完成反馈：</text>
-							<text class="content">{{ orderInfo.task_assignment.after_detail }}</text>
-						</view>
-						<view class="remark" v-if="orderInfo.task_assignment.additional_feedback">
-							<text class="label">其他备注：</text>
-							<text class="content">{{ orderInfo.task_assignment.additional_feedback }}</text>
-						</view>
-						<view class="images-section" v-if="orderInfo.task_assignment.after_pic_url && orderInfo.task_assignment.after_pic_url.length > 0">
-							<text class="section-title">反馈图片：</text>
-							<view class="images">
-								<view
-									v-for="(url, index) in orderInfo.task_assignment.after_pic_url"
-									:key="index"
-									class="feedback-image-item">
-									<image
-										:src="url"
-										mode="aspectFill"
-										@click="previewFeedbackImage(index)"
-										class="feedback-image">
-									</image>
-									<text class="image-label">{{ getFeedbackImageLabel(index) }}</text>
-								</view>
-							</view>
-						</view>
-					</view>
-				</view>
-			</view>
-
-			<!-- 用户确认卡片 -->
+		<!-- 用户确认卡片 -->
 			<view class="confirm-card" v-if="orderInfo.status === 'completed'">
 				<view class="card-title">
 					<text>我已确认</text>
@@ -596,24 +711,24 @@
 					</view>
 				</view>
 
-				<!-- 设备是否外摆 -->
-				<view class="edit-form-group">
-					<text class="edit-form-label">设备是否外摆</text>
-					<view class="device-outside-selector">
-						<view
-							class="device-option"
-							:class="{active: editForm.device_outside === true}"
-							@click="editForm.device_outside = true"
-						>
-							<text>是</text>
-						</view>
-						<view
-							class="device-option"
-							:class="{active: editForm.device_outside === false}"
-							@click="editForm.device_outside = false"
-						>
-							<text>否</text>
-						</view>
+			<!-- 设备位置 -->
+			<view class="edit-form-group">
+				<text class="edit-form-label">设备位置</text>
+				<view class="device-outside-selector">
+					<view
+						class="device-option"
+						:class="{active: editForm.device_outside === true}"
+						@click="editForm.device_outside = true"
+					>
+						<text>外摆</text>
+					</view>
+					<view
+						class="device-option"
+						:class="{active: editForm.device_outside === false}"
+						@click="editForm.device_outside = false"
+					>
+						<text>非外摆</text>
+					</view>
 					</view>
 				</view>
 
@@ -695,35 +810,39 @@
 				// }],
 				navBarHeight: 0,
 				orderId: '',
-				orderInfo: {
-					task_id: '',
-					status: '',
-					task_type_name: '',
-					contact_name: '',
-					contact_phone: '',
-					order_amount: 0,
-					brand: '',
-					detail: '',
-					item_number: 0,
-					sn_mac_code: [],
-					store_name: '',
-					province_name: '',
-					city_name: '',
-					district_name: '',
-					shop_address: '',
-					address: '',
-					pic_url: [],
-					description: '',
-					service_time_type: '',
-					deadline: '',
-					range_start_date: '',
-					range_end_date: '',
-					base_amount: 0,
-					extra_amount: 0
-				},
+			orderInfo: {
+				task_id: '',
+				status: '',
+				task_type_name: '',
+				contact_name: '',
+				contact_phone: '',
+				order_amount: 0,
+				brand: '',
+				detail: '',
+				item_number: 0,
+				sn_mac_code: [],
+				store_name: '',
+				province_name: '',
+				city_name: '',
+				district_name: '',
+				shop_address: '',
+				address: '',
+				pic_url: [],
+				description: '',
+				service_time_type: '',
+				deadline: '',
+				range_start_date: '',
+				range_end_date: '',
+				base_amount: 0,
+				extra_amount: 0,
+				latitude: 0,
+				longitude: 0
+			},
 				isFullyExpanded: false,
+				isFeedbackExpanded: false,
 				showPriceDetail: false,
 				showCancelModal: false,
+				mapMarkers: [], // 地图标记点
 				cancelModalData: {
 					title: '',
 					content: '',
@@ -769,6 +888,16 @@
 			}
 		},
 		computed: {
+			// 判断是否有附加服务
+			hasExtraServices() {
+				if (!this.orderInfo || !this.orderInfo.task_detail) {
+					return false;
+				}
+				const taskDetail = this.orderInfo.task_detail;
+				return !!(taskDetail.extra_task_1 || taskDetail.extra_task_2 || 
+					taskDetail.extra_task_3 || taskDetail.extra_task_4 || 
+					taskDetail.extra_task_5 || taskDetail.extra_task_6);
+			}
 		},
 		onLoad(options) {
 			// 计算导航栏高度
@@ -783,15 +912,9 @@
 			}
 		},
 
-		onShow() {
-			// 每次页面显示时，如果退款申请中，则弹出第二个弹窗
-			if (this.orderInfo.refund_request === 1 && this.orderId) {
-				// 延迟显示，确保页面已完全加载
-				setTimeout(() => {
-					this.showConfirmCancelModal = true;
-				}, 500);
-			}
-		},
+	onShow() {
+		// 页面显示时的处理
+	},
 		methods: {
 			// 加载订单详情
 			async loadOrderDetail() {
@@ -818,18 +941,39 @@
 						sign: sign
 					}
 
-					// 调用订单详情接口
-					const res = await this.$request('task/info', params, 'POST')
-					console.log('订单详情:', res)
+			// 调用订单详情接口
+			const res = await this.$request('task/info', params, 'POST')
+			console.log('订单详情:', res)
 
-					if (res.code === 200 && res.data) {
-						this.orderInfo = res.data
-					} else {
-						uni.showToast({
-							title: res.message || '获取订单详情失败',
-							icon: 'none'
-						})
-					}
+			if (res.code === 200 && res.data) {
+				this.orderInfo = res.data
+				
+				// Check if order has pending refund request
+				if (this.orderInfo.refund_request === 1) {
+					// Delay slightly to ensure DOM is ready
+					setTimeout(() => {
+						this.showConfirmCancelModal = true;
+					}, 300);
+				}
+				
+				// 更新地图标记
+				if (this.orderInfo.latitude && this.orderInfo.longitude) {
+					this.mapMarkers = [{
+						id: 1,
+						latitude: this.orderInfo.latitude,
+						longitude: this.orderInfo.longitude,
+						iconPath: 'https://ccpt.qiniu.0871.cn/tb11.png',
+						width: 30,
+						height: 30,
+						title: this.orderInfo.task_detail ? this.orderInfo.task_detail.store_name : '服务门店'
+					}]
+				}
+				} else {
+					uni.showToast({
+						title: res.message || '获取订单详情失败',
+						icon: 'none'
+					})
+				}
 				} catch (err) {
 					console.error('获取订单详情失败:', err)
 					uni.showToast({
@@ -838,8 +982,10 @@
 					})
 				}
 			},
-			// 获取状态文本
-			getStatusText(status) {
+		// 获取状态文本
+		getStatusText(order) {
+			// 如果传入的是字符串（为了兼容性），直接返回旧逻辑
+			if (typeof order === 'string') {
 				const statusMap = {
 					'waiting': '等待接单...',
 					'assigned': '充充小哥在路上...',
@@ -848,8 +994,32 @@
 					'cancel': '已取消',
 					'completed': '已完成'
 				}
-				return statusMap[status] || status
-			},
+				return statusMap[order] || order
+			}
+			
+			// 判断退款状态：status 是 finished 或 completed，且 payment_status 是 refunded
+			if ((order.status === 'finished' || order.status === 'completed') && 
+			    order.payment_status === 'refunded') {
+				if (order.refund_status === 'full') {
+					return '已退款-全额'
+				} else if (order.refund_status === 'partial') {
+					return '已退款-部分'
+				} else {
+					return '已退款'
+				}
+			}
+			
+			// 正常状态判断
+			const statusMap = {
+				'waiting': '等待接单...',
+				'assigned': '充充小哥在路上...',
+				'finished_timeout': '超时完成',
+				'finished': '待确认',
+				'cancel': '已取消',
+				'completed': '已完成'
+			}
+			return statusMap[order.status] || order.status
+		},
 			// 获取品牌文本
 			getBrandText(brand) {
 				const brandMap = {
@@ -861,15 +1031,55 @@
 				}
 				return brandMap[brand] || brand
 			},
-			// 获取服务项文本
+			// 获取服务项文本（完整）
 			getDetailText(detail) {
+				if (!detail) return ''
+				
+				// 处理多选情况
+				if (detail.includes(',')) {
+					const details = detail.split(',').map(d => d.trim());
+					const detailMap = {
+						'bubao': '补宝',
+						'goodRecycle': '好宝回收',
+						'badRecycle': '坏宝回收',
+						'offline_abnormal': '离线异常',
+						'income_abnormal': '收入异常',
+						'other_abnormal': '其他异常'
+					}
+					return details.map(d => detailMap[d] || d).join('、')
+				}
+				
+				// 单选情况
 				const detailMap = {
 					'bubao': '补宝',
+					'goodRecycle': '好宝回收',
+					'badRecycle': '坏宝回收',
 					'offline_abnormal': '离线异常',
 					'income_abnormal': '收入异常',
 					'other_abnormal': '其他异常'
 				}
 				return detailMap[detail] || detail
+			},
+			// 获取服务项文本（简化版 - 用于 .service-text）
+			getSimplifiedDetailText(detail) {
+				if (!detail) return ''
+				
+				// 处理多选情况，取第一个服务类型
+				const firstDetail = detail.includes(',') ? detail.split(',')[0].trim() : detail;
+				
+				// 好宝回收、坏宝回收 → 显示"收宝"
+				if (firstDetail === 'goodRecycle' || firstDetail === 'badRecycle') {
+					return '收宝';
+				}
+				// 离线异常、收入异常、其他异常 → 显示"异常"
+				if (firstDetail === 'offline_abnormal' || firstDetail === 'income_abnormal' || firstDetail === 'other_abnormal') {
+					return '异常';
+				}
+				// 其他服务项保持原样
+				const detailMap = {
+					'bubao': '补宝'
+				}
+				return detailMap[firstDetail] || firstDetail
 			},
 			// 获取品牌class
 			getBrandClass(brand) {
@@ -884,13 +1094,86 @@
 			},
 			// 获取服务类型class
 			getServiceTypeClass(detail) {
+				if (!detail) return 'supplement'
+				
+				// 处理多选情况，取第一个服务类型
+				const firstDetail = detail.includes(',') ? detail.split(',')[0].trim() : detail;
+				
 				const serviceClassMap = {
 					'bubao': 'supplement',
+					'goodRecycle': 'recycle',
+					'badRecycle': 'recycle',
 					'offline_abnormal': 'offline-abnormal',
 					'income_abnormal': 'income-abnormal',
 					'other_abnormal': 'other-abnormal'
 				}
-				return serviceClassMap[detail] || 'supplement'
+				return serviceClassMap[firstDetail] || 'supplement'
+			},
+			// 格式化服务项目和数量
+			formatServiceItemsWithNumber(taskDetail) {
+				if (!taskDetail || !taskDetail.detail) return ''
+				
+				const items = []
+				
+				// 检查是否是多选（包含逗号）
+				if (taskDetail.detail.includes(',')) {
+					const details = taskDetail.detail.split(',').map(d => d.trim());
+					
+					// 多选时，分别显示好宝回收和坏宝回收的数量
+					details.forEach(detail => {
+						let itemName;
+						let itemNumber;
+						
+						switch (detail) {
+							case 'bubao':
+								itemName = '补宝';
+								itemNumber = taskDetail.item_number || 1;
+								break;
+							case 'goodRecycle':
+								itemName = '好宝回收';
+								itemNumber = taskDetail.shoubao_normal_item_number || 0;
+								break;
+							case 'badRecycle':
+								itemName = '坏宝回收';
+								itemNumber = taskDetail.shoubao_broken_item_number || 0;
+								break;
+							case 'offline_abnormal':
+								itemName = '离线异常';
+								itemNumber = taskDetail.item_number || 1;
+								break;
+							case 'income_abnormal':
+								itemName = '收入异常';
+								itemNumber = taskDetail.item_number || 1;
+								break;
+							case 'other_abnormal':
+								itemName = '其他异常';
+								itemNumber = taskDetail.item_number || 1;
+								break;
+							default:
+								itemName = detail;
+								itemNumber = taskDetail.item_number || 1;
+						}
+						
+						if (itemNumber > 0) {
+							items.push(`${itemName}x${itemNumber}`);
+						}
+					});
+					
+					return items.join('、');
+				} else {
+					// 单选时
+					const detailMap = {
+						'bubao': '补宝',
+						'goodRecycle': '好宝回收',
+						'badRecycle': '坏宝回收',
+						'offline_abnormal': '离线异常',
+						'income_abnormal': '收入异常',
+						'other_abnormal': '其他异常'
+					}
+					const itemName = detailMap[taskDetail.detail] || taskDetail.detail;
+					const itemNumber = taskDetail.item_number || 0;
+					return `${itemName}x${itemNumber}`;
+				}
 			},
 			// 格式化日期时间（去掉秒）
 			formatShortDate(dateTimeStr) {
@@ -952,7 +1235,7 @@
 			},
 			// 获取反馈图片标签
 			getFeedbackImageLabel(index) {
-				const labels = ['到店打卡', '维护前', '维护后', '其他反馈'];
+				const labels = ['到店打卡', '维护前', '维护后', '仓宝状态确认', '其他反馈'];
 				return labels[index] || `图片${index + 1}`;
 			},
 			goHome() {
@@ -1190,6 +1473,11 @@
 			// 切换详情内容的展开/收起状态
 			toggleFullExpand() {
 				this.isFullyExpanded = !this.isFullyExpanded
+			},
+			
+			// 切换完单反馈的展开/收起状态
+			toggleFeedbackExpand() {
+				this.isFeedbackExpanded = !this.isFeedbackExpanded
 			},
 			
 			// 切换价格明细的展开/收起状态
@@ -1485,6 +1773,60 @@
 						});
 					}
 				});
+			},
+
+			// 打开地图导航
+			openNavigation() {
+				const address = `${this.orderInfo.province_name}${this.orderInfo.city_name}${this.orderInfo.district_name}${this.orderInfo.shop_address}${this.orderInfo.address}`;
+				const name = this.orderInfo.task_detail ? this.orderInfo.task_detail.store_name : '服务门店';
+				
+				if (!address) {
+					uni.showToast({
+						title: '地址信息不完整',
+						icon: 'none'
+					});
+					return;
+				}
+
+				// 如果有经纬度信息，直接打开导航
+				if (this.orderInfo.latitude && this.orderInfo.longitude) {
+					uni.openLocation({
+						latitude: this.orderInfo.latitude,
+						longitude: this.orderInfo.longitude,
+						name: name,
+						address: address,
+						scale: 15,
+						success: () => {
+							console.log('打开地图导航成功');
+						},
+						fail: (err) => {
+							console.error('打开地图导航失败:', err);
+							uni.showToast({
+								title: '打开地图失败',
+								icon: 'none'
+							});
+						}
+					});
+				} else {
+					// 如果没有经纬度，提示用户复制地址
+					uni.showModal({
+						title: '提示',
+						content: '暂无精确位置信息，是否复制地址？',
+						success: (res) => {
+							if (res.confirm) {
+								uni.setClipboardData({
+									data: address,
+									success: () => {
+										uni.showToast({
+											title: '地址已复制',
+											icon: 'success'
+										});
+									}
+								});
+							}
+						}
+					});
+				}
 			},
 
 			// 修改订单信息
@@ -2166,24 +2508,29 @@
 						}
 					}
 
-					.status-tag {
-						color: #ff6b00;
-						display: flex;
-						align-items: center;
-						background-color: rgba(255, 107, 0, 0.1);
-						padding: 4rpx 12rpx;
-						border-radius: 4rpx;
-						margin-bottom: 4rpx;
-						margin-top: 4rpx; /* 与promotion-banner对齐 */
-						font-size: 22rpx;
+				.status-tag {
+					color: #ff6b00;
+					display: flex;
+					align-items: center;
+					background-color: rgba(255, 107, 0, 0.1);
+					padding: 4rpx 12rpx;
+					border-radius: 4rpx;
+					margin-bottom: 4rpx;
+					margin-top: 4rpx; /* 与promotion-banner对齐 */
+					font-size: 22rpx;
 
-						.arrow {
-							margin-left: 6rpx;
-							font-size: 20rpx;
-						}
+					.arrow {
+						margin-left: 6rpx;
+						font-size: 20rpx;
 					}
+					
+					&.status-refunded {
+						color: #E74C3C;
+						background-color: rgba(231, 76, 60, 0.1);
+					}
+				}
 
-					.waiting-description {
+				.waiting-description {
 						background-color: rgba(36, 146, 242, 0.05);
 						border-radius: 4rpx;
 						padding: 6rpx 8rpx;
@@ -2649,6 +2996,117 @@
 			}
 		}
 
+		// 地图导航卡片样式
+		.map-card {
+			background: #FFFFFF;
+			border-radius: 12rpx;
+			margin-bottom: 20rpx;
+			overflow: hidden;
+			box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+
+			.map-container {
+				width: 100%;
+				height: 220rpx;
+				position: relative;
+				overflow: hidden;
+
+				.map-view {
+					width: 100%;
+					height: 100%;
+				}
+
+				.map-placeholder {
+					width: 100%;
+					height: 100%;
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+					gap: 16rpx;
+					background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+
+					.map-icon-wrapper {
+						width: 100rpx;
+						height: 100rpx;
+						border-radius: 50%;
+						background: rgba(255, 255, 255, 0.9);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.2);
+
+						.map-icon {
+							width: 60rpx;
+							height: 60rpx;
+						}
+					}
+
+					.map-text {
+						font-size: 28rpx;
+						color: #1890FF;
+						font-weight: 600;
+					}
+
+					.map-arrow {
+						font-size: 32rpx;
+						color: #1890FF;
+						font-weight: bold;
+					}
+				}
+
+				.map-store-name-overlay {
+					position: absolute;
+					top: 20rpx;
+					left: 20rpx;
+					z-index: 10;
+
+					.store-name-tag {
+						background: rgba(255, 255, 255, 0.95);
+						border-radius: 30rpx;
+						padding: 12rpx 24rpx;
+						display: flex;
+						align-items: center;
+						gap: 8rpx;
+						box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+
+						.tag-icon {
+							width: 28rpx;
+							height: 28rpx;
+						}
+
+						.tag-text {
+							font-size: 28rpx;
+							font-weight: 600;
+							color: #333;
+						}
+					}
+				}
+
+				.map-nav-button {
+					position: absolute;
+					bottom: 20rpx;
+					right: 20rpx;
+					z-index: 10;
+					background: #1890FF;
+					border-radius: 30rpx;
+					padding: 12rpx 32rpx;
+					box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.3);
+					transition: all 0.3s ease;
+
+					&:active {
+						transform: scale(0.95);
+						background: #1576D2;
+					}
+
+					.nav-text {
+						font-size: 28rpx;
+						font-weight: 600;
+						color: #FFFFFF;
+					}
+				}
+			}
+		}
+
 		.order-title-new {
 			display: flex;
 			align-items: flex-start;
@@ -2781,6 +3239,68 @@
 						}
 					}
 				}
+
+				.device-code-row {
+					display: flex;
+					align-items: flex-start;
+					margin-bottom: 8rpx;
+
+					.device-code-list {
+						flex: 1;
+						display: flex;
+						flex-direction: column;
+						gap: 8rpx;
+
+						.device-code-item {
+							display: flex;
+							align-items: center;
+
+							.info-value {
+								font-size: 26rpx;
+								color: #333;
+								flex: 1;
+								margin: 0 8rpx;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 附加服务样式
+		.extra-services {
+			display: flex;
+			align-items: flex-start;
+			padding: 20rpx 0;
+			border-top: 1rpx solid #f5f5f5;
+
+			.extra-services-label {
+				font-size: 26rpx;
+				color: #666;
+				flex-shrink: 0;
+				min-width: 140rpx;
+			}
+
+			.extra-services-content {
+				flex: 1;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				font-size: 26rpx;
+
+				.service-name {
+					color: #333;
+				}
+
+				.service-count {
+					color: #2492F2;
+					margin-right: 4rpx;
+				}
+
+				.service-separator {
+					color: #333;
+					margin-right: 4rpx;
+				}
 			}
 		}
 
@@ -2813,23 +3333,28 @@
 						}
 					}
 
-					.status-tag {
-						color: #ff6b00;
-						display: flex;
-						align-items: center;
-						background-color: rgba(255, 107, 0, 0.1);
-						padding: 6rpx 12rpx;
-						border-radius: 4rpx;
-						font-size: 21rpx;
+				.status-tag {
+					color: #ff6b00;
+					display: flex;
+					align-items: center;
+					background-color: rgba(255, 107, 0, 0.1);
+					padding: 6rpx 12rpx;
+					border-radius: 4rpx;
+					font-size: 21rpx;
 
-						.arrow {
-							margin-left: 6rpx;
-							font-size: 20rpx;
-						}
+					.arrow {
+						margin-left: 6rpx;
+						font-size: 20rpx;
+					}
+					
+					&.status-refunded {
+						color: #E74C3C;
+						background-color: rgba(231, 76, 60, 0.1);
 					}
 				}
+			}
 
-				.rider-info {
+			.rider-info {
 					flex: 1;
 					display: flex;
 					align-items: flex-start;
@@ -2922,22 +3447,52 @@
 			border-bottom: 2rpx solid #f5f5f5;
 		}
 
-		.toggle-title {
+	.toggle-title {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		
+		.title-left {
 			display: flex;
 			align-items: center;
 		}
-
-		.header-icon {
-			width: 38rpx;
-			height: 38rpx;
-			margin-right: 10rpx;
+		
+		.order-no-right {
+			display: flex;
+			align-items: center;
+			
+			.order-no-text {
+				font-size: 24rpx;
+				color: #999;
+				margin-right: 8rpx;
+			}
+			
+			.copy-order-no-btn {
+				padding: 8rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				
+				.copy-icon-small {
+					width: 22rpx;
+					height: 22rpx;
+				}
+			}
 		}
+	}
 
-		.header-title {
-			font-size: 32rpx;
-			font-weight: 500;
-			color: #333;
-		}
+	.header-icon {
+		width: 38rpx;
+		height: 38rpx;
+		margin-right: 10rpx;
+	}
+
+	.header-title {
+		font-size: 32rpx;
+		font-weight: 500;
+		color: #333;
+	}
 
 
 
@@ -2947,16 +3502,16 @@
 			border-radius: 0 0 12rpx 12rpx;
 		}
 
-		.detail-list {
-			padding: 30rpx;
-			background: #fff;
-			border-radius: 0 0 12rpx 12rpx;
-			overflow: hidden;
-			transition: max-height 0.3s ease;
-		}
+	.detail-list {
+		padding: 30rpx;
+		background: #fff;
+		border-radius: 0 0 12rpx 12rpx;
+		overflow: hidden;
+		transition: max-height 0.3s ease;
+	}
 
-		/* 模糊效果层 */
-		.blur-mask {
+	/* 模糊效果层 */
+	.blur-mask {
 			position: absolute;
 			bottom: 0;
 			left: 0;
@@ -3126,17 +3681,56 @@
 					}
 				}
 
-				// 门店名称容器样式
-				&.store-name-container {
+			// 订单编号容器样式
+			&.order-no-container {
+				display: flex;
+				align-items: center;
+				justify-content: flex-end;
+
+				.order-no-text {
+					margin-right: 8rpx;
+				}
+
+				.copy-order-no-btn {
+					font-size: 22rpx;
+					padding: 0rpx 4rpx;
+					background-color: #f5f5f5;
+					color: #666;
+					border: 1rpx solid #ddd;
+					border-radius: 20rpx;
+					margin-left: 4rpx;
 					display: flex;
 					align-items: center;
-					justify-content: flex-end;
-
-					.store-name-text {
-						margin-right: 8rpx;
+					justify-content: center;
+					flex-shrink: 0;
+					transition: all 0.2s ease;
+					cursor: pointer;
+					position: relative;
+					z-index: 10;
+					
+					&:active {
+						background-color: #e8e8e8;
+						border-color: #ccc;
 					}
 
-						.copy-store-btn {
+					.copy-icon-small {
+						width: 22rpx;
+						height: 22rpx;
+					}
+				}
+			}
+
+			// 门店名称容器样式
+			&.store-name-container {
+				display: flex;
+				align-items: center;
+				justify-content: flex-end;
+
+				.store-name-text {
+					margin-right: 8rpx;
+				}
+
+					.copy-store-btn {
 							font-size: 22rpx;
 							padding: 0rpx 4rpx;
 							background-color: #f5f5f5;
@@ -3229,29 +3823,84 @@
 					}
 				}
 
-				.reward-list {
-					.reward-item {
-						display: flex;
-						justify-content: space-between;
-						align-items: center;
-						padding: 8rpx 0;
+			.reward-list {
+				.reward-item {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 8rpx 0;
 
-						.reward-amount {
-							font-size: 26rpx;
-							color: #FF6B00;
-							font-weight: 500;
-						}
+					.reward-amount {
+						font-size: 26rpx;
+						color: #FF6B00;
+						font-weight: 500;
+					}
 
-						.reward-time {
-							font-size: 24rpx;
-							color: #999;
-						}
+					.reward-time {
+						font-size: 24rpx;
+						color: #999;
 					}
 				}
 			}
 		}
 		
-		.price-item {
+		.refund-detail {
+			margin-top: 20rpx;
+			padding-top: 20rpx;
+			border-top: 2rpx solid #e8e8e8;
+
+			.refund-detail-title {
+				display: flex;
+				align-items: center;
+				gap: 8rpx;
+				margin-bottom: 12rpx;
+
+				.refund-emoji {
+					font-size: 24rpx;
+				}
+
+				text {
+					font-size: 26rpx;
+					font-weight: 600;
+					color: #333;
+				}
+			}
+
+			.refund-info {
+				.refund-info-item {
+					display: flex;
+					align-items: flex-start;
+					padding: 8rpx 0;
+					line-height: 1.5;
+
+					.info-label {
+						font-size: 26rpx;
+						color: #666;
+						min-width: 140rpx;
+						flex-shrink: 0;
+					}
+
+					.info-value {
+						font-size: 26rpx;
+						color: #333;
+						flex: 1;
+						
+						&.refund-status {
+							color: #E74C3C;
+							font-weight: 500;
+						}
+						
+						&.refund-amount {
+							color: #E74C3C;
+							font-weight: 600;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	.price-item {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
@@ -3410,31 +4059,34 @@
 				padding-left: 20rpx;
 			}
 
-			.feedback-content, .confirm-content {
-				.feedback-header {
-					margin-bottom: 0;
+		.feedback-content, .confirm-content {
+			overflow: hidden;
+			transition: max-height 0.3s ease;
+			
+			.feedback-header {
+				margin-bottom: 0;
 
-					.rider-info {
-						display: flex;
-						align-items: center;
+				.rider-info {
+					display: flex;
+					align-items: center;
 
-						.avatar {
-							width: 60rpx;
-							height: 60rpx;
-							border-radius: 50%;
-							margin-right: 16rpx;
-						}
+					.avatar {
+						width: 60rpx;
+						height: 60rpx;
+						border-radius: 50%;
+						margin-right: 16rpx;
+					}
 
-						.name {
-							font-size: 28rpx;
-							color: #333;
-						}
+					.name {
+						font-size: 28rpx;
+						color: #333;
 					}
 				}
+			}
 
-				.feedback-info, .confirm-info {
-					margin-top: 20rpx;
-				}
+			.feedback-info, .confirm-info {
+				margin-top: 20rpx;
+			}
 
 				.images-section {
 					margin-top: 20rpx;

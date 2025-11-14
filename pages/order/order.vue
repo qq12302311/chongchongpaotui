@@ -70,10 +70,10 @@
 				<!-- 订单列表 -->
 				<view v-else class="order-list">
 					<view v-for="(order, index) in orderList" :key="index" class="order-item" @click="goToOrderDetail(order)">
-						<view class="order-header">
-							<text class="order-type">{{getBrandText(order.brand)}} {{getDetailText(order.task_detail)}} x{{getItemNumber(order.task_detail)}}</text>
-							<text class="order-status" :class="order.status">{{getStatusText(order.status)}}</text>
-						</view>
+					<view class="order-header">
+						<text class="order-type">{{getBrandText(order.brand)}} {{getDetailText(order.task_detail)}} x{{getItemNumber(order.task_detail)}}</text>
+						<text class="order-status" :class="[(order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded' ? 'refunded' : order.status]">{{getStatusText(order)}}</text>
+					</view>
 						<view class="order-info">
 							<view class="info-item">
 								<text class="label">门店名称：</text>
@@ -84,8 +84,12 @@
 								<text class="value">{{order.province_name}}{{order.city_name}}{{order.district_name}}{{order.shop_address}}{{order.address}}</text>
 							</view>
 							<view class="info-item">
-								<text class="label">订单金额：</text>
-								<text class="value price">¥{{order.order_amount}}</text>
+								<text class="label">服务项目：</text>
+								<text class="value">{{formatServiceItems(order.task_detail)}}</text>
+							</view>
+							<view class="info-item" v-if="formatExtraServices(order.task_detail)">
+								<text class="label">附加服务：</text>
+								<text class="value">{{formatExtraServices(order.task_detail)}}</text>
 							</view>
 							<view class="info-item" v-if="order.reward && order.reward.length > 0">
 								<text class="label">打赏金额：</text>
@@ -95,14 +99,19 @@
 								<text class="label">下单时间：</text>
 								<text class="value">{{order.task_date}}</text>
 							</view>
+							<view class="info-item price-item">
+								<text class="label">订单金额：</text>
+								<view class="price-wrapper" @click.stop="togglePrice(order.task_id, $event)">
+									<text class="value price" v-if="showPriceMap[order.task_id]">¥{{order.order_amount}}</text>
+									<text class="arrow-icon" v-else>▼</text>
+								</view>
+								<!-- 再来一单按钮 - 绝对定位 -->
+								<view class="reorder-btn-float" @click.stop="handleReorderFromOrder(order)">
+									<image class="reorder-emoji" src="https://ccpt.qiniu.0871.cn/zlyd.svg" mode="aspectFit"></image>
+									<text class="reorder-text">再来一单</text>
+								</view>
+							</view>
 					</view>
-				<!-- 订单操作按钮 -->
-				<view class="order-footer">
-					<view class="reorder-btn" @click.stop="handleReorderFromOrder(order)">
-						<text class="reorder-emoji">🔄</text>
-						<text class="reorder-text">再来一单</text>
-					</view>
-				</view>
 				</view>
 				</view>
 			</view>
@@ -128,6 +137,7 @@
 	import FloatingImage from '@/components/FloatingImage/index.vue'
 	// import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
 	import md5 from 'md5'
+	import floatingImageMixin from '@/mixins/floatingImageMixin.js'
 
 	export default {
 		components: {
@@ -136,6 +146,7 @@
 			FloatingImage,
 			// FloatingChatIconUser
 		},
+		mixins: [floatingImageMixin],
 		data() {
 			return {
 				navBarHeight: 0,
@@ -148,7 +159,8 @@
 				loading: false, // 加载状态
 				page: 1, // 当前页码
 				pageSize: 10, // 每页数量
-				hasMore: true // 是否还有更多数据
+				hasMore: true, // 是否还有更多数据
+				showPriceMap: {} // 控制每个订单金额的显示/隐藏
 			}
 		},
 	onShow() {
@@ -239,6 +251,11 @@
 		toggleSearchConditions() {
 			this.showSearchConditions = !this.showSearchConditions
 		},
+		// 切换金额显示/隐藏
+		togglePrice(taskId, event) {
+			event.stopPropagation()
+			this.$set(this.showPriceMap, taskId, !this.showPriceMap[taskId])
+		},
 			switchTab(index) {
 				this.currentTab = index
 				this.updateTabLinePosition(index)
@@ -254,70 +271,118 @@
 				const left = (index * tabWidth) + (tabWidth / 2)
 				this.tabLineLeft = `${left}%`
 			},
-			// 加载订单列表
-			async loadOrderList(isLoadMore = false) {
-				if (!isLoadMore && !this.hasMore) return
+		// 加载订单列表
+		async loadOrderList(isLoadMore = false) {
+			if (!isLoadMore && !this.hasMore) return
 
-				this.loading = true // 开始加载，显示加载中状态
-				try {
-					const statusMap = {
-						0: 'waiting', // 新订单
-						1: ['assigned', 'finished'], // 进行中（传递数组）
-						2: 'canceled', // 已取消
-						3: 'completed' // 已完成
-					}
+			this.loading = true // 开始加载，显示加载中状态
+			try {
+				const statusMap = {
+					0: 'waiting', // 新订单
+					1: ['assigned', 'finished'], // 进行中（需要查询多个状态）
+					2: 'canceled', // 已取消
+					3: 'completed' // 已完成
+				}
 
-					// 获取用户信息
-					const userInfo = uni.getStorageSync('userInfo')
-					const openid = uni.getStorageSync('openid')
+				// 获取用户信息
+				const userInfo = uni.getStorageSync('userInfo')
+				const openid = uni.getStorageSync('openid')
 
-					if (!userInfo || !userInfo.user_id || !openid) {
-						uni.showToast({
-							title: '请先登录',
-							icon: 'none'
+				if (!userInfo || !userInfo.user_id || !openid) {
+					uni.showToast({
+						title: '请先登录',
+						icon: 'none'
+					})
+					return
+				}
+
+				// 计算sign
+				const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
+				const sign = md5(signStr)
+
+				let list = []
+				
+				// 判断是否需要查询多个状态（进行中标签）
+				const statusValue = statusMap[this.currentTab]
+				if (Array.isArray(statusValue)) {
+					// 进行中标签：需要分别查询 assigned 和 finished，然后合并
+					console.log('查询进行中订单，需要查询多个状态:', statusValue)
+					
+					const results = await Promise.all(
+						statusValue.map(status => {
+							const params = {
+								status: status,
+								user_id: userInfo.user_id,
+								sign: sign,
+							}
+							console.log('查询状态:', status, '参数:', params)
+							return this.$request('task/list', params, 'POST')
 						})
-						return
-					}
-
-					// 计算sign
-					const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
-					const sign = md5(signStr)
-
+					)
+					
+					// 合并所有查询结果
+					results.forEach((res, index) => {
+						console.log(`状态 ${statusValue[index]} 返回结果:`, res)
+						if (res.code === 200 && res.data) {
+							list = [...list, ...res.data]
+						}
+					})
+					
+					console.log('合并后的订单列表数量:', list.length)
+				} else {
+					// 其他标签：直接查询单个状态
 					const params = {
-						status: statusMap[this.currentTab],
+						status: statusValue,
 						user_id: userInfo.user_id,
 						sign: sign,
 					}
 
+					console.log('请求订单列表参数:', params)
+					console.log('当前标签:', this.tabs[this.currentTab], 'status值:', statusValue)
+
 					const res = await this.$request('task/list', params, 'POST')
 
+					console.log('订单列表返回结果:', res)
+					console.log('返回的订单数量:', res.data ? res.data.length : 0)
+					
 					if (res.code === 200) {
-						const list = res.data || []
-						if (isLoadMore) {
-							this.orderList = [...this.orderList, ...list]
-						} else {
-							this.orderList = list
-						}
-						this.hasMore = list.length === this.pageSize
-						if (this.hasMore) {
-							this.page++
-						}
+						list = res.data || []
 					} else {
+						console.error('加载订单失败:', res.msg || '未知错误')
 						uni.showToast({
 							title: res.msg || '加载失败',
 							icon: 'none'
 						})
+						this.loading = false
+						return
 					}
-				} catch (error) {
-					console.error('加载订单列表失败:', error)
-					uni.showToast({
-						title: '加载失败，请重试',
-						icon: 'none'
-					})
-				} finally {
-					this.loading = false
 				}
-			},
+
+				// 更新订单列表
+				if (list.length > 0) {
+					console.log('订单详情示例:', list[0])
+				}
+				
+				console.log('当前标签:', this.tabs[this.currentTab], '订单列表:', list)
+				if (isLoadMore) {
+					this.orderList = [...this.orderList, ...list]
+				} else {
+					this.orderList = list
+				}
+				this.hasMore = list.length === this.pageSize
+				if (this.hasMore) {
+					this.page++
+				}
+			} catch (error) {
+				console.error('加载订单列表失败:', error)
+				uni.showToast({
+					title: '加载失败，请重试',
+					icon: 'none'
+				})
+			} finally {
+				this.loading = false
+			}
+		},
 			// 处理接单
 			async handleAccept(order) {
 				try {
@@ -411,7 +476,9 @@
 					})
 				}
 			},
-			getStatusText(status) {
+		getStatusText(order) {
+			// 如果传入的是字符串（为了兼容性），直接返回旧逻辑
+			if (typeof order === 'string') {
 				const statusMap = {
 					'waiting': '等待接单...',
 					'assigned': '进行中',
@@ -420,9 +487,33 @@
 					'canceled': '已取消',
 					'completed': '已完成'
 				}
-				return statusMap[status] || status
-			},
-			// 获取品牌文本
+				return statusMap[order] || order
+			}
+			
+		// 判断退款状态：status 是 finished 或 completed，且 payment_status 是 refunded
+		if ((order.status === 'finished' || order.status === 'completed') && 
+		    order.payment_status === 'refunded') {
+			if (order.refund_status === 'full') {
+				return '已退款-全额'
+			} else if (order.refund_status === 'partial') {
+				return '已退款-部分'
+			} else {
+				return '已退款'
+			}
+		}
+			
+			// 正常状态判断
+			const statusMap = {
+				'waiting': '等待接单...',
+				'assigned': '进行中',
+				'finished_timeout': '超时完成',
+				'finished': '待确认',
+				'canceled': '已取消',
+				'completed': '已完成'
+			}
+			return statusMap[order.status] || order.status
+		},
+		// 获取品牌文本
 			getBrandText(brand) {
 				const brandMap = {
 					'meituan': '美团',
@@ -436,13 +527,122 @@
 			// 获取服务详情文本
 			getDetailText(taskDetail) {
 				if (!taskDetail || !taskDetail.detail) return ''
+				
+				// 处理多选情况，取第一个服务类型
+				const firstDetail = taskDetail.detail.includes(',') ? taskDetail.detail.split(',')[0].trim() : taskDetail.detail;
+				
 				const detailMap = {
 					'bubao': '补宝',
+					'goodRecycle': '好宝回收',
+					'badRecycle': '坏宝回收',
 					'offline_abnormal': '离线异常',
 					'income_abnormal': '收入异常',
 					'other_abnormal': '其他异常'
 				}
-				return detailMap[taskDetail.detail] || taskDetail.detail
+				return detailMap[firstDetail] || firstDetail
+			},
+			// 格式化服务项目
+			formatServiceItems(taskDetail) {
+				if (!taskDetail) return ''
+
+				const items = []
+
+				// 主要服务项目 - 支持多选（逗号分隔）
+				if (taskDetail.detail) {
+					// 检查是否是多选（包含逗号）
+					const details = taskDetail.detail.includes(',') ? taskDetail.detail.split(',') : [taskDetail.detail];
+					
+					// 处理多选情况
+					if (details.length > 1) {
+						// 多选时，分别显示好宝回收和坏宝回收的数量
+						details.forEach(detail => {
+							detail = detail.trim();
+							let itemName;
+							let itemNumber;
+							
+							switch (detail) {
+								case 'bubao':
+									itemName = '补宝';
+									itemNumber = taskDetail.item_number || 1;
+									break;
+								case 'goodRecycle':
+									itemName = '好宝回收';
+									itemNumber = taskDetail.shoubao_normal_item_number || 0;
+									break;
+								case 'badRecycle':
+									itemName = '坏宝回收';
+									itemNumber = taskDetail.shoubao_broken_item_number || 0;
+									break;
+								case 'offline_abnormal':
+									itemName = '离线异常';
+									itemNumber = taskDetail.item_number || 1;
+									break;
+								case 'income_abnormal':
+									itemName = '收入异常';
+									itemNumber = taskDetail.item_number || 1;
+									break;
+								case 'other_abnormal':
+									itemName = '其他异常';
+									itemNumber = taskDetail.item_number || 1;
+									break;
+								default:
+									itemName = detail;
+									itemNumber = taskDetail.item_number || 1;
+							}
+							
+							if (itemNumber > 0) {
+								items.push(`${itemName}x${itemNumber}`);
+							}
+						});
+					} else {
+						// 单选时，保持原有逻辑
+						let itemName;
+						
+						switch (taskDetail.detail) {
+							case 'bubao':
+								itemName = '补宝';
+								break;
+							case 'goodRecycle':
+								itemName = '好宝回收';
+								break;
+							case 'badRecycle':
+								itemName = '坏宝回收';
+								break;
+							case 'offline_abnormal':
+								itemName = '离线异常';
+								break;
+							case 'income_abnormal':
+								itemName = '收入异常';
+								break;
+							case 'other_abnormal':
+								itemName = '其他异常';
+								break;
+							default:
+								itemName = taskDetail.detail;
+						}
+						
+						items.push(`${itemName}x${taskDetail.item_number || 1}`);
+					}
+				}
+
+				return items.join('、')
+			},
+			// 格式化附加服务
+			formatExtraServices(taskDetail) {
+				if (!taskDetail) return ''
+
+				const items = []
+
+				// 附加服务项目
+				for (let i = 1; i <= 6; i++) {
+					const task = taskDetail[`extra_task_${i}`]
+					const number = taskDetail[`extra_task_${i}_item_number`]
+					if (task && number) {
+						items.push(`${task}x${number}`)
+					}
+				}
+
+				return items.join('、')
 			},
 			// 获取任务数量
 			getItemNumber(taskDetail) {
@@ -576,15 +776,14 @@
 					contact: orderDetail.task_detail?.contact_name || orderDetail.contact_name || '',
 					phone: orderDetail.task_detail?.phone_number || orderDetail.phone_number || '',
 
-					// 设备信息
-					snMacList: orderDetail.task_detail?.sn_mac_code || [{
-						id: Date.now(),
-						value: ''
-					}],
-					poiRemark: orderDetail.task_detail?.shop_poi || '',
-					shop_poi: orderDetail.task_detail?.shop_poi || '',
-					device_outside: orderDetail.task_detail?.device_outside !== undefined ?
-						orderDetail.task_detail.device_outside : '',
+				// 设备信息
+				snMacList: orderDetail.task_detail?.sn_mac_code || [{
+					id: Date.now(),
+					value: ''
+				}],
+				shop_poi: orderDetail.task_detail?.shop_poi || '', // 门店POI字段
+				device_outside: orderDetail.task_detail?.device_outside !== undefined ?
+					orderDetail.task_detail.device_outside : '',
 
 					// 门店图片
 					doorImages: orderDetail.task_detail?.pic_url || [],
@@ -1030,12 +1229,17 @@
 						background-color: rgba(153, 153, 153, 0.1);
 					}
 
-					&.completed {
-						color: #2ECC71;
-						background-color: rgba(46, 204, 113, 0.1);
-					}
+				&.completed {
+					color: #2ECC71;
+					background-color: rgba(46, 204, 113, 0.1);
+				}
+
+				&.refunded {
+					color: #E74C3C;
+					background-color: rgba(231, 76, 60, 0.1);
 				}
 			}
+		}
 
 			.order-info {
 				.info-item {
@@ -1075,77 +1279,58 @@
 						}
 					}
 				}
-			}
-
-			.order-footer {
-				display: flex;
-				justify-content: flex-end;
-				margin-top: 24rpx;
-				padding-top: 20rpx;
-				border-top: 1rpx solid #f0f0f0;
-
-				.btn {
-					margin-left: 16rpx;
-					font-size: 24rpx;
-					padding: 8rpx 28rpx;
-					border-radius: 24rpx;
-					background-color: #2492F2;
-					color: #ffffff;
-					font-weight: 500;
-					box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.3);
-					transition: all 0.3s ease;
-
-					&:active {
-						transform: scale(0.95);
-						box-shadow: 0 2rpx 6rpx rgba(36, 146, 242, 0.2);
-					}
-				}
-
-			.reorder-btn {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				padding: 14rpx 32rpx;
-				background: linear-gradient(135deg, #2492F2 0%, #5CB3FF 100%);
-				border-radius: 36rpx;
-				box-shadow: 0 6rpx 16rpx rgba(36, 146, 242, 0.25);
-				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-				position: relative;
-				overflow: hidden;
-
-				&::before {
-					content: '';
-					position: absolute;
-					top: 0;
-					left: 0;
-					right: 0;
-					bottom: 0;
-					background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
-					opacity: 0;
-					transition: opacity 0.3s ease;
-				}
-
-				&:active {
-					transform: translateY(2rpx) scale(0.98);
-					box-shadow: 0 3rpx 8rpx rgba(36, 146, 242, 0.2);
+				
+				.price-item {
+					position: relative;
+					padding-right: 180rpx;
 					
-					&::before {
-						opacity: 1;
+					.price-wrapper {
+						display: flex;
+						align-items: center;
+						cursor: pointer;
+						
+						.arrow-icon {
+							font-size: 24rpx;
+							color: #2492F2;
+							font-weight: bold;
+						}
+					}
+					
+					.reorder-btn-float {
+						position: absolute;
+						right: 90px;
+						top: 10rpx;
+						transform: translateY(-50%);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						padding: 10rpx 24rpx;
+						background: linear-gradient(135deg, #2492F2 0%, #5CB3FF 100%);
+						border-radius: 36rpx;
+						box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.25);
+						transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+						z-index: 10;
+						
+						&:active {
+							transform: translateY(-50%) scale(0.95);
+							box-shadow: 0 2rpx 8rpx rgba(36, 146, 242, 0.2);
+						}
+						
+						.reorder-emoji {
+							width: 24rpx;
+							height: 24rpx;
+							margin-right: 6rpx;
+						}
+						
+						.reorder-text {
+							font-size: 24rpx;
+							color: #FFFFFF;
+							font-weight: 600;
+							letter-spacing: 0.5rpx;
+							white-space: nowrap;
+						}
 					}
 				}
-
-				.reorder-emoji {
-					font-size: 28rpx;
-					margin-right: 8rpx;
-				}
-
-				.reorder-text {
-					font-size: 26rpx;
-					color: #FFFFFF;
-					font-weight: 600;
-					letter-spacing: 0.5rpx;
-				}
-			}
 			}
 		}
 	}

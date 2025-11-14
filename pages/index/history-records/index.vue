@@ -37,11 +37,15 @@
 								<view class="sn-mac-info" v-if="record.sn_mac_code && record.sn_mac_code.length > 0">
 									<text class="sn-mac-text">SN/MAC: {{ record.sn_mac_code.length }}个</text>
 								</view>
-								<view class="poi-remark" v-if="record.shop_poi">
-									<text class="poi-label">POI备注：</text>
-									<text class="poi-text">{{ record.shop_poi }}</text>
-								</view>
-							</view>
+					<view class="poi-remark" v-if="record.shop_poi">
+						<text class="poi-label">POI备注：</text>
+						<text class="poi-text">{{ record.shop_poi }}</text>
+					</view>
+					<view class="time-range-info" v-if="record.recommended_service_time_start && record.recommended_service_time_end">
+						<text class="time-range-label">建议上门时间：</text>
+						<text class="time-range-text">{{ record.recommended_service_time_start }} - {{ record.recommended_service_time_end }}</text>
+					</view>
+				</view>
 							<view class="door-images" v-if="record.door_images && record.door_images.length > 0">
 								<image v-for="(img, imgIndex) in record.door_images.slice(0, 3)" :key="imgIndex" :src="img" mode="aspectFill" class="door-image"></image>
 								<view class="more-images" v-if="record.door_images.length > 3">+{{ record.door_images.length - 3 }}</view>
@@ -100,18 +104,29 @@
 							</view>
 						</view>
 
-						<view class="info-section" v-if="selectedRecord.shop_poi">
-							<view class="section-title">
-								<text class="title-icon">📍</text>
-								<text class="title-text">POI信息</text>
-							</view>
-							<view class="info-item">
-								<text class="info-label">POI备注：</text>
-								<text class="info-value">{{ selectedRecord.shop_poi }}</text>
-							</view>
+					<view class="info-section" v-if="selectedRecord.shop_poi">
+						<view class="section-title">
+							<text class="title-icon">📍</text>
+							<text class="title-text">POI信息</text>
 						</view>
+						<view class="info-item">
+							<text class="info-label">POI备注：</text>
+							<text class="info-value">{{ selectedRecord.shop_poi }}</text>
+						</view>
+					</view>
 
-						<view class="warning-notice">
+					<view class="info-section" v-if="selectedRecord.recommended_service_time_start && selectedRecord.recommended_service_time_end">
+						<view class="section-title">
+							<text class="title-icon">⏰</text>
+							<text class="title-text">建议上门时间</text>
+						</view>
+						<view class="info-item">
+							<text class="info-label">时间段：</text>
+							<text class="info-value">{{ selectedRecord.recommended_service_time_start }} - {{ selectedRecord.recommended_service_time_end }}</text>
+						</view>
+					</view>
+
+					<view class="warning-notice">
 							<text class="warning-icon">⚠️</text>
 							<text class="warning-text">请确认以上信息准确无误，避免因信息变更导致骑手空跑</text>
 						</view>
@@ -310,19 +325,49 @@ export default {
 		},
 
 		// 搜索记录
-		searchRecords() {
-			if (!this.searchKeyword) {
+		async searchRecords() {
+			const keyword = (this.searchKeyword || '').trim()
+			if (!keyword) {
 				this.filteredRecords = [...this.records]
 				return
 			}
-			this.filteredRecords = this.filterRecords(this.records, this.searchKeyword)
+			try {
+				// 读取用户ID
+				const userInfo = uni.getStorageSync('userInfo') || {}
+				const userId = userInfo.user_id || 0
+				if (!userId) {
+					// 无用户ID时回退到本地模糊匹配
+					this.filteredRecords = this.filterRecords(this.records, keyword)
+					return
+				}
+
+				uni.showLoading({ title: '搜索中...', mask: true })
+				const res = await this.$request('user/addresses/get', {
+					user_id: userId,
+					store_name: keyword
+				}, 'POST')
+				// 接口返回成功时，使用后端模糊查询结果
+				if (res && res.status === 'success') {
+					const list = Array.isArray(res.data) ? res.data : []
+					this.filteredRecords = list
+				} else {
+					// 失败时退回到本地模糊匹配
+					this.filteredRecords = this.filterRecords(this.records, keyword)
+				}
+			} catch (e) {
+				console.error('搜索门店失败:', e)
+				this.filteredRecords = this.filterRecords(this.records, keyword)
+			} finally {
+				uni.hideLoading()
+			}
 		},
 
 		// 过滤记录
 		filterRecords(records, keyword) {
 			keyword = keyword.toLowerCase()
 			return records.filter(record => {
-				const storeName = (record.storeName || '').toLowerCase()
+				// 兼容本地字段 storeName 与 接口字段 store_name
+				const storeName = (record.storeName || record.store_name || '').toLowerCase()
 				const address = (record.address || '').toLowerCase()
 				return storeName.includes(keyword) || address.includes(keyword)
 			})
@@ -400,11 +445,11 @@ export default {
 						id: Date.now(),
 						value: ''
 					}],
-					locationDesc: record.location_description || '',
-					phone: record.phone_number,
-					contact: record.name,
-					poiRemark: record.shop_poi || '', // 修复：正确映射门店POI字段
-					device_outside: record.device_outside !== undefined ? record.device_outside : '', // 修复：正确处理设备外摆字段
+				locationDesc: record.location_description || '',
+				phone: record.phone_number,
+				contact: record.name,
+				shop_poi: record.shop_poi || '', // 修复：正确映射门店POI字段到shop_poi
+				device_outside: record.device_outside !== undefined ? record.device_outside : '', // 修复：正确处理设备外摆字段
 
 					// 【重要】所有其他字段都设置为初始值，确保干净状态
 					distance: 0,
@@ -424,12 +469,12 @@ export default {
 					couponAmount: 0,
 					taskDetails: '',
 					goodsRequirement: '',
-					timeFrame: '5小时内',
-					timeSlot: '15日 12点-14点',
-					additional_notes: '',
-					recommended_service_time_start: '',
-					recommended_service_time_end: '',
-				}
+				timeFrame: '5小时内',
+				timeSlot: '15日 12点-14点',
+				additional_notes: '',
+				recommended_service_time_start: record.recommended_service_time_start || '',
+				recommended_service_time_end: record.recommended_service_time_end || '',
+			}
 
 				console.log('合并后的formData:', JSON.parse(JSON.stringify(formData)));
 
@@ -455,6 +500,18 @@ export default {
 					});
 				}
 
+			// 【关键】判断上一页是发布页面还是门店信息页面
+			const isPublishPage = prevPage.route === 'pages/index/publish/index' ||
+								 (prevPage.$page && prevPage.$page.path === '/pages/index/publish/index');
+			const isStoreInfoPage = prevPage.route === 'pages/index/publish/store-info/index' ||
+								   (prevPage.$page && prevPage.$page.path === '/pages/index/publish/store-info/index');
+
+			// 如果是门店信息页面，需要将 shop_poi 映射为 poiRemark
+			if (isStoreInfoPage) {
+				formData.poiRemark = formData.shop_poi || '';
+				console.log('✅ 门店信息页面：已将 shop_poi 映射为 poiRemark:', formData.poiRemark);
+			}
+
 			prevPage.$vm.formData = formData
 
 			// 【关键修复】更新 selectedCity 和 selectedDistrictId
@@ -472,8 +529,8 @@ export default {
 				await this.updateDistrictIdByAddress(record.city_name, record.district_name, prevPage);
 			}
 
-			// 【关键修复】重置价格详情，确保价格计算从干净状态开始
-			if (prevPage.$vm.priceDetails) {
+			// 【关键修复】重置价格详情，确保价格计算从干净状态开始（仅发布页面需要）
+			if (isPublishPage && prevPage.$vm.priceDetails) {
 				prevPage.$vm.priceDetails = {
 					baseServiceFee: 0,
 					extraDeviceFee: 0,
@@ -488,8 +545,8 @@ export default {
 				};
 			}
 
-				// 【核心修复】重置附加服务选择状态
-				if (prevPage.$vm.selectedAdditionalServices) {
+				// 【核心修复】重置附加服务选择状态（仅发布页面需要）
+				if (isPublishPage && prevPage.$vm.selectedAdditionalServices) {
 					prevPage.$vm.selectedAdditionalServices = [];
 					console.log('重置附加服务选择状态为空数组');
 				}
@@ -498,11 +555,10 @@ export default {
 				console.log('上一页页面信息:', {
 					route: prevPage.route,
 					path: prevPage.$page && prevPage.$page.path,
-					fullPath: prevPage.$page && prevPage.$page.fullPath
+					fullPath: prevPage.$page && prevPage.$page.fullPath,
+					isPublishPage: isPublishPage,
+					isStoreInfoPage: isStoreInfoPage
 				});
-
-				const isPublishPage = prevPage.route === 'pages/index/publish/index' ||
-									 (prevPage.$page && prevPage.$page.path === '/pages/index/publish/index');
 
 				if (isPublishPage && typeof prevPage.$vm.calculatePrice === 'function') {
 					// 【修复】添加强制更新，确保数据状态一致
@@ -519,6 +575,12 @@ export default {
 						console.log('计算后的priceDetails:', JSON.parse(JSON.stringify(prevPage.$vm.priceDetails)));
 						console.log('=== 价格重新计算完成 ===');
 					})
+				}
+
+				// 如果是门店信息页面，强制更新视图
+				if (isStoreInfoPage) {
+					prevPage.$vm.$forceUpdate();
+					console.log('✅ 门店信息页面：已强制更新视图');
 				}
 
 				uni.showToast({
@@ -715,23 +777,43 @@ export default {
 						}
 					}
 
-					.poi-remark {
-						margin-top: 10rpx;
-						display: flex;
-						flex-direction: column;
-						gap: 6rpx;
+				.poi-remark {
+					margin-top: 10rpx;
+					display: flex;
+					flex-direction: column;
+					gap: 6rpx;
 
-						.poi-label {
-							font-size: 26rpx;
-							color: #666;
-						}
+					.poi-label {
+						font-size: 26rpx;
+						color: #666;
+					}
 
-						.poi-text {
-							font-size: 24rpx;
-							color: #999;
-						}
+					.poi-text {
+						font-size: 24rpx;
+						color: #999;
 					}
 				}
+
+				.time-range-info {
+					margin-top: 10rpx;
+					display: flex;
+					align-items: center;
+					gap: 6rpx;
+
+					.time-range-label {
+						font-size: 26rpx;
+						color: #666;
+					}
+
+					.time-range-text {
+						font-size: 24rpx;
+						color: #2492F2;
+						background-color: rgba(36, 146, 242, 0.1);
+						padding: 4rpx 12rpx;
+						border-radius: 8rpx;
+					}
+				}
+			}
 
 				.door-images {
 					display: flex;

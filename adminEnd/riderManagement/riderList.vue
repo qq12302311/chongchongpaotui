@@ -87,7 +87,12 @@
           <view class="rider-details">
             <view class="detail-item">
               <text class="detail-label">认证状态:</text>
-              <text class="detail-value" :class="getVerifyClass(rider.verified)">{{ getVerifyText(rider.verified) }}</text>
+              <text class="detail-value" :class="{
+                'verify-none': rider.verified === 'none',
+                'verify-pending': rider.verified === 'pending',
+                'verify-approved': rider.verified === 'approved',
+                'verify-rejected': rider.verified === 'rejected'
+              }">{{ getVerifyText(rider.verified) }}</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">佣金比例:</text>
@@ -362,17 +367,6 @@ export default {
         'rejected': '已拒绝'
       };
       return verifyMap[verified] || verified;
-    },
-
-    // 获取认证状态样式类
-    getVerifyClass(verified) {
-      const classMap = {
-        'none': 'verify-none',
-        'pending': 'verify-pending',
-        'approved': 'verify-approved',
-        'rejected': 'verify-rejected'
-      };
-      return classMap[verified] || '';
     },
 
     // 显示骑手详情

@@ -279,6 +279,15 @@
 
 		<!-- 悬浮聊天图标 -->
 		<floating-chat-icon></floating-chat-icon>
+
+		<!-- 补宝订单提醒弹窗 -->
+		<view class="bubao-modal" v-if="showBubaoModal">
+			<view class="modal-mask"></view>
+			<view class="modal-content">
+				<image class="bubao-image" src="https://ccpt.qiniu.0871.cn/pztx11.png" mode="widthFix"></image>
+				<view class="countdown-text">{{ bubaoCountdownDisplay }}</view>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -336,7 +345,11 @@
 					'京津冀 东三省 内蒙 海南': 'HKxgs2020',
 					'云南贵州广西湖北西藏': 'weiazzy',
 					'剩余区域': 'agan-24h'
-				}
+				},
+				// 补宝订单提醒弹窗相关
+				showBubaoModal: false,
+				bubaoCountdown: 6,
+				bubaoTimer: null
 			}
 		},
 		computed: {
@@ -344,6 +357,11 @@
 			displayBrand() {
 				const brand = this.orderInfo.brand || ''
 				return this.brandMap[brand.toLowerCase()] || brand
+			},
+
+			// 格式化补宝倒计时显示
+			bubaoCountdownDisplay() {
+				return `${this.bubaoCountdown}秒后自动关闭`;
 			},
 
 			// 格式化设备编码
@@ -376,6 +394,10 @@
 			// 页面卸载时清除定时器
 			if (this.timer) {
 				clearInterval(this.timer)
+			}
+			// 清除补宝倒计时定时器
+			if (this.bubaoTimer) {
+				clearInterval(this.bubaoTimer)
 			}
 		},
 		methods: {
@@ -814,6 +836,32 @@
 				});
 			},
 
+			// 判断是否为补宝订单（怪兽、街电、小电）
+			isBubaoOrder() {
+				const brand = (this.orderInfo.brand || '').toLowerCase();
+				return brand === 'guaishou' || brand === 'jiedian' || brand === 'xiaodian';
+			},
+
+			// 显示补宝订单提醒弹窗
+			showBubaoReminder() {
+				this.showBubaoModal = true;
+				this.bubaoCountdown = 6;
+				
+				// 清除可能存在的旧定时器
+				if (this.bubaoTimer) {
+					clearInterval(this.bubaoTimer);
+				}
+				
+				// 开始倒计时
+				this.bubaoTimer = setInterval(() => {
+					this.bubaoCountdown--;
+					if (this.bubaoCountdown <= 0) {
+						clearInterval(this.bubaoTimer);
+						this.showBubaoModal = false;
+					}
+				}, 1000);
+			},
+
 			// 接单操作
 			async acceptOrder() {
 				try {
@@ -848,17 +896,29 @@
 							console.log('接单成功，已清除本地 referrer_id');
 						}
 
-						uni.showToast({
-							title: '接单成功',
-							icon: 'success'
-						});
-
-						// 自动跳转到订单信息页面
-						setTimeout(() => {
-							uni.redirectTo({
-								url: `/riderEnd/order-info?id=${orderId}`
+						// 判断是否为补宝订单，如果是则显示提醒弹窗
+						if (this.isBubaoOrder()) {
+							this.showBubaoReminder();
+							
+							// 延迟7秒跳转（6秒弹窗 + 1秒缓冲）
+							setTimeout(() => {
+								uni.redirectTo({
+									url: `/riderEnd/order-info?id=${orderId}`
+								});
+							}, 7000);
+						} else {
+							uni.showToast({
+								title: '接单成功',
+								icon: 'success'
 							});
-						}, 1500); // 延迟1.5秒跳转，让用户看到成功提示
+
+							// 自动跳转到订单信息页面
+							setTimeout(() => {
+								uni.redirectTo({
+									url: `/riderEnd/order-info?id=${orderId}`
+								});
+							}, 1500); // 延迟1.5秒跳转，让用户看到成功提示
+						}
 					} else {
 						uni.showToast({
 							title: res.message || '接单失败',
@@ -1870,4 +1930,76 @@
 			word-break: break-all;
 			white-space: normal;
 		}
+
+	// 补宝订单提醒弹窗样式
+	.bubao-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 9999;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.modal-mask {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: rgba(0, 0, 0, 0.7);
+		}
+
+		.modal-content {
+			position: relative;
+			width: 80%;
+			max-width: 600rpx;
+			background-color: transparent;
+			border-radius: 20rpx;
+			padding: 40rpx;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			animation: modalFadeIn 0.3s ease-in-out;
+
+			.bubao-image {
+				width: 100%;
+				border-radius: 12rpx;
+				margin-bottom: 30rpx;
+			}
+
+			.countdown-text {
+				font-size: 32rpx;
+				color: #FF6B00;
+				font-weight: 600;
+				text-align: center;
+				animation: countdownPulse 1s ease-in-out infinite;
+			}
+		}
+	}
+
+	@keyframes modalFadeIn {
+		0% {
+			opacity: 0;
+			transform: scale(0.8);
+		}
+		100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	@keyframes countdownPulse {
+		0%, 100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.8;
+			transform: scale(1.05);
+		}
+	}
 </style>

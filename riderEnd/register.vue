@@ -32,7 +32,7 @@
           </view>
         </view>
         <!-- 说明文字 -->
-        <view class="notice-text">(限共享充电宝从业人员入驻)</view>
+        <view class="notice-text">(限充电宝从业人员入驻)</view>
       </view>
 
       <!-- 服务商选择 -->
@@ -58,7 +58,7 @@
           <input
             type="text"
             :value="getSelectedAreaNames"
-            placeholder="请选择可接单服务的城市"
+            placeholder="请选择可接单服务城市"
             class="input"
             disabled
           />
@@ -74,7 +74,7 @@
           <input
             type="text"
             :value="getSelectedBrandsNames"
-            placeholder="请选择可服务品牌（自带该品牌工作账号）"
+            placeholder="请选择可服务品牌（自带该品牌APP工作台）"
             class="input"
             disabled
           />

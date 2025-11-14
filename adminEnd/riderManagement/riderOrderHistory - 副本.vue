@@ -174,8 +174,8 @@ export default {
         { name: '已完成', count: 0, status: 'completed' },
         { name: '已取消', count: 0, status: 'canceled' }
       ],
-      currentStatus: 'all',
-      activeTab: 0,
+      currentStatus: 'assigned',
+      activeTab: 1,
       orderList: [],
       loading: false,
       refreshing: false,
@@ -249,8 +249,8 @@ export default {
       try {
         // 使用管理员身份查询指定骑手的订单
         const params = {
-          per_page: this.pageSize,
           page: this.page,
+          pageSize: this.pageSize,
           service_member_id: this.riderId,  // 要查询的骑手 ID
           sign: 'chongchong'                // 签名
         }
@@ -308,6 +308,9 @@ export default {
 
           // 判断是否还有更多数据
           this.hasMore = newOrders.length === this.pageSize
+
+          // 更新标签计数
+          this.updateTabCounts()
         } else {
           uni.showToast({
             title: res.msg || '获取订单列表失败',
@@ -350,8 +353,8 @@ export default {
         for (let i = 0; i < this.tabs.length; i++) {
           const tab = this.tabs[i]
           const params = {
-            per_page: 1,
             page: 1,
+            pageSize: 1,
             service_member_id: this.riderId,  // 要查询的骑手 ID
             sign: 'chongchong'                // 签名
           }

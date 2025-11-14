@@ -26,5 +26,6 @@
     "git.enableSmartCommit": true,
     "git.confirmSync": false,
     "chatgpt.openOnStartup": true,
-    "claudeCodeChat.permissions.yoloMode": false
+    "claudeCodeChat.permissions.yoloMode": false,
+    "cursor.composer.usageSummaryDisplay": "always"
 }

@@ -1,0 +1,353 @@
+{
+  "bsonType": "object",
+  "required": ["task_id", "user_id", "created_at"],
+  "properties": {
+    "_id": {
+      "description": "文档ID，自动生成"
+    },
+    "task_id": {
+      "bsonType": "string",
+      "description": "订单ID",
+      "title": "订单ID"
+    },
+    "user_id": {
+      "bsonType": "string",
+      "description": "用户ID",
+      "title": "用户ID"
+    },
+    "service_provider_id": {
+      "bsonType": "string",
+      "description": "服务商ID",
+      "title": "服务商ID"
+    },
+    "task_type_id": {
+      "bsonType": "string",
+      "description": "任务类型ID",
+      "title": "任务类型ID"
+    },
+    "created_at": {
+      "bsonType": "date",
+      "description": "创建时间",
+      "title": "创建时间"
+    },
+    "base_info": {
+      "bsonType": "object",
+      "description": "基础信息",
+      "properties": {
+        "item_number": {
+          "bsonType": "int",
+          "description": "设备数量"
+        },
+        "distance": {
+          "bsonType": "double",
+          "description": "距离（公里）"
+        },
+        "time_type": {
+          "bsonType": "string",
+          "description": "时间类型"
+        },
+        "time_limit": {
+          "bsonType": "int",
+          "description": "时间限制（小时）"
+        }
+      }
+    },
+    "base_service_fee_detail": {
+      "bsonType": "object",
+      "description": "基础服务费明细",
+      "properties": {
+        "base_device_fee": {
+          "bsonType": "double",
+          "description": "基础设备费用",
+          "default": 0
+        },
+        "base_device_count": {
+          "bsonType": "int",
+          "description": "基础设备数量"
+        },
+        "extra_device_fee": {
+          "bsonType": "double",
+          "description": "额外设备费用",
+          "default": 0
+        },
+        "extra_device_count": {
+          "bsonType": "int",
+          "description": "额外设备数量"
+        },
+        "extra_device_unit_fee": {
+          "bsonType": "double",
+          "description": "单个额外设备费用"
+        },
+        "tier_fees": {
+          "bsonType": "array",
+          "description": "阶梯费用明细",
+          "items": {
+            "bsonType": "object",
+            "properties": {
+              "tier_name": {
+                "bsonType": "string",
+                "description": "阶梯名称，如'第一阶梯'"
+              },
+              "start_count": {
+                "bsonType": "int",
+                "description": "起始数量"
+              },
+              "end_count": {
+                "bsonType": "int",
+                "description": "结束数量"
+              },
+              "unit_fee": {
+                "bsonType": "double",
+                "description": "单价"
+              },
+              "count": {
+                "bsonType": "int",
+                "description": "该阶梯数量"
+              },
+              "fee": {
+                "bsonType": "double",
+                "description": "该阶梯总费用"
+              }
+            }
+          }
+        },
+        "total": {
+          "bsonType": "double",
+          "description": "基础服务费总计",
+          "default": 0
+        }
+      }
+    },
+    "distance_fee_detail": {
+      "bsonType": "object",
+      "description": "距离费明细",
+      "properties": {
+        "base_distance": {
+          "bsonType": "double",
+          "description": "基础距离（公里）"
+        },
+        "base_distance_fee": {
+          "bsonType": "double",
+          "description": "基础距离费用",
+          "default": 0
+        },
+        "actual_distance": {
+          "bsonType": "double",
+          "description": "实际距离（公里）"
+        },
+        "extra_distance": {
+          "bsonType": "double",
+          "description": "超出距离（公里）",
+          "default": 0
+        },
+        "extra_distance_unit": {
+          "bsonType": "double",
+          "description": "超出距离单位（公里）"
+        },
+        "extra_distance_unit_fee": {
+          "bsonType": "double",
+          "description": "单位超出距离费用"
+        },
+        "extra_distance_fee": {
+          "bsonType": "double",
+          "description": "超出距离费用",
+          "default": 0
+        },
+        "total": {
+          "bsonType": "double",
+          "description": "距离费总计",
+          "default": 0
+        }
+      }
+    },
+    "time_limit_fee_detail": {
+      "bsonType": "object",
+      "description": "时效费明细",
+      "properties": {
+        "time_type": {
+          "bsonType": "string",
+          "description": "时间类型"
+        },
+        "time_limit_hours": {
+          "bsonType": "int",
+          "description": "限时小时数"
+        },
+        "time_limit_fee": {
+          "bsonType": "double",
+          "description": "时效费用",
+          "default": 0
+        },
+        "calculation_rule": {
+          "bsonType": "string",
+          "description": "计费规则说明"
+        }
+      }
+    },
+    "additional_services": {
+      "bsonType": "array",
+      "description": "附加服务明细",
+      "items": {
+        "bsonType": "object",
+        "properties": {
+          "service_name": {
+            "bsonType": "string",
+            "description": "服务名称"
+          },
+          "service_code": {
+            "bsonType": "string",
+            "description": "服务代码"
+          },
+          "base_fee": {
+            "bsonType": "double",
+            "description": "基础费用",
+            "default": 0
+          },
+          "base_count": {
+            "bsonType": "int",
+            "description": "基础数量"
+          },
+          "actual_count": {
+            "bsonType": "int",
+            "description": "实际数量"
+          },
+          "extra_count": {
+            "bsonType": "int",
+            "description": "额外数量"
+          },
+          "extra_unit_fee": {
+            "bsonType": "double",
+            "description": "额外单价"
+          },
+          "extra_fee": {
+            "bsonType": "double",
+            "description": "额外费用",
+            "default": 0
+          },
+          "total": {
+            "bsonType": "double",
+            "description": "该服务总费用",
+            "default": 0
+          }
+        }
+      }
+    },
+    "discount_detail": {
+      "bsonType": "object",
+      "description": "优惠明细",
+      "properties": {
+        "coupon_id": {
+          "bsonType": "string",
+          "description": "优惠券ID"
+        },
+        "coupon_name": {
+          "bsonType": "string",
+          "description": "优惠券名称"
+        },
+        "coupon_amount": {
+          "bsonType": "double",
+          "description": "优惠金额",
+          "default": 0
+        },
+        "coupon_type": {
+          "bsonType": "string",
+          "description": "优惠券类型"
+        }
+      }
+    },
+    "rider_tip": {
+      "bsonType": "double",
+      "description": "骑手打赏",
+      "default": 0
+    },
+    "price_summary": {
+      "bsonType": "object",
+      "description": "价格汇总",
+      "required": ["service_amount", "total_amount", "payment_amount"],
+      "properties": {
+        "service_amount": {
+          "bsonType": "double",
+          "description": "服务金额（未减优惠券）",
+          "default": 0
+        },
+        "discount_amount": {
+          "bsonType": "double",
+          "description": "优惠金额",
+          "default": 0
+        },
+        "total_amount": {
+          "bsonType": "double",
+          "description": "总金额（减去优惠券后）",
+          "default": 0
+        },
+        "rider_tip_amount": {
+          "bsonType": "double",
+          "description": "打赏金额",
+          "default": 0
+        },
+        "payment_amount": {
+          "bsonType": "double",
+          "description": "实际支付金额",
+          "default": 0
+        }
+      }
+    },
+    "provider_price_config": {
+      "bsonType": "object",
+      "description": "服务商价格配置快照（记录当时的价格配置）",
+      "properties": {
+        "bubao_base_device": {
+          "bsonType": "int",
+          "description": "基础设备数量"
+        },
+        "bubao_base_device_fee": {
+          "bsonType": "string",
+          "description": "基础设备费用"
+        },
+        "bubao_extra_device": {
+          "bsonType": "int",
+          "description": "额外设备计数单位"
+        },
+        "bubao_extra_device_fee": {
+          "bsonType": "string",
+          "description": "额外设备费用"
+        },
+        "bubao_base_distance": {
+          "bsonType": "double",
+          "description": "基础距离"
+        },
+        "bubao_base_distance_fee": {
+          "bsonType": "string",
+          "description": "基础距离费用"
+        },
+        "bubao_extra_distance": {
+          "bsonType": "double",
+          "description": "额外距离单位"
+        },
+        "bubao_extra_distance_fee": {
+          "bsonType": "string",
+          "description": "额外距离费用"
+        }
+      }
+    },
+    "calculation_note": {
+      "bsonType": "string",
+      "description": "计费说明（可选）",
+      "maxLength": 500
+    },
+    "is_high_price": {
+      "bsonType": "bool",
+      "description": "是否高价订单（可用于标记需要特别说明的订单）",
+      "default": false
+    },
+    "high_price_threshold": {
+      "bsonType": "double",
+      "description": "高价阈值（超过此金额标记为高价）"
+    }
+  }
+}
+
+
+
+
+
+

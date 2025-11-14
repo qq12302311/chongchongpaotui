@@ -228,7 +228,8 @@ export default {
 			today_commission: memberData.today_commission,
 			today_completed_tasks_count: memberData.today_completed_tasks_count,
 			zone: memberData.zone,
-			withdraw_info: memberData.withdraw_info || null // 添加提现信息
+			withdraw_info: memberData.withdraw_info || null, // 添加提现信息
+			task_quota: memberData.task_quota || 0
           });
 
           // 提示登录成功

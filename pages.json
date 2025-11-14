@@ -58,6 +58,15 @@
 			}
 		},
 		{
+			"path": "pages/index/recycle/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "回收宝贝"
+			}
+		},
+		{
 			"path": "pages/index/offline/index",
 			"style": {
 				"navigationStyle": "custom",
@@ -417,6 +426,24 @@
 						"navigationStyle": "custom",
 						"navigationBarTextStyle": "white",
 						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "riderManagement/riderList",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "骑手管理"
+					}
+				},
+				{
+					"path": "riderManagement/riderOrderHistory",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "骑手订单历史"
 					}
 				},
 				{

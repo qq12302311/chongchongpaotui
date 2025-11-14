@@ -1,7 +1,7 @@
 <template>
 	<view class="store-info-page">
 		<!-- 顶部导航栏 -->
-		<nav-bar :title="'服务门店信息'" title-align="center" :fixed="true" :placeholder="true" :border="false"
+		<nav-bar :title="districtTitle" title-align="center" :fixed="true" :placeholder="true" :border="false"
 			:bgColor="'#2492F2'" :titleColor="'#FFFFFF'" :backColor="'#FFFFFF'"></nav-bar>
 
 		<!-- 导航栏占位元素 -->
@@ -45,26 +45,6 @@
 		</view>
 
 		<view class="info-card">
-
-			<!-- 所选区县 -->
-			<view class="form-item">
-				<view class="input-row">
-					<view class="label-container">
-						<text class="dot"></text>
-						<text>所选区县</text>
-					</view>
-					<view class="input-container horizontal">
-						<view class="district-display">
-							<text class="district-text">{{ displaySelectedCity }}</text>
-							<view class="checkbox-wrapper" @click="toggleDistrictConfirm">
-								<view class="checkbox" :class="{ 'checked': isDistrictConfirmed }">
-									<text class="checkbox-icon" v-if="isDistrictConfirmed">✓</text>
-								</view>
-							</view>
-						</view>
-					</view>
-				</view>
-			</view>
 
 			<!-- 门店地址 -->
 			<view class="form-item">
@@ -214,36 +194,36 @@
 							</view>
 						</view>
 					</view>
-				</view>
-				<view class="snmac-list">
-					<view v-for="(snMac, index) in formData.snMacList.slice(1)" :key="snMac.id" class="snmac-item">
-						<view class="input-row">
-							<view class="snmac-actions">
-								<text class="delete-btn" @click="removeSnMacInput(index + 1)">删除</text>
-							</view>
-							<view class="input-container horizontal">
-								<view class="input-wrapper">
-									<input type="text" :value="snMac.value"
-										@input="updateSnMacValue(index + 1, $event.detail.value)" class="custom-input"
-										:id="'input-' + snMac.id" placeholder=" " />
-									<view class="placeholder-box" v-if="!snMac.value && !snMacErrors[index + 1]">
-										<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon">
-										</image>
-										<text class="placeholder-text">点击填写设备编码</text>
-									</view>
-									<!-- 其他设备编码错误提示 -->
-									<view v-if="snMacErrors[index + 1]" class="error-tip-right">
-										<text class="error-text">{{ snMacErrors[index + 1] }}</text>
-									</view>
+			</view>
+			<view class="snmac-list" v-if="isFirstSnMacValid">
+				<view v-for="(snMac, index) in formData.snMacList.slice(1)" :key="snMac.id" class="snmac-item">
+					<view class="input-row">
+						<view class="snmac-actions">
+							<text class="delete-btn" @click="removeSnMacInput(index + 1)">删除</text>
+						</view>
+						<view class="input-container horizontal">
+							<view class="input-wrapper">
+								<input type="text" :value="snMac.value"
+									@input="updateSnMacValue(index + 1, $event.detail.value)" class="custom-input"
+									:id="'input-' + snMac.id" placeholder=" " />
+								<view class="placeholder-box" v-if="!snMac.value && !snMacErrors[index + 1]">
+									<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon">
+									</image>
+									<text class="placeholder-text">点击填写设备编码</text>
+								</view>
+								<!-- 其他设备编码错误提示 -->
+								<view v-if="snMacErrors[index + 1]" class="error-tip-right">
+									<text class="error-text">{{ snMacErrors[index + 1] }}</text>
 								</view>
 							</view>
 						</view>
 					</view>
-					<view class="add-snmac" @click="addSnMacInput">
-						<text class="add-icon">+</text>
-						<text>添加设备编码</text>
-					</view>
 				</view>
+				<view class="add-snmac" @click="addSnMacInput">
+					<text class="add-icon">+</text>
+					<text>添加设备编码</text>
+				</view>
+			</view>
 				<!-- 门店POI备注上方添加分隔线 -->
 				<view class="divider"></view>
 
@@ -302,7 +282,32 @@
 						</view>
 					</view>
 				</view>
+
+			<!-- 分隔线 -->
+			<view class="divider"></view>
+
+		<!-- 建议骑手上门时间段 - 已取消 -->
+		<!-- <view class="form-item" style="margin-bottom:30rpx">
+			<view class="input-row">
+				<view class="label-container">
+					<text class="dot"></text>
+					<text>建议骑手上门时间段</text>
+					<text class="time-note">便于骑手高效完单！</text>
+				</view>
+				<view class="input-container horizontal">
+					<view class="input-wrapper" @click="showTimeRangePicker">
+						<view class="time-display-wrapper">
+							<text class="time-display-text">{{ getTimeRangeDisplay() }}</text>
+							<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-arrow"></image>
+						</view>
+					</view>
+				</view>
 			</view>
+		</view> -->
+
+		<!-- 分隔线 -->
+		<view class="divider"></view>
+		</view>
 
 			<!-- 上传门头 -->
 			<view class="form-item">
@@ -351,12 +356,62 @@
 		</view>
 
 		<!-- 底部按钮 -->
-		<view class="bottom-button">
+		<view class="bottom-button" v-if="!showTimeRangePopup">
 			<button class="save-btn" @click="saveStoreInfo">保存</button>
 		</view>
 
 		<!-- 悬浮聊天图标 -->
 		<FloatingChatIconUser />
+
+		<!-- 时间段选择弹窗 -->
+		<uni-popup ref="timeRangePopup" type="bottom" @change="onTimeRangePopupChange" :mask-click="true" :z-index="99999999">
+			<view class="time-range-popup">
+				<view class="popup-header">
+					<text class="title">选择时间段</text>
+					<text class="close" @tap="closeTimeRangePopup">×</text>
+				</view>
+				<view class="popup-content">
+					<!-- 表头 -->
+					<view class="picker-header">
+						<text class="header-item">开始时</text>
+						<text class="header-item">开始分</text>
+						<text class="header-item">结束时</text>
+						<text class="header-item">结束分</text>
+					</view>
+					<!-- picker-view -->
+					<picker-view
+						class="time-picker-view"
+						:value="timeRangeIndex"
+						@change="onTimeRangePickerChange"
+						:indicator-style="indicatorStyle"
+					>
+						<picker-view-column>
+							<view class="picker-item" v-for="(item, index) in timeRangePickerData[0]" :key="index">
+								<text>{{ item }}</text>
+							</view>
+						</picker-view-column>
+						<picker-view-column>
+							<view class="picker-item" v-for="(item, index) in timeRangePickerData[1]" :key="index">
+								<text>{{ item }}</text>
+							</view>
+						</picker-view-column>
+						<picker-view-column>
+							<view class="picker-item" v-for="(item, index) in timeRangePickerData[2]" :key="index">
+								<text>{{ item }}</text>
+							</view>
+						</picker-view-column>
+						<picker-view-column>
+							<view class="picker-item" v-for="(item, index) in timeRangePickerData[3]" :key="index">
+								<text>{{ item }}</text>
+							</view>
+						</picker-view-column>
+					</picker-view>
+					<view class="popup-footer">
+						<button class="confirm-btn" @tap="confirmTimeRange">确定</button>
+					</view>
+				</view>
+			</view>
+		</uni-popup>
 
 		<!-- 门店地址弹窗已取消 -->
 		<!-- <auth-modal
@@ -397,8 +452,7 @@
 		data() {
 			return {
 				showAddressPopup: false,
-				selectedCity: uni.getStorageSync('selectedCity'),
-				isDistrictConfirmed: false, // 区县确认勾选状态，默认不勾选
+				selectedCity: '',
 				formData: {
 					address: '',
 					detailAddress: '',
@@ -420,15 +474,29 @@
 					longitude: 0,
 					distance: 0,
 					user_id: 0,
+					recommended_service_time_start: '', // 建议骑手上门开始时间
+					recommended_service_time_end: '', // 建议骑手上门结束时间
 				},
 				historyRecords: [],
 				showAuthModal: false,
 				snMacErrors: {}, // 存储设备编码的错误信息，key为index，value为错误信息
 				showDeviceCodeModal: false, // 控制设备编码帮助弹窗显示
-				showPoiModal: false // 控制门店POI帮助弹窗显示
+				showPoiModal: false, // 控制门店POI帮助弹窗显示
+				// 时间段选择相关
+				timeRangePickerData: [],
+				timeRangeIndex: [1, 0, 9, 0], // 默认选择 01:00 - 09:00
+				tempTimeRangeIndex: [1, 0, 9, 0],
+				showTimeRangePopup: false,
+				indicatorStyle: 'height: 50px;'
 			}
 		},
 		onLoad() {
+			// 初始化 selectedCity
+			this.selectedCity = uni.getStorageSync('selectedCity') || '';
+			
+			// 初始化时间段选择器数据
+			this.initTimeRangePickerData();
+			
 			// 安全获取用户信息
 			const userInfo = uni.getStorageSync('userInfo')
 			if (userInfo && typeof userInfo === 'object') {
@@ -469,27 +537,29 @@
 						storeInfo.snMacList = this.formData.snMacList;
 					}
 					
-					// 安全合并数据，确保数据类型正确
-					this.formData = {
-						...this.formData,
-						address: String(storeInfo.address || ''),
-						detailAddress: String(storeInfo.detailAddress || ''),
-						storeName: String(storeInfo.storeName || ''),
-						snMacList: storeInfo.snMacList,
-						device_outside: (storeInfo.device_outside === 0 || storeInfo.device_outside === 1 || storeInfo.device_outside === 2) ? storeInfo.device_outside : '', // 只接受有效的数值选择
-						poiRemark: String(storeInfo.poiRemark || ''),
-						phone: String(storeInfo.phone || this.formData.phone),
-						contact: String(storeInfo.contact || this.formData.contact),
-						doorImages: Array.isArray(storeInfo.doorImages) ? storeInfo.doorImages : [],
-						locationDesc: String(storeInfo.locationDesc || ''),
-						province: String(storeInfo.province || ''),
-						city: String(storeInfo.city || ''),
-						district: String(storeInfo.district || ''),
-						latitude: parseFloat(storeInfo.latitude) || 0,
-						longitude: parseFloat(storeInfo.longitude) || 0,
-						distance: parseFloat(storeInfo.distance) || 0,
-						user_id: storeInfo.user_id || this.formData.user_id,
-					}
+				// 安全合并数据，确保数据类型正确
+				this.formData = {
+					...this.formData,
+					address: String(storeInfo.address || ''),
+					detailAddress: String(storeInfo.detailAddress || ''),
+					storeName: String(storeInfo.storeName || ''),
+					snMacList: storeInfo.snMacList,
+					device_outside: (storeInfo.device_outside === 0 || storeInfo.device_outside === 1 || storeInfo.device_outside === 2) ? storeInfo.device_outside : '', // 只接受有效的数值选择
+					poiRemark: String(storeInfo.shop_poi || storeInfo.poiRemark || ''), // 优先读取 shop_poi，兼容旧的 poiRemark
+					phone: String(storeInfo.phone || this.formData.phone),
+					contact: String(storeInfo.contact || this.formData.contact),
+					doorImages: Array.isArray(storeInfo.doorImages) ? storeInfo.doorImages : [],
+					locationDesc: String(storeInfo.locationDesc || ''),
+					province: String(storeInfo.province || ''),
+					city: String(storeInfo.city || ''),
+					district: String(storeInfo.district || ''),
+					latitude: parseFloat(storeInfo.latitude) || 0,
+					longitude: parseFloat(storeInfo.longitude) || 0,
+					distance: parseFloat(storeInfo.distance) || 0,
+					user_id: storeInfo.user_id || this.formData.user_id,
+					recommended_service_time_start: String(storeInfo.recommended_service_time_start || ''),
+					recommended_service_time_end: String(storeInfo.recommended_service_time_end || ''),
+				}
 				}
 			} catch (error) {
 				console.error('获取本地门店信息失败:', error);
@@ -500,6 +570,10 @@
 			// this.historyRecords = uni.getStorageSync('storeHistoryRecords') || []
 		},
 		onShow() {
+			// 刷新 selectedCity 以更新标题显示
+			this.selectedCity = uni.getStorageSync('selectedCity') || '';
+			console.log('刷新 selectedCity:', this.selectedCity);
+			
 			// 获取历史门店记录
 			this.gethistoryRecords()
 			// 获取城市列表
@@ -697,38 +771,57 @@
 			}
 		},
 		computed: {
-			// 显示的所选城市
-			displaySelectedCity() {
-				return this.selectedCity || '未选择';
+			// 顶部标题：显示所选城市和区县（与发布订单页保持一致）
+			districtTitle() {
+				// 使用 data 中的 selectedCity，确保响应式更新
+				return this.selectedCity || '服务门店信息'; // 显示完整的"城市 · 区县"或默认标题
 			},
 			// 地图标记点
 			mapMarkers() {
 				if (!this.formData.latitude || !this.formData.longitude) {
 					return [];
 				}
-			return [{
-				id: 1,
-				latitude: parseFloat(this.formData.latitude),
-				longitude: parseFloat(this.formData.longitude),
-				width: 1,
-				height: 1,
-				callout: {
-					content: this.formData.storeName || '门店位置',
-					color: '#333333',
-					fontSize: 12,
-					borderRadius: 4,
-					bgColor: '#FFFFFF',
-					padding: 8,
-					display: 'ALWAYS'
-				}
-			}];
+		return [{
+			id: 1,
+			latitude: parseFloat(this.formData.latitude),
+			longitude: parseFloat(this.formData.longitude),
+			width: 1,
+			height: 1,
+			callout: {
+				content: this.formData.storeName || '门店位置',
+				color: '#333333',
+				fontSize: 12,
+				borderRadius: 4,
+				bgColor: '#FFFFFF',
+				padding: 8,
+				display: 'ALWAYS'
 			}
+		}];
 		},
+		// 判断第一个设备编码是否有效
+		isFirstSnMacValid() {
+			if (!this.formData.snMacList || this.formData.snMacList.length === 0) {
+				return false;
+			}
+			const firstValue = this.formData.snMacList[0].value;
+			// 检查第一个设备编码是否有值、没有错误、且长度不少于8位、只包含数字和字母
+			if (!firstValue || firstValue.trim() === '') {
+				return false;
+			}
+			if (this.snMacErrors[0]) {
+				return false;
+			}
+			if (firstValue.trim().length < 8) {
+				return false;
+			}
+			const regex = /^[a-zA-Z0-9]+$/;
+			if (!regex.test(firstValue.trim())) {
+				return false;
+			}
+			return true;
+		}
+	},
 		methods: {
-			// 切换区县确认勾选状态
-			toggleDistrictConfirm() {
-				this.isDistrictConfirmed = !this.isDistrictConfirmed;
-			},
 			// 导航到门店位置
 			navigateToLocation() {
 				if (!this.formData.latitude || !this.formData.longitude) {
@@ -1021,11 +1114,6 @@
 			},
 			// 表单验证函数
 			validateFormData() {
-				// 检查区县确认勾选状态
-				if (!this.isDistrictConfirmed) {
-					return { isValid: false, message: '请核对所选区县' };
-				}
-
 				// 检查地址
 				if (!this.formData.address || this.formData.address.trim() === '') {
 					return { isValid: false, message: '请选择门店地址' };
@@ -1082,7 +1170,12 @@
 					return { isValid: false, message: '请选择设备摆放点位（外摆/非外摆/不清楚）' };
 				}
 
-				return { isValid: true, message: '' };
+			// 验证建议骑手上门时间段（已取消必填）
+			// if (!this.formData.recommended_service_time_start || !this.formData.recommended_service_time_end) {
+			// 	return { isValid: false, message: '请选择建议骑手上门时间段' };
+			// }
+
+			return { isValid: true, message: '' };
 			},
 			
 			// 更新发布页面数据
@@ -1106,27 +1199,29 @@
 							console.log('✅ 已同步更新发布页面的 selectedCity:', selectedCity);
 						}
 						
-						// 更新发布订单页的 formData
-						publishPage.$vm.formData = {
-							...publishPage.$vm.formData,
-							storeName: this.formData.storeName,
-							address: this.formData.address,
-							detailAddress: this.formData.detailAddress,
-							phone: this.formData.phone,
-							contact: this.formData.contact,
-							snMacList: this.formData.snMacList,
-							device_outside: deviceOutsideValue,
-							poiRemark: this.formData.poiRemark,
-							doorImages: this.formData.doorImages,
-							locationDesc: this.formData.locationDesc,
-							latitude: this.formData.latitude,
-							longitude: this.formData.longitude,
-							province: this.formData.province,
-							city: this.formData.city,
-							district: this.formData.district,
-							// 注意：不设置distance，让价格计算函数根据坐标重新计算
-							// distance: this.formData.distance,
-						};
+					// 更新发布订单页的 formData
+					publishPage.$vm.formData = {
+						...publishPage.$vm.formData,
+						storeName: this.formData.storeName,
+						address: this.formData.address,
+						detailAddress: this.formData.detailAddress,
+						phone: this.formData.phone,
+						contact: this.formData.contact,
+						snMacList: this.formData.snMacList,
+						device_outside: deviceOutsideValue,
+						shop_poi: this.formData.poiRemark, // 将poiRemark的值赋给shop_poi字段
+						doorImages: this.formData.doorImages,
+						locationDesc: this.formData.locationDesc,
+						latitude: this.formData.latitude,
+						longitude: this.formData.longitude,
+						province: this.formData.province,
+						city: this.formData.city,
+						district: this.formData.district,
+						recommended_service_time_start: this.formData.recommended_service_time_start,
+						recommended_service_time_end: this.formData.recommended_service_time_end,
+						// 注意：不设置distance，让价格计算函数根据坐标重新计算
+						// distance: this.formData.distance,
+					};
 
 						// 强制更新发布页面并重新计算价格
 						publishPage.$vm.$forceUpdate();
@@ -1222,25 +1317,27 @@
 							value: item.value.trim().toUpperCase() // 统一转为大写
 						}));
 
-					const submitData = {
-						user_id: this.formData.user_id || 0,
-						store_name: this.formData.storeName.trim(),
-						address: this.formData.address.trim(),
-						detail_address: this.formData.detailAddress ? this.formData.detailAddress.trim() : '',
-						longitude: parseFloat(this.formData.longitude) || 0,
-						latitude: parseFloat(this.formData.latitude) || 0,
-						province: this.formData.province.trim(),
-						city: this.formData.city.trim(),
-						district: this.formData.district.trim(),
-						snMaclist: processedSnMacList,
-						device_outside: deviceOutsideValue,
-						poi_remark: this.formData.poiRemark ? this.formData.poiRemark.trim() : '',
-						doorImages: this.formData.doorImages || [],
-						location_description: this.formData.locationDesc ? this.formData.locationDesc.trim() : '',
-						phone_number: this.formData.phone.trim(),
-						name: this.formData.contact ? this.formData.contact.trim() : '',
-						distance: parseFloat(this.formData.distance) || 0,
-					};
+				const submitData = {
+					user_id: this.formData.user_id || 0,
+					store_name: this.formData.storeName.trim(),
+					address: this.formData.address.trim(),
+					detail_address: this.formData.detailAddress ? this.formData.detailAddress.trim() : '',
+					longitude: parseFloat(this.formData.longitude) || 0,
+					latitude: parseFloat(this.formData.latitude) || 0,
+					province: this.formData.province.trim(),
+					city: this.formData.city.trim(),
+					district: this.formData.district.trim(),
+					snMaclist: processedSnMacList,
+					device_outside: deviceOutsideValue,
+					poi_remark: this.formData.poiRemark ? this.formData.poiRemark.trim() : '',
+					doorImages: this.formData.doorImages || [],
+					location_description: this.formData.locationDesc ? this.formData.locationDesc.trim() : '',
+					phone_number: this.formData.phone.trim(),
+					name: this.formData.contact ? this.formData.contact.trim() : '',
+					distance: parseFloat(this.formData.distance) || 0,
+					recommended_service_time_start: this.formData.recommended_service_time_start || '',
+					recommended_service_time_end: this.formData.recommended_service_time_end || '',
+				};
 
 					console.log('提交数据:', submitData);
 
@@ -1389,6 +1486,84 @@
 					title: '图片加载失败',
 					icon: 'none'
 				});
+			},
+
+			// ========== 时间段选择相关方法 ==========
+			// 初始化时间段选择器数据
+			initTimeRangePickerData() {
+				const hours = [];
+				const minutes = [];
+
+				// 添加"24小时均可"选项到小时数组的第一位
+				hours.push('24小时均可');
+
+				// 生成小时（00-23）
+				for (let i = 0; i < 24; i++) {
+					hours.push(i.toString().padStart(2, '0'));
+				}
+
+				// 生成分钟（00-59）
+				for (let i = 0; i < 60; i++) {
+					minutes.push(i.toString().padStart(2, '0'));
+				}
+
+				// [开始小时, 开始分钟, 结束小时, 结束分钟]
+				this.timeRangePickerData = [hours, minutes, hours, minutes];
+			},
+
+			// 获取时间段显示文本
+			getTimeRangeDisplay() {
+				if (this.formData.recommended_service_time_start && this.formData.recommended_service_time_end) {
+					// 如果开始和结束时间都是00:00，显示"24小时均可"
+					if (this.formData.recommended_service_time_start === '00:00' && this.formData.recommended_service_time_end === '00:00') {
+						return '24小时均可';
+					}
+					return `${this.formData.recommended_service_time_start} - ${this.formData.recommended_service_time_end}`;
+				}
+				return '请选择时间段';
+			},
+
+			// 显示时间段选择弹窗
+			showTimeRangePicker() {
+				this.tempTimeRangeIndex = [...this.timeRangeIndex];
+				this.showTimeRangePopup = true;
+				this.$refs.timeRangePopup.open();
+			},
+
+			// 关闭时间段选择弹窗
+			closeTimeRangePopup() {
+				this.$refs.timeRangePopup.close();
+			},
+
+			// 时间段弹窗状态变化
+			onTimeRangePopupChange(e) {
+				this.showTimeRangePopup = e.show;
+			},
+
+			// picker-view值变化
+			onTimeRangePickerChange(e) {
+				this.tempTimeRangeIndex = e.detail.value;
+			},
+
+			// 确认时间段选择
+			confirmTimeRange() {
+				this.timeRangeIndex = [...this.tempTimeRangeIndex];
+
+				const startHour = this.timeRangePickerData[0][this.timeRangeIndex[0]];
+				const startMinute = this.timeRangePickerData[1][this.timeRangeIndex[1]];
+				const endHour = this.timeRangePickerData[2][this.timeRangeIndex[2]];
+				const endMinute = this.timeRangePickerData[3][this.timeRangeIndex[3]];
+
+				// 如果选择了"24小时均可"
+				if (startHour === '24小时均可' || endHour === '24小时均可') {
+					this.formData.recommended_service_time_start = '00:00';
+					this.formData.recommended_service_time_end = '00:00';
+				} else {
+					this.formData.recommended_service_time_start = `${startHour}:${startMinute}`;
+					this.formData.recommended_service_time_end = `${endHour}:${endMinute}`;
+				}
+
+				this.closeTimeRangePopup();
 			}
 		}
 	}
@@ -1473,7 +1648,7 @@
 		display: flex;
 		align-items: center;
 		padding-bottom: 16rpx;
-		border-bottom: 1rpx solid #EEEEEE;
+		// border-bottom: 1rpx solid #EEEEEE;
 	}
 
 	.label-container {
@@ -1502,7 +1677,7 @@
 
 		.time-note {
 			position: absolute;
-			top: 22px;
+			top: 17px;
 			left: 0px;
 			font-size: 20rpx;
 			color: #FF4D4F;
@@ -1574,54 +1749,6 @@
 					width: 28rpx;
 					height: 28rpx;
 					margin-left: 8rpx;
-				}
-			}
-		}
-	}
-
-	// 所选区县样式
-	.district-display {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		width: 100%;
-
-		.district-text {
-			font-size: 24rpx;
-			color: #333;
-			margin-right: 20rpx;
-			flex: 1;
-			text-align: right;
-		}
-
-		.checkbox-wrapper {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			cursor: pointer;
-			flex-shrink: 0;
-
-			.checkbox {
-				width: 32rpx;
-				height: 32rpx;
-				border: 2rpx solid #D3D4D6;
-				border-radius: 6rpx;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transition: all 0.3s ease;
-				background-color: #FFFFFF;
-
-				&.checked {
-					border-color: #2492F2;
-					background-color: #2492F2;
-				}
-
-				.checkbox-icon {
-					font-size: 20rpx;
-					color: #FFFFFF;
-					font-weight: bold;
-					line-height: 1;
 				}
 			}
 		}
@@ -2048,6 +2175,118 @@
 				font-size: 24rpx;
 				color: #FFFFFF;
 				font-weight: 500;
+			}
+		}
+	}
+
+	// 时间段显示样式
+	.time-display-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		width: 100%;
+		cursor: pointer;
+
+		.time-display-text {
+			font-size: 24rpx;
+			color: #333333;
+			margin-right: 8rpx;
+		}
+
+		.time-arrow {
+			width: 24rpx;
+			height: 24rpx;
+		}
+	}
+
+	// 时间段选择弹窗样式
+	.time-range-popup {
+		background: #FFFFFF;
+		border-radius: 20rpx 20rpx 0 0;
+		padding: 0;
+		max-height: 80vh;
+		position: relative;
+		z-index: 99999999;
+
+		.popup-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 30rpx 40rpx 20rpx;
+			border-bottom: 1rpx solid #F0F0F0;
+
+			.title {
+				font-size: 32rpx;
+				font-weight: 600;
+				color: #333333;
+			}
+
+			.close {
+				font-size: 48rpx;
+				color: #999999;
+				line-height: 1;
+				padding: 10rpx;
+			}
+		}
+
+		.popup-content {
+			padding: 0 40rpx 40rpx;
+			position: relative;
+			z-index: 99999999;
+
+			.picker-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-around;
+				padding: 20rpx 0 10rpx;
+				border-bottom: 1rpx solid #F0F0F0;
+
+				.header-item {
+					flex: 1;
+					text-align: center;
+					font-size: 28rpx;
+					color: #666666;
+					font-weight: 500;
+				}
+			}
+
+			.time-picker-view {
+				height: 400rpx;
+				margin: 20rpx 0;
+
+				.picker-item {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					height: 50px;
+
+					text {
+						font-size: 28rpx;
+						color: #333333;
+					}
+				}
+			}
+
+			.popup-footer {
+				padding-top: 20rpx;
+
+				.confirm-btn {
+					width: 100%;
+					height: 88rpx;
+					background: linear-gradient(135deg, #2492F2, #1890FF);
+					color: #FFFFFF;
+					font-size: 32rpx;
+					font-weight: 600;
+					border-radius: 12rpx;
+					border: none;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+
+					&:active {
+						opacity: 0.8;
+					}
+				}
 			}
 		}
 	}

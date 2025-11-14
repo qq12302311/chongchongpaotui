@@ -77,10 +77,17 @@
             <view class="order-details">
               <view class="store-name-row">
                 <text class="store-name">{{ formatStoreName(order.storeName) }}</text>
-                <text class="price">{{ getDisplayAmount(order) }}</text>
+                <view class="price-container">
+                  <text class="price">{{ order.reward ? getTotalAmountWithReward(order) : getDisplayAmount(order) }}</text>
+                  <text v-if="order.reward" class="reward-badge">赏{{ parseInt(getRewardAmount(order)) }}</text>
+                </view>
               </view>
               <view class="service-time">服务时间：<text class="highlight" style="white-space: pre-line;">{{ order.serviceTime }}</text></view>
               <view class="service-item">服务项目：<text class="highlight">{{ order.serviceItem }}</text></view>
+              <view class="service-item" v-if="order.extraServices">附加服务：<text class="highlight">{{ order.extraServices }}</text></view>
+              <view class="service-item" v-if="order.reward">
+                <text style="color: #FF6B00;">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
+              </view>
               <!-- <view class="contact-info">联系客户：<text class="highlight">{{ order.contactName }} {{ order.contactPhone }}</text></view> -->
             </view>
 
@@ -347,6 +354,20 @@ export default {
               ].filter(Boolean).join('');
             }
 
+            // 处理打赏信息
+            let rewardInfo = null;
+            if (item.reward && Array.isArray(item.reward) && item.reward.length > 0) {
+              // 计算打赏总金额（只计算已支付的）
+              const paidRewards = item.reward.filter(r => r.status === 'paid');
+              if (paidRewards.length > 0) {
+                const totalAmount = paidRewards.reduce((sum, r) => sum + parseFloat(r.order_amount || 0), 0);
+                rewardInfo = {
+                  amount: totalAmount.toFixed(2),
+                  count: paidRewards.length
+                };
+              }
+            }
+
             return {
               id: item.task_id,
               orderNumber: item.task_no,
@@ -357,6 +378,7 @@ export default {
               storeName: item.task_detail.store_name,
               serviceTime: this.formatServiceTime(item.task_date, item.deadline, item.time_limit),
               serviceItem: this.formatServiceItems(item.task_detail),
+              extraServices: this.formatExtraServices(item.task_detail), // 添加附加服务
               contactName: item.name,
               contactPhone: item.phone_number,
               distance: this.calculateDistance(item.latitude, item.longitude),
@@ -370,7 +392,8 @@ export default {
               status: item.status,
               address: fullAddress || '未知地址',
               doorImage: item.task_detail && item.task_detail.pic_url && item.task_detail.pic_url.length > 0 ? item.task_detail.pic_url[0] : '',
-              brand: item.brand || '' // 添加品牌信息
+              brand: item.brand || '', // 添加品牌信息
+              reward: rewardInfo // 打赏信息
             }
           })
 
@@ -516,30 +539,92 @@ export default {
 
       const items = []
 
-      // 主要服务项目
+      // 主要服务项目 - 支持多选（逗号分隔）
       if (taskDetail.detail) {
-        let itemName;
-
-        // 判断服务类型
-        switch (taskDetail.detail) {
-          case 'bubao':
-            itemName = '补宝';
-            break;
-          case 'offline_abnormal':
-            itemName = '离线异常';
-            break;
-          case 'income_abnormal':
-            itemName = '收入异常';
-            break;
-          case 'other_abnormal':
-            itemName = '其他异常';
-            break;
-          default:
-            itemName = taskDetail.detail;
+        // 检查是否是多选（包含逗号）
+        const details = taskDetail.detail.includes(',') ? taskDetail.detail.split(',') : [taskDetail.detail];
+        
+        // 处理多选情况
+        if (details.length > 1) {
+          // 多选时，分别显示好宝回收和坏宝回收的数量
+          details.forEach(detail => {
+            detail = detail.trim();
+            let itemName;
+            let itemNumber;
+            
+            switch (detail) {
+              case 'bubao':
+                itemName = '补宝';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'goodRecycle':
+                itemName = '好宝回收';
+                itemNumber = taskDetail.shoubao_normal_item_number || 0;
+                break;
+              case 'badRecycle':
+                itemName = '坏宝回收';
+                itemNumber = taskDetail.shoubao_broken_item_number || 0;
+                break;
+              case 'offline_abnormal':
+                itemName = '离线异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'income_abnormal':
+                itemName = '收入异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              case 'other_abnormal':
+                itemName = '其他异常';
+                itemNumber = taskDetail.item_number || 1;
+                break;
+              default:
+                itemName = detail;
+                itemNumber = taskDetail.item_number || 1;
+            }
+            
+            if (itemNumber > 0) {
+              items.push(`${itemName}x${itemNumber}`);
+            }
+          });
+        } else {
+          // 单选时，保持原有逻辑
+          let itemName;
+          
+          switch (taskDetail.detail) {
+            case 'bubao':
+              itemName = '补宝';
+              break;
+            case 'goodRecycle':
+              itemName = '好宝回收';
+              break;
+            case 'badRecycle':
+              itemName = '坏宝回收';
+              break;
+            case 'offline_abnormal':
+              itemName = '离线异常';
+              break;
+            case 'income_abnormal':
+              itemName = '收入异常';
+              break;
+            case 'other_abnormal':
+              itemName = '其他异常';
+              break;
+            default:
+              itemName = taskDetail.detail;
+          }
+          
+          items.push(`${itemName}x${taskDetail.item_number || 1}`);
         }
-
-        items.push(`${itemName}x${taskDetail.item_number || 1}`)
       }
+
+      return items.join('、')
+    },
+
+    // 格式化附加服务
+    formatExtraServices(taskDetail) {
+      if (!taskDetail) return ''
+
+      const items = []
 
       // 附加服务项目
       for (let i = 1; i <= 6; i++) {
@@ -555,9 +640,16 @@ export default {
 
     // 获取服务类型CSS类名
     getServiceTypeClass(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return 'supplement';
+        case 'goodRecycle':
+          return 'recycle';
+        case 'badRecycle':
+          return 'recycle';
         case 'offline_abnormal':
           return 'offline-abnormal';
         case 'income_abnormal':
@@ -571,9 +663,16 @@ export default {
 
     // 获取服务类型显示文本（只显示前两个字符）
     getServiceTypeDisplayText(detail) {
-      switch (detail) {
+      // 处理多选情况，取第一个服务类型
+      const firstDetail = detail && detail.includes(',') ? detail.split(',')[0].trim() : detail;
+      
+      switch (firstDetail) {
         case 'bubao':
           return '补宝';
+        case 'goodRecycle':
+          return '收宝';
+        case 'badRecycle':
+          return '收宝';
         case 'offline_abnormal':
           return '离线';
         case 'income_abnormal':
@@ -582,7 +681,7 @@ export default {
           return '其他';
         default:
           // 如果是其他类型，取前两个字符
-          return detail ? detail.substring(0, 2) : '';
+          return firstDetail ? firstDetail.substring(0, 2) : '';
       }
     },
 
@@ -813,6 +912,32 @@ export default {
       const finalAmount = (amount * rate) - rewardAmount;
 
       return `¥${finalAmount.toFixed(2)}`;
+    },
+
+    // 获取打赏金额（乘以费率）
+    getRewardAmount(order) {
+      if (!order.reward || !order.reward.amount) return '0.00';
+      const rewardValue = parseFloat(order.reward.amount) * (this.riderUserInfo && this.riderUserInfo.rate ? Number(this.riderUserInfo.rate) : 1);
+      return rewardValue.toFixed(2);
+    },
+
+    // 获取订单金额+打赏金额的总和
+    getTotalAmountWithReward(order) {
+      // 获取基础订单金额
+      const baseAmount = this.getDisplayAmount(order);
+      
+      // 如果有打赏，则计算总金额
+      if (order.reward && order.reward.amount) {
+        // 提取数字部分
+        const baseValue = parseFloat(baseAmount.replace('¥', ''));
+        // 打赏金额乘以费率
+        const rewardValue = parseFloat(order.reward.amount) * (this.riderUserInfo && this.riderUserInfo.rate ? Number(this.riderUserInfo.rate) : 1);
+        const total = baseValue + rewardValue;
+        return `¥${total.toFixed(2)}`;
+      }
+      
+      // 没有打赏，返回原金额
+      return baseAmount;
     },
 
     // 处理 backgroundFetch 错误
@@ -1252,12 +1377,29 @@ export default {
             font-size: 32rpx;
             color: #333;
             font-weight: 600;
+            flex: 1;
+          }
+
+          .price-container {
+            display: flex;
+            align-items: center;
+            gap: 8rpx;
           }
 
           .price {
             font-size: 30rpx;
             color: #FF6B00;
             font-weight: 500;
+          }
+
+          .reward-badge {
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%);
+            color: #fff;
+            font-size: 20rpx;
+            padding: 4rpx 10rpx;
+            border-radius: 8rpx;
+            font-weight: 500;
+            white-space: nowrap;
           }
         }
 
