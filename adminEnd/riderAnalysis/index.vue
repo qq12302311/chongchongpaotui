@@ -528,12 +528,23 @@ export default {
           series: [
             {
               name: "新增骑手",
-              data: [12, 18, 8, 15, 6, 22, 16]
+              data: [12, 18, 8, 15, 6, 22, 16],
+              show: true
             },
             {
               name: "推荐骑手", 
               data: [3, 4, 2, 3, 1, 5, 3],
-              show: true // 默认显示
+              show: true
+            },
+            {
+              name: "每日接单骑手",
+              data: [25, 32, 18, 28, 15, 38, 30],
+              show: true
+            },
+            {
+              name: "每日新增接单骑手",
+              data: [8, 12, 5, 10, 4, 15, 11],
+              show: true
             }
           ]
         };
@@ -566,6 +577,18 @@ export default {
           displayName: '推荐骑手',
           show: true, // 默认显示
           priority: 2
+        },
+        {
+          searchNames: ['每日接单骑手', '每周接单骑手', '每月接单骑手', '接单骑手', '接单用户'],
+          displayName: '每日接单骑手',
+          show: true,
+          priority: 3
+        },
+        {
+          searchNames: ['每日新增接单骑手', '每周新增接单骑手', '每月新增接单骑手', '新增接单骑手', '新增接单用户'],
+          displayName: '每日新增接单骑手',
+          show: true,
+          priority: 4
         }
       ];
 
@@ -602,6 +625,12 @@ export default {
           if (mapping.displayName === '推荐骑手') {
             // 推荐骑手数据应该比新增骑手少
             mockData = baseData.map(val => Math.floor(val * 0.25));
+          } else if (mapping.displayName === '每日接单骑手') {
+            // 接单骑手数据应该比注册骑手多一些（累计值）
+            mockData = baseData.map(val => Math.floor(val * 1.5) + 10);
+          } else if (mapping.displayName === '每日新增接单骑手') {
+            // 新增接单骑手数据应该比新增注册骑手少一些
+            mockData = baseData.map(val => Math.floor(val * 0.6));
           } else {
             mockData = baseData;
           }
@@ -634,12 +663,23 @@ export default {
           series: [
             {
               name: "新增骑手",
-              data: [12, 18, 8, 15, 6, 22, 16]
+              data: [12, 18, 8, 15, 6, 22, 16],
+              show: true
             },
             {
               name: "推荐骑手",
               data: [3, 4, 2, 3, 1, 5, 3],
-              show: true // 默认显示
+              show: true
+            },
+            {
+              name: "每日接单骑手",
+              data: [25, 32, 18, 28, 15, 38, 30],
+              show: true
+            },
+            {
+              name: "每日新增接单骑手",
+              data: [8, 12, 5, 10, 4, 15, 11],
+              show: true
             }
           ]
         };

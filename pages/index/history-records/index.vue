@@ -89,6 +89,7 @@
 							</view>
 						</view>
 
+						<!-- SN/MAC码信息 - 有码时显示 -->
 						<view class="info-section" v-if="selectedRecord.sn_mac_code && selectedRecord.sn_mac_code.length > 0">
 							<view class="section-title">
 								<text class="title-icon">📱</text>
@@ -100,6 +101,40 @@
 								</view>
 								<view class="sn-mac-count">
 									<text class="count-text">共 {{ selectedRecord.sn_mac_code.length }} 个设备</text>
+								</view>
+							</view>
+						</view>
+
+						<!-- SN/MAC码填写 - 无码时显示 -->
+						<view class="info-section" v-if="!selectedRecord.sn_mac_code || selectedRecord.sn_mac_code.length === 0">
+							<view class="section-title">
+								<text class="title-icon">📱</text>
+								<text class="title-text">添加SN/MAC码</text>
+							</view>
+							<view class="sn-mac-input-section">
+								<view class="input-tip">
+									<text class="tip-text">该门店暂无设备编码，请添加</text>
+								</view>
+								<view class="sn-mac-input-list">
+									<view v-for="(item, index) in tempSnMacList" :key="item.id" class="sn-mac-input-item">
+										<view class="input-row-wrapper">
+											<input
+												type="text"
+												v-model="item.value"
+												class="sn-mac-input"
+												placeholder="编码不低于8位数字和字母"
+												@input="validateSnMacInput(index)"
+											/>
+											<view class="delete-btn" v-if="tempSnMacList.length > 1" @click.stop="removeTempSnMac(index)">删除</view>
+										</view>
+										<view v-if="item.error" class="error-message">
+											<text class="error-text">{{ item.error }}</text>
+										</view>
+									</view>
+								</view>
+								<view class="add-sn-mac-btn" @click.stop="addTempSnMac">
+									<text class="add-icon">+</text>
+									<text>添加设备编码</text>
 								</view>
 							</view>
 						</view>
@@ -159,7 +194,12 @@ export default {
 			filteredRecords: [],
 			searchKeyword: '',
 			showImportModal: false,
-			selectedRecord: {}
+			selectedRecord: {},
+			tempSnMacList: [{
+				id: Date.now(),
+				value: '',
+				error: ''
+			}]
 		}
 	},
 	onLoad() {
@@ -389,16 +429,51 @@ export default {
 		showImportConfirm(record) {
 			this.selectedRecord = record
 			this.showImportModal = true
+
+			// 如果没有SM码，初始化临时SM码列表
+			if (!record.sn_mac_code || record.sn_mac_code.length === 0) {
+				this.tempSnMacList = [{
+					id: Date.now(),
+					value: '',
+					error: ''
+				}]
+			}
 		},
 
 		// 关闭导入确认弹窗
 		closeImportModal() {
 			this.showImportModal = false
 			this.selectedRecord = {}
+			// 重置临时SM码列表
+			this.tempSnMacList = [{
+				id: Date.now(),
+				value: '',
+				error: ''
+			}]
 		},
 
 		// 确认导入
 		async confirmImport() {
+			// 如果没有SM码，需要先验证并提交SM码
+			if (!this.selectedRecord.sn_mac_code || this.selectedRecord.sn_mac_code.length === 0) {
+				// 验证SM码
+				const validationResult = this.validateAllSnMacInputs()
+				if (!validationResult.isValid) {
+					uni.showToast({
+						title: validationResult.message,
+						icon: 'none',
+						duration: 2000
+					})
+					return
+				}
+
+				// 提交SM码到接口
+				const updateSuccess = await this.updateSnMacToServer()
+				if (!updateSuccess) {
+					return // 更新失败，不继续导入
+				}
+			}
+
 			await this.importRecord(this.selectedRecord)
 			this.closeImportModal()
 		},
@@ -608,6 +683,154 @@ export default {
 
 			return `${year}-${month}-${day} ${hour}:${minute}`
 		},
+
+		// ========== SM码相关方法 ==========
+		// 添加临时SM码
+		addTempSnMac() {
+			this.tempSnMacList.push({
+				id: Date.now(),
+				value: '',
+				error: ''
+			})
+		},
+
+		// 删除临时SM码
+		removeTempSnMac(index) {
+			if (this.tempSnMacList.length > 1) {
+				this.tempSnMacList.splice(index, 1)
+			}
+		},
+
+		// 验证单个SM码输入
+		validateSnMacInput(index) {
+			const item = this.tempSnMacList[index]
+			const value = item.value.trim()
+
+			// 清除错误
+			item.error = ''
+
+			if (!value) {
+				item.error = '设备编码不能为空'
+				return false
+			}
+
+			if (value.length < 8) {
+				item.error = '设备编码不能少于8位'
+				return false
+			}
+
+			const regex = /^[a-zA-Z0-9]+$/
+			if (!regex.test(value)) {
+				item.error = '设备编码只能包含数字和字母'
+				return false
+			}
+
+			return true
+		},
+
+		// 验证所有SM码输入
+		validateAllSnMacInputs() {
+			let isValid = true
+			let firstErrorMessage = ''
+
+			for (let i = 0; i < this.tempSnMacList.length; i++) {
+				const valid = this.validateSnMacInput(i)
+				if (!valid && isValid) {
+					isValid = false
+					firstErrorMessage = this.tempSnMacList[i].error || `第${i + 1}个设备编码有误`
+				}
+			}
+
+			return {
+				isValid,
+				message: firstErrorMessage || '请填写正确的设备编码'
+			}
+		},
+
+		// 提交SM码到服务器
+		async updateSnMacToServer() {
+			try {
+				// 处理设备编码数据
+				const processedSnMacList = this.tempSnMacList
+					.filter(item => item.value && item.value.trim())
+					.map(item => ({
+						id: item.id,
+						value: item.value.trim().toUpperCase()
+					}))
+
+				if (processedSnMacList.length === 0) {
+					uni.showToast({
+						title: '请至少添加一个设备编码',
+						icon: 'none',
+						duration: 2000
+					})
+					return false
+				}
+
+				const userInfo = uni.getStorageSync('userInfo')
+				const submitData = {
+					user_id: userInfo.user_id || 0,
+					store_name: this.selectedRecord.store_name,
+					address: this.selectedRecord.address,
+					detail_address: this.selectedRecord.shop_address || '',
+					longitude: parseFloat(this.selectedRecord.longitude) || 0,
+					latitude: parseFloat(this.selectedRecord.latitude) || 0,
+					province: this.selectedRecord.province_name || '',
+					city: this.selectedRecord.city_name || '',
+					district: this.selectedRecord.district_name || '',
+					snMaclist: processedSnMacList,
+					device_outside: this.selectedRecord.device_outside !== undefined ? this.selectedRecord.device_outside : null,
+					poi_remark: this.selectedRecord.shop_poi || '',
+					doorImages: this.selectedRecord.door_images || [],
+					location_description: this.selectedRecord.location_description || '',
+					phone_number: this.selectedRecord.phone_number || '',
+					name: this.selectedRecord.name || '',
+					distance: parseFloat(this.selectedRecord.distance) || 0,
+					recommended_service_time_start: this.selectedRecord.recommended_service_time_start || '',
+					recommended_service_time_end: this.selectedRecord.recommended_service_time_end || '',
+				}
+
+				console.log('提交SM码数据:', submitData)
+
+				uni.showLoading({
+					title: '保存中...',
+					mask: true
+				})
+
+				const res = await this.$request('user/addresses/create', submitData, 'POST')
+
+				uni.hideLoading()
+
+				if (res.status === 'success') {
+					// 更新selectedRecord的sn_mac_code
+					this.selectedRecord.sn_mac_code = processedSnMacList
+
+					uni.showToast({
+						title: '设备编码保存成功',
+						icon: 'success',
+						duration: 1500
+					})
+
+					return true
+				} else {
+					uni.showToast({
+						title: res.msg || '保存失败，请重试',
+						icon: 'none',
+						duration: 2000
+					})
+					return false
+				}
+			} catch (error) {
+				uni.hideLoading()
+				console.error('提交SM码失败:', error)
+				uni.showToast({
+					title: '网络错误，请重试',
+					icon: 'none',
+					duration: 2000
+				})
+				return false
+			}
+		}
 	}
 }
 </script>
@@ -1055,6 +1278,86 @@ export default {
 	to {
 		opacity: 1;
 		transform: translateY(0) scale(1);
+	}
+}
+
+// SM码输入样式
+.sn-mac-input-section {
+	.input-tip {
+		background-color: #FFF7E6;
+		border: 1rpx solid #FFD666;
+		border-radius: 8rpx;
+		padding: 16rpx;
+		margin-bottom: 20rpx;
+
+		.tip-text {
+			font-size: 24rpx;
+			color: #D46B08;
+			line-height: 1.4;
+		}
+	}
+
+	.sn-mac-input-list {
+		.sn-mac-input-item {
+			margin-bottom: 20rpx;
+
+			.input-row-wrapper {
+				display: flex;
+				align-items: center;
+				gap: 16rpx;
+
+				.sn-mac-input {
+					flex: 1;
+					height: 72rpx;
+					background-color: #F8F9FA;
+					border: 1rpx solid #E9ECEF;
+					border-radius: 8rpx;
+					padding: 0 20rpx;
+					font-size: 26rpx;
+					color: #333333;
+
+					&::placeholder {
+						color: #999999;
+					}
+				}
+
+				.delete-btn {
+					color: #FF4D4F;
+					font-size: 24rpx;
+					padding: 8rpx 16rpx;
+					background-color: #FFF1F0;
+					border-radius: 8rpx;
+					flex-shrink: 0;
+				}
+			}
+
+			.error-message {
+				margin-top: 8rpx;
+				padding-left: 4rpx;
+
+				.error-text {
+					font-size: 22rpx;
+					color: #FF4D4F;
+					line-height: 1.3;
+				}
+			}
+		}
+	}
+
+	.add-sn-mac-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 20rpx 0;
+		color: #2492F2;
+		font-size: 28rpx;
+		cursor: pointer;
+
+		.add-icon {
+			margin-right: 8rpx;
+			font-size: 32rpx;
+			font-weight: bold;
+		}
 	}
 }
 </style>

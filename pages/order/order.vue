@@ -41,7 +41,15 @@
 				<view class="search-input-wrapper">
 					<view class="search-input">
 						<text class="iconfont search-icon">🔍</text>
-						<input type="text" placeholder="输入关键字搜索订单" placeholder-style="color: #AAAAAA;" />
+						<input
+						type="text"
+						v-model="searchKeyword"
+						placeholder="输入关键字搜索订单"
+						placeholder-style="color: #AAAAAA;"
+						@confirm="handleSearch" />
+					<view class="search-btn" @click="handleSearch">
+						<text>搜索</text>
+					</view>
 					</view>
 				</view>
 			</view>
@@ -57,22 +65,35 @@
 
 			<!-- 订单列表内容 -->
 			<view class="order-content">
-				<!-- 加载中提示 -->
-				<view v-if="loading" class="loading-container">
+				<!-- 首次加载中提示 -->
+				<view v-if="loading && orderList.length === 0" class="loading-container">
 					<view class="loading-spinner"></view>
 					<text class="loading-text">加载中...</text>
 				</view>
 				<!-- 空状态 -->
-				<view v-else-if="orderList.length === 0" class="empty-state">
+				<view v-else-if="!loading && orderList.length === 0" class="empty-state">
 					<image class="empty-image" src="https://ccpt.qiniu.0871.cn/order/notorder.png" mode="aspectFit"></image>
 					<text class="empty-text">暂无相关订单</text>
 				</view>
 				<!-- 订单列表 -->
 				<view v-else class="order-list">
-					<view v-for="(order, index) in orderList" :key="index" class="order-item" @click="goToOrderDetail(order)">
+					<view v-for="(order, index) in orderList" :key="index"
+						class="order-item"
+						:class="{ 'order-item-gray': order.status === 'canceled' || ((order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded') }"
+						@click="goToOrderDetail(order)">
 					<view class="order-header">
 						<text class="order-type">{{getBrandText(order.brand)}} {{getDetailText(order.task_detail)}} x{{getItemNumber(order.task_detail)}}</text>
-						<text class="order-status" :class="[(order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded' ? 'refunded' : order.status]">{{getStatusText(order)}}</text>
+						<!-- 已完成订单显示评价信息 -->
+						<view v-if="order.status === 'completed'" class="review-status" @click.stop="handleReviewClick(order)">
+							<view class="stars">
+								<text v-for="star in 5" :key="star" class="star" :class="{ 'star-filled': star <= getReviewRating(order) }">★</text>
+							</view>
+							<text class="review-text" :class="order.review ? 'reviewed' : 'not-reviewed'">
+								{{ order.review ? '已评价' : '未评价' }}
+							</text>
+						</view>
+						<!-- 其他状态显示原有状态文本 -->
+						<text v-else class="order-status" :class="[(order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded' ? 'refunded' : order.status]">{{getStatusText(order)}}</text>
 					</view>
 						<view class="order-info">
 							<view class="info-item">
@@ -103,7 +124,7 @@
 								<text class="label">订单金额：</text>
 								<view class="price-wrapper" @click.stop="togglePrice(order.task_id, $event)">
 									<text class="value price" v-if="showPriceMap[order.task_id]">¥{{order.order_amount}}</text>
-									<text class="arrow-icon" v-else>▼</text>
+									<image v-else class="arrow-icon" src="https://ccpt.qiniu.0871.cn/home/my/byj.svg" mode="aspectFit"></image>
 								</view>
 								<!-- 再来一单按钮 - 绝对定位 -->
 								<view class="reorder-btn-float" @click.stop="handleReorderFromOrder(order)">
@@ -113,6 +134,16 @@
 							</view>
 					</view>
 				</view>
+					<!-- 底部加载更多指示器 -->
+					<view class="load-more-container">
+						<view v-if="loading && orderList.length > 0" class="loading-more">
+							<view class="loading-spinner-small"></view>
+							<text class="loading-more-text">加载中...</text>
+						</view>
+						<view v-else-if="!hasMore && orderList.length > 0" class="no-more">
+							<text class="no-more-text">没有更多订单了</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -151,16 +182,17 @@
 			return {
 				navBarHeight: 0,
 				showSearchConditions: false,
-				tabs: ['新任务', '进行中', '已取消', '已完成'],
+				tabs: ['新任务', '进行中', '完成待确认', '已结束'],
 				currentTab: 0,
 				tabLineLeft: '10%',
 				tabLineTransform: 'translateX(-15px)',
 				orderList: [], // 订单列表
 				loading: false, // 加载状态
 				page: 1, // 当前页码
-				pageSize: 10, // 每页数量
+				pageSize: 5, // 每页数量
 				hasMore: true, // 是否还有更多数据
-				showPriceMap: {} // 控制每个订单金额的显示/隐藏
+				showPriceMap: {}, // 控制每个订单金额的显示/隐藏
+				searchKeyword: '' // 搜索关键字
 			}
 		},
 	onShow() {
@@ -174,6 +206,21 @@
 	onUnload() {
 		// 页面卸载时清理可能残留的临时数据
 		uni.removeStorageSync('reorderFormData')
+	},
+	// 上拉加载更多
+	onReachBottom() {
+		console.log('触发上拉加载更多')
+		if (this.hasMore && !this.loading) {
+			console.log('开始加载更多订单，当前页码:', this.page)
+			this.loadOrderList(true) // 加载更多
+		} else if (!this.hasMore) {
+			console.log('没有更多数据了')
+			uni.showToast({
+				title: '没有更多订单了',
+				icon: 'none',
+				duration: 1500
+			})
+		}
 	},
 		mounted() {
 			// 初始化标签下划线位置
@@ -251,6 +298,15 @@
 		toggleSearchConditions() {
 			this.showSearchConditions = !this.showSearchConditions
 		},
+		// 处理搜索
+		handleSearch() {
+			// 重置页码和列表
+			this.page = 1
+			this.hasMore = true
+			this.orderList = []
+			// 重新加载订单列表
+			this.loadOrderList(false)
+		},
 		// 切换金额显示/隐藏
 		togglePrice(taskId, event) {
 			event.stopPropagation()
@@ -273,15 +329,26 @@
 			},
 		// 加载订单列表
 		async loadOrderList(isLoadMore = false) {
-			if (!isLoadMore && !this.hasMore) return
+			// 如果是加载更多但没有更多数据，直接返回
+			if (isLoadMore && !this.hasMore) {
+				console.log('没有更多数据，停止加载')
+				return
+			}
+			
+			// 如果正在加载中，避免重复请求
+			if (this.loading) {
+				console.log('正在加载中，跳过本次请求')
+				return
+			}
 
 			this.loading = true // 开始加载，显示加载中状态
+			console.log('开始加载订单列表，isLoadMore:', isLoadMore, '当前页码:', this.page)
 			try {
 				const statusMap = {
 					0: 'waiting', // 新订单
-					1: ['assigned', 'finished'], // 进行中（需要查询多个状态）
-					2: 'canceled', // 已取消
-					3: 'completed' // 已完成
+					1: ['assigned'], // 进行中（需要查询多个状态）
+					2: ['finished'], // 完成待确认
+					3: ['completed', 'canceled'] // 已结束（合并已完成和已取消）
 				}
 
 				// 获取用户信息
@@ -302,60 +369,40 @@
 
 				let list = []
 				
-				// 判断是否需要查询多个状态（进行中标签）
+				// 获取状态值（可能是字符串或数组）
 				const statusValue = statusMap[this.currentTab]
-				if (Array.isArray(statusValue)) {
-					// 进行中标签：需要分别查询 assigned 和 finished，然后合并
-					console.log('查询进行中订单，需要查询多个状态:', statusValue)
-					
-					const results = await Promise.all(
-						statusValue.map(status => {
-							const params = {
-								status: status,
-								user_id: userInfo.user_id,
-								sign: sign,
-							}
-							console.log('查询状态:', status, '参数:', params)
-							return this.$request('task/list', params, 'POST')
-						})
-					)
-					
-					// 合并所有查询结果
-					results.forEach((res, index) => {
-						console.log(`状态 ${statusValue[index]} 返回结果:`, res)
-						if (res.code === 200 && res.data) {
-							list = [...list, ...res.data]
-						}
-					})
-					
-					console.log('合并后的订单列表数量:', list.length)
+				// 构建请求参数，status 直接传递（字符串或数组）
+				const params = {
+					status: statusValue,
+					user_id: userInfo.user_id,
+					sign: sign,
+					per_page: 5,
+					page: this.page
+				}
+
+				// 如果有搜索关键字，添加到参数中
+				if (this.searchKeyword && this.searchKeyword.trim()) {
+					params.search_term = this.searchKeyword.trim()
+				}
+
+				console.log('请求订单列表参数:', params)
+				console.log('当前标签:', this.tabs[this.currentTab], 'status值:', statusValue)
+
+				const res = await this.$request('task/list', params, 'POST')
+
+				console.log('订单列表返回结果:', res)
+				console.log('返回的订单数量:', res.data ? res.data.length : 0)
+				
+				if (res.code === 200) {
+					list = res.data || []
 				} else {
-					// 其他标签：直接查询单个状态
-					const params = {
-						status: statusValue,
-						user_id: userInfo.user_id,
-						sign: sign,
-					}
-
-					console.log('请求订单列表参数:', params)
-					console.log('当前标签:', this.tabs[this.currentTab], 'status值:', statusValue)
-
-					const res = await this.$request('task/list', params, 'POST')
-
-					console.log('订单列表返回结果:', res)
-					console.log('返回的订单数量:', res.data ? res.data.length : 0)
-					
-					if (res.code === 200) {
-						list = res.data || []
-					} else {
-						console.error('加载订单失败:', res.msg || '未知错误')
-						uni.showToast({
-							title: res.msg || '加载失败',
-							icon: 'none'
-						})
-						this.loading = false
-						return
-					}
+					console.error('加载订单失败:', res.msg || '未知错误')
+					uni.showToast({
+						title: res.msg || '加载失败',
+						icon: 'none'
+					})
+					this.loading = false
+					return
 				}
 
 				// 更新订单列表
@@ -365,13 +412,24 @@
 				
 				console.log('当前标签:', this.tabs[this.currentTab], '订单列表:', list)
 				if (isLoadMore) {
+					// 加载更多时，追加到现有列表
 					this.orderList = [...this.orderList, ...list]
+					console.log('追加订单后总数:', this.orderList.length)
 				} else {
+					// 首次加载或刷新时，替换列表
 					this.orderList = list
+					console.log('刷新订单列表，总数:', this.orderList.length)
 				}
-				this.hasMore = list.length === this.pageSize
+				
+				// 判断是否还有更多数据
+				// 如果返回的数据量小于每页数量，说明没有更多数据了
+				this.hasMore = list.length >= 5
+				console.log('是否还有更多数据:', this.hasMore, '本次返回数量:', list.length)
+				
+				// 如果还有更多数据，页码+1，为下次加载做准备
 				if (this.hasMore) {
 					this.page++
+					console.log('页码+1，下次将加载第', this.page, '页')
 				}
 			} catch (error) {
 				console.error('加载订单列表失败:', error)
@@ -664,6 +722,25 @@
 				}, 0)
 				return total.toFixed(2)
 			},
+		// 获取评价星级
+		getReviewRating(order) {
+			// 如果有评价数据，返回评价星级，否则返回0
+			if (order.review && order.review.rating) {
+				return parseInt(order.review.rating) || 0
+			}
+			return 0
+		},
+		// 处理评价点击
+		handleReviewClick(order) {
+			// 如果已经评价过，不做任何操作
+			if (order.review) {
+				return
+			}
+			// 未评价时，跳转到评价页面
+			uni.navigateTo({
+				url: `/pages/order/review?task_id=${order.task_id}`
+			})
+		},
 		// 跳转到订单详情页
 		goToOrderDetail(order) {
 			uni.navigateTo({
@@ -901,12 +978,16 @@
 		padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 		/* iOS >= 11.2 */
 		box-sizing: border-box;
+		overflow-x: hidden;
+		width: 100%;
 	}
 
 	.content {
 		padding: 0;
 		position: relative;
 		background-color: #f5f5f5;
+		overflow-x: hidden;
+		width: 100%;
 	}
 
 	.search-section {
@@ -1043,6 +1124,22 @@
 			font-size: 28rpx;
 			color: #333333;
 		}
+
+		.search-btn {
+			margin-left: 10rpx;
+			padding: 8rpx 24rpx;
+			background-color: #2492F2;
+			color: #ffffff;
+			border-radius: 30rpx;
+			font-size: 26rpx;
+			white-space: nowrap;
+			transition: all 0.3s;
+
+			&:active {
+				opacity: 0.8;
+				transform: scale(0.95);
+			}
+		}
 	}
 
 	.tabs {
@@ -1091,7 +1188,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 60vh;
+		// min-height: 60vh;
 	}
 
 	.loading-container {
@@ -1121,6 +1218,42 @@
 		0% { transform: rotate(0deg); }
 		100% { transform: rotate(360deg); }
 	}
+	
+	.load-more-container {
+		width: 100%;
+		padding: 30rpx 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		
+		.loading-more {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			
+			.loading-spinner-small {
+				width: 30rpx;
+				height: 30rpx;
+				border: 2rpx solid #f3f3f3;
+				border-top: 2rpx solid #2492F2;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-right: 10rpx;
+			}
+			
+			.loading-more-text {
+				font-size: 24rpx;
+				color: #999999;
+			}
+		}
+		
+		.no-more {
+			.no-more-text {
+				font-size: 24rpx;
+				color: #CCCCCC;
+			}
+		}
+	}
 
 	.empty-state {
 		display: flex;
@@ -1144,7 +1277,6 @@
 
 	.order-list {
 		padding: 0 10rpx;
-		min-height: 100vh;
 		background-color: #f5f5f5;
 		display: flex;
 		flex-direction: column;
@@ -1152,6 +1284,9 @@
 		justify-content: flex-start;
 		padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
 		padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+		width: 100%;
+		box-sizing: border-box;
+		overflow-x: hidden;
 
 		.order-item {
 			background-color: #ffffff;
@@ -1160,15 +1295,49 @@
 			margin-bottom: 20rpx;
 			box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 			transition: all 0.3s ease;
-			width: 680rpx;
-			max-width: 95vw;
+			width: 100%;
+			max-width: 680rpx;
 			box-sizing: border-box;
 			display: flex;
 			flex-direction: column;
 			align-items: stretch;
+			overflow: hidden;
 
 			&:active {
 				transform: scale(0.98);
+			}
+			
+			// 已取消和已退款订单的灰色样式
+			&.order-item-gray {
+				.order-header {
+					.order-type {
+						color: #999999 !important;
+						
+						&::before {
+							background-color: #CCCCCC !important;
+						}
+					}
+				}
+				
+				.order-info {
+					.info-item {
+						.label {
+							color: #BBBBBB !important;
+						}
+						
+						.value {
+							color: #999999 !important;
+							
+							&.price {
+								color: #999999 !important;
+							}
+							
+							&.reward {
+								color: #999999 !important;
+							}
+						}
+					}
+				}
 			}
 
 			.order-header {
@@ -1229,17 +1398,55 @@
 						background-color: rgba(153, 153, 153, 0.1);
 					}
 
-				&.completed {
-					color: #2ECC71;
-					background-color: rgba(46, 204, 113, 0.1);
+					&.completed {
+						color: #2ECC71;
+						background-color: rgba(46, 204, 113, 0.1);
+					}
+
+					&.refunded {
+						color: #999999;
+						background-color: rgba(153, 153, 153, 0.1);
+					}
 				}
 
-				&.refunded {
-					color: #E74C3C;
-					background-color: rgba(231, 76, 60, 0.1);
+				.review-status {
+					display: flex;
+					flex-direction: column;
+					align-items: flex-end;
+					gap: 4rpx;
+
+					.stars {
+						display: flex;
+						align-items: center;
+						gap: 2rpx;
+
+						.star {
+							font-size: 24rpx;
+							color: #E0E0E0;
+
+							&.star-filled {
+								color: #FFB800;
+							}
+						}
+					}
+
+					.review-text {
+						font-size: 22rpx;
+						padding: 2rpx 12rpx;
+						border-radius: 12rpx;
+
+						&.reviewed {
+							color: #2ECC71;
+							background-color: rgba(46, 204, 113, 0.1);
+						}
+
+						&.not-reviewed {
+							color: #999999;
+							background-color: rgba(153, 153, 153, 0.1);
+						}
+					}
 				}
 			}
-		}
 
 			.order-info {
 				.info-item {
@@ -1282,7 +1489,7 @@
 				
 				.price-item {
 					position: relative;
-					padding-right: 180rpx;
+					padding-right: 200rpx;
 					
 					.price-wrapper {
 						display: flex;
@@ -1290,16 +1497,15 @@
 						cursor: pointer;
 						
 						.arrow-icon {
-							font-size: 24rpx;
-							color: #2492F2;
-							font-weight: bold;
+							width: 32rpx;
+							height: 32rpx;
 						}
 					}
 					
 					.reorder-btn-float {
 						position: absolute;
-						right: 90px;
-						top: 10rpx;
+						right: 95px;
+						top: 50%;
 						transform: translateY(-50%);
 						display: flex;
 						align-items: center;

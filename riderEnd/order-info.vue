@@ -6,6 +6,45 @@
 	<!-- 导航栏占位元素 -->
 	<view class="nav-placeholder"></view>
 
+	<!-- 悬浮预估完单时间卡片 - 可拖拽 -->
+	<view
+		class="estimate-float-card"
+		v-if="showEstimateCard && orderInfo.status === 'assigned' && orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type == null"
+		:style="{
+			left: estimateCardPosition.x + 'px',
+			top: estimateCardPosition.y + 'px'
+		}"
+		@touchstart="handleEstimateTouchStart"
+		@touchmove="handleEstimateTouchMove"
+		@touchend="handleEstimateTouchEnd">
+		<view class="estimate-card-content">
+			<!-- <view class="estimate-title">填写预估完单时间</view> -->
+			<!-- <view class="estimate-warning">
+				<text>避免客户不确定完成时间，造成撤单损失！</text>
+			</view> -->
+			<view class="estimate-selector-row">
+				<picker 
+					mode="selector" 
+					:range="estimateTimeOptions" 
+					range-key="label"
+					@change="onEstimateTimeChange"
+					class="estimate-picker">
+					<view class="estimate-picker-content">
+						<text class="estimate-label">请选择</text>
+						<!-- <text class="estimate-arrow">▼</text> -->
+					</view>
+				</picker>
+			</view>
+			<view class="estimate-selector-row-right">
+				<view class="estimate-picker-content">
+					<text class="estimate-label">{{ estimateTimeDisplay }}</text>
+					<text class="estimate-arrow">▼</text>
+				</view>
+			</view>
+			<button class="estimate-submit-btn" @click="submitEstimateTime">确认提交</button>
+		</view>
+	</view>
+
 	<!-- 订单城市平均完单时效 -->
 	<view class="city-efficiency-wrapper" v-if="orderInfo.estimated_completion_hours">
 		<view class="city-efficiency-card">
@@ -18,6 +57,112 @@
 				<text class="efficiency-value">{{ displayEstimatedHours }}h</text>
 			</view>
 		</view>
+	</view>
+
+	<!-- 用户评价卡片 - 仅在已确认完成状态下显示，且在最上方 -->
+	<view class="review-card" v-if="orderInfo.status === 'completed' && orderInfo.review">
+		<view class="card-title">
+			<text>用户评价</text>
+		</view>
+		<view class="review-card-content">
+			<view class="review-rating" v-if="orderInfo.review.rating">
+				<text class="rating-label">评分：</text>
+				<view class="stars">
+					<text
+						v-for="star in 5"
+						:key="star"
+						class="star"
+						:class="{ active: star <= orderInfo.review.rating }">
+						★
+					</text>
+				</view>
+				<text class="rating-text">{{ orderInfo.review.rating }}分</text>
+			</view>
+			<view class="review-tags" v-if="orderInfo.review.tags && orderInfo.review.tags.length > 0">
+				<text class="tags-label">评价标签：</text>
+				<view class="tags-list">
+					<text
+						v-for="(tag, index) in orderInfo.review.tags"
+						:key="index"
+						class="tag-item">
+						{{ tag }}
+					</text>
+				</view>
+			</view>
+			<view class="review-comment" v-if="orderInfo.review.comment">
+				<text class="comment-label">评价内容：</text>
+				<text class="comment-text">{{ orderInfo.review.comment }}</text>
+			</view>
+			<view class="review-time" v-if="orderInfo.review.created_at">
+				<text class="time-label">评价时间：</text>
+				<text class="time-text">{{ formatDateTime(orderInfo.review.created_at) }}</text>
+			</view>
+		</view>
+	</view>
+
+	<!-- 用户确认卡片 - 仅在已确认完成状态下显示，在用户评价下方 -->
+	<view class="confirm-card" v-if="orderInfo.status === 'completed'">
+		<view class="card-title">
+			<text>用户确认</text>
+		</view>
+		<view class="confirm-content">
+			<view class="confirm-info">
+				<view class="remark" v-if="orderInfo.completed_at">
+					<text class="label">确认时间：</text>
+					<text class="content">{{ formatDateTime(orderInfo.completed_at) }}</text>
+				</view>
+			</view>
+		</view>
+	</view>
+
+	<!-- 完成反馈卡片 - 仅在已确认完成状态下显示，在用户确认下方 -->
+	<view class="feedback-card" v-if="orderInfo.status === 'completed'">
+		<view class="card-title">
+			<text>完成反馈</text>
+		</view>
+		<view class="detail-list-wrapper">
+			<view class="feedback-content" :style="{ maxHeight: feedbackExpanded ? 'none' : '300rpx' }">
+			<view class="feedback-info">
+				<view class="remark" v-if="orderInfo.task_assignment.finished_at">
+					<text class="label">完成时间：</text>
+					<text class="content">{{ orderInfo.task_assignment.finished_at }}</text>
+			</view>
+				<view class="remark" v-if="orderInfo.task_assignment.after_detail">
+					<text class="label">完成反馈：</text>
+					<text class="content">{{ orderInfo.task_assignment.after_detail }}</text>
+				</view>
+				<view class="images-section" v-if="orderInfo.task_assignment.after_pic_url && orderInfo.task_assignment.after_pic_url.length > 0">
+					<text class="section-title">反馈图片：</text>
+					<view class="images">
+						<view
+							v-for="(url, index) in orderInfo.task_assignment.after_pic_url"
+							:key="index"
+							class="feedback-image-item">
+							<image
+								:src="url"
+								mode="aspectFill"
+								@click="previewFeedbackImage(index)"
+								class="feedback-image">
+							</image>
+							<text class="image-label">{{ getFeedbackImageLabel(index) }}</text>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+		<!-- 模糊效果层 -->
+		<view class="blur-mask" v-if="!feedbackExpanded"></view>
+	</view>
+	
+	<!-- 展开/收起按钮 -->
+	<view class="expand-btn" @click="toggleFeedbackExpand">
+		<view class="expand-btn-content">
+			<text class="expand-text">{{ feedbackExpanded ? '收起' : '展开' }}</text>
+			<view class="expand-icon" :class="{ 'expanded': feedbackExpanded }">
+				<uni-icons type="bottom" size="16" color="#2492F2"></uni-icons>
+			</view>
+		</view>
+	</view>
 	</view>
 
 	<!-- 地图和门店信息卡片 -->
@@ -57,7 +202,7 @@
 	<!-- 地图下方警告提示 -->
 	<view class="map-warning-container">
 		<view class="arrow-up"></view>
-		<text class="time-warning-text">通过三方导航或团购平台核对地址，再出发！</text>
+		<text class="time-warning-text">通过其他导航或团购平台核对地址，再出发！</text>
 	</view>
 	
 	<!-- 门头照 -->
@@ -72,44 +217,63 @@
 		</view>
 	</view>
 	
-	<!-- 服务门店 -->
-	<view class="info-row">
-		<view class="dot-icon"></view>
-		<text class="info-label">服务门店</text>
+<!-- 服务门店 -->
+<view class="info-row">
+	<view class="dot-icon"></view>
+	<text class="info-label">服务门店</text>
+	<view class="info-value-wrapper">
 		<text class="info-value">{{ orderInfo.task_detail && orderInfo.task_detail.store_name ? orderInfo.task_detail.store_name : '未知门店' }}</text>
-	</view>
-		
-	<!-- 门店POI -->
-	<view class="info-row poi-row">
-		<view class="poi-warning-container" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
-			<text class="poi-warning-text">必核对机型，避免补错！</text>
+		<view class="copy-btn" @click.stop="copyText(orderInfo.task_detail && orderInfo.task_detail.store_name ? orderInfo.task_detail.store_name : '', '服务门店')">
+			<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 		</view>
+	</view>
+</view>
+
+<!-- 地址详情 -->
+<view class="info-row">
+	<view class="dot-icon" style="opacity: 0;"></view>
+	<text class="info-label">地址详情</text>
+	<view class="info-value-wrapper">
+		<text class="info-value">{{ orderInfo.shop_address ? orderInfo.shop_address : '无' }}</text>
+		<view class="copy-btn" @click.stop="copyText(orderInfo.shop_address ? orderInfo.shop_address : '', '地址详情')">
+			<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+		</view>
+	</view>
+</view>
+	
+<!-- 门店POI -->
+	<view class="info-row poi-row">
+		<!-- <view class="poi-warning-container" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi">
+			<text class="poi-warning-text">必核对机型，避免补错！</text>
+		</view> -->
 		<view class="dot-icon" style="opacity: 0;"></view>
 		<text class="info-label">门店POI</text>
+		<view class="info-value-wrapper">
 			<text class="info-value">{{ orderInfo.task_detail && orderInfo.task_detail.shop_poi ? orderInfo.task_detail.shop_poi : '无' }}</text>
-		<view class="copy-btn-small" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi" @tap.stop="copyDeviceCode(orderInfo.task_detail.shop_poi)">
-			<image class="copy-icon" src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit"></image>
-		</view>
-		</view>
-		
-	<!-- 设备编码 -->
-	<view class="info-row device-code-row">
-		<!-- 红色警告提示 -->
-		<view class="time-warning-container">
-			<text class="time-warning-text">务必核对轨迹编码，避免补错！</text>
-		</view>
-		<view class="dot-icon" style="opacity: 0;"></view>
-		<text class="info-label">设备编码</text>
-			<view class="device-code-value">
-				<text v-for="(code, index) in deviceCodes" :key="index" class="code-text">
-					{{ code }}<text v-if="index < deviceCodes.length - 1">、</text>
-				</text>
-				<text v-if="deviceCodes.length === 0">无</text>
+			<view class="copy-btn" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi" @tap.stop="copyDeviceCode(orderInfo.task_detail.shop_poi)">
+				<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 			</view>
-		<view class="copy-btn-small" v-if="deviceCodes.length > 0" @tap.stop="copyDeviceCode(deviceCodes[0])">
-			<image class="copy-icon" src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit"></image>
 		</view>
+	</view>
+		
+<!-- 设备编码 -->
+<view class="info-row device-code-row">
+	<!-- 红色警告提示 -->
+	<view class="time-warning-container">
+		<text class="time-warning-text">务必核对柜机编码，避免补错！</text>
+	</view>
+	<view class="dot-icon" style="opacity: 0;"></view>
+	<text class="info-label">设备编码</text>
+		<view class="device-code-value">
+			<view v-for="(code, index) in deviceCodes" :key="index" class="device-code-item">
+				<text class="code-text">{{ code }}</text>
+				<view class="copy-btn" @tap.stop="copyDeviceCode(code)">
+					<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+				</view>
+			</view>
+			<text v-if="deviceCodes.length === 0">无</text>
 		</view>
+	</view>
 	</view>
 
 	<!-- 订单信息卡片 -->
@@ -120,10 +284,12 @@
 		<view class="info-row">
 			<view class="dot-icon"></view>
 			<text class="info-label">订单编号</text>
-			<text class="info-value">{{ orderInfo.task_no }}</text>
-		<view class="copy-btn-small" @tap.stop="copyOrderNumber">
-			<image class="copy-icon" src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit"></image>
-		</view>
+			<view class="info-value-wrapper">
+				<text class="info-value">{{ orderInfo.task_no }}</text>
+				<view class="copy-btn" @tap.stop="copyOrderNumber">
+					<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+				</view>
+			</view>
 		</view>
 		
 	<!-- 主项服务 -->
@@ -134,49 +300,70 @@
 			<text class="info-value">{{ displayServiceName }} <text style="color: #1890ff;">x{{ orderInfo.task_detail && orderInfo.task_detail.item_number ? orderInfo.task_detail.item_number : 1 }}</text></text>
 		</view>
 		
-	<!-- 附加服务 -->
-	<view class="info-row" v-if="hasExtraServices">
-		<view class="dot-icon" style="opacity: 0;"></view>
-		<text class="info-label">附加服务</text>
-			<view :class="['service-tag', getBrandClass()]">{{ displayBrand }}</view>
-			<view class="extra-services-text">
-				<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_1">
-					<text class="service-name">{{ orderInfo.task_detail.extra_task_1 }}</text>
-					<text class="service-count"> x{{ orderInfo.task_detail.extra_task_1_item_number }}</text>
-					<text v-if="orderInfo.task_detail.extra_task_2 || orderInfo.task_detail.extra_task_3 || orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
-				</template>
-				<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_2">
-					<text class="service-name">{{ orderInfo.task_detail.extra_task_2 }}</text>
-					<text class="service-count"> x{{ orderInfo.task_detail.extra_task_2_item_number }}</text>
-					<text v-if="orderInfo.task_detail.extra_task_3 || orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
-				</template>
-				<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_3">
-					<text class="service-name">{{ orderInfo.task_detail.extra_task_3 }}</text>
-					<text class="service-count"> x{{ orderInfo.task_detail.extra_task_3_item_number }}</text>
-					<text v-if="orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
-				</template>
-				<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_4">
-					<text class="service-name">{{ orderInfo.task_detail.extra_task_4 }}</text>
-					<text class="service-count"> x{{ orderInfo.task_detail.extra_task_4_item_number }}</text>
-					<text v-if="orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
-				</template>
-				<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_5">
-					<text class="service-name">{{ orderInfo.task_detail.extra_task_5 }}</text>
-					<text class="service-count"> x{{ orderInfo.task_detail.extra_task_5_item_number }}</text>
-					<text v-if="orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
-				</template>
-				<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_6">
-					<text class="service-name">{{ orderInfo.task_detail.extra_task_6 }}</text>
-					<text class="service-count"> x{{ orderInfo.task_detail.extra_task_6_item_number }}</text>
-				</template>
-			</view>
+<!-- 附加服务 -->
+<view class="info-row">
+	<view class="dot-icon" style="opacity: 0;"></view>
+	<text class="info-label">附加服务</text>
+		<view :class="['service-tag', getBrandClass()]" v-if="hasExtraServices">{{ displayBrand }}</view>
+		<view class="extra-services-text" v-if="hasExtraServices">
+			<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_1">
+				<text class="service-name">{{ orderInfo.task_detail.extra_task_1 }}</text>
+				<text class="service-count"> x{{ orderInfo.task_detail.extra_task_1_item_number }}</text>
+				<text v-if="orderInfo.task_detail.extra_task_2 || orderInfo.task_detail.extra_task_3 || orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+			</template>
+			<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_2">
+				<text class="service-name">{{ orderInfo.task_detail.extra_task_2 }}</text>
+				<text class="service-count"> x{{ orderInfo.task_detail.extra_task_2_item_number }}</text>
+				<text v-if="orderInfo.task_detail.extra_task_3 || orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+			</template>
+			<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_3">
+				<text class="service-name">{{ orderInfo.task_detail.extra_task_3 }}</text>
+				<text class="service-count"> x{{ orderInfo.task_detail.extra_task_3_item_number }}</text>
+				<text v-if="orderInfo.task_detail.extra_task_4 || orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+			</template>
+			<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_4">
+				<text class="service-name">{{ orderInfo.task_detail.extra_task_4 }}</text>
+				<text class="service-count"> x{{ orderInfo.task_detail.extra_task_4_item_number }}</text>
+				<text v-if="orderInfo.task_detail.extra_task_5 || orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+			</template>
+			<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_5">
+				<text class="service-name">{{ orderInfo.task_detail.extra_task_5 }}</text>
+				<text class="service-count"> x{{ orderInfo.task_detail.extra_task_5_item_number }}</text>
+				<text v-if="orderInfo.task_detail.extra_task_6" class="service-separator">、</text>
+			</template>
+			<template v-if="orderInfo.task_detail && orderInfo.task_detail.extra_task_6">
+				<text class="service-name">{{ orderInfo.task_detail.extra_task_6 }}</text>
+				<text class="service-count"> x{{ orderInfo.task_detail.extra_task_6_item_number }}</text>
+			</template>
 		</view>
-		
+	<text class="info-value" v-else>无</text>
+</view>
+
+<!-- 打赏金额 -->
+<view class="info-row" v-if="orderInfo.rewardInfo">
+	<view class="dot-icon" style="opacity: 0;"></view>
+	<text class="info-label">打赏金额</text>
+	<text class="info-value" style="color: #FF6B00; font-weight: 500;">¥{{ getRewardAmount(orderInfo) }}</text>
+</view>
+
+<!-- 时效费用 -->
+<view class="info-row">
+	<view class="dot-icon" style="opacity: 0;"></view>
+	<text class="info-label">时效费用</text>
+	<text class="info-value" style="color: #FF6B00; font-weight: 500;">{{ orderInfo.time_fee ? '¥' + orderInfo.time_fee : '¥0.00' }}</text>
+</view>
+
 	<!-- 设备位置 -->
 	<view class="info-row" v-if="orderInfo.task_detail && orderInfo.task_detail.device_outside !== undefined">
 		<view class="dot-icon" style="opacity: 0;"></view>
 		<text class="info-label">设备位置</text>
 			<text class="info-value">{{ orderInfo.task_detail.device_outside ? '外摆' : '非外摆' }}</text>
+		</view>
+		<!-- 预估完单 -->
+		<view class="info-row" v-if="orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type !== undefined">
+			<view class="dot-icon" style="opacity: 0;"></view>
+			<text class="info-label">预估完单</text>
+			<text class="info-value">{{ orderInfo.task_assignment.predict_complete_type || '无' }}</text>
 		</view>
 	</view>
 
@@ -196,7 +383,7 @@
 	<view class="info-row door-time-row" v-if="orderInfo.recommended_service_time_start && orderInfo.recommended_service_time_end">
 		<!-- 红色警告提示 -->
 		<view class="time-warning-container">
-			<text class="time-warning-text">请过三方导航或团购平台门店信息核实时间，以免跑空！</text>
+			<text class="time-warning-text">请过其他导航或团购平台门店信息核实时间，以免跑空！</text>
 		</view>
 		<view class="dot-icon" style="opacity: 0;"></view>
 		<text class="info-label">上门时段</text>
@@ -334,7 +521,7 @@
 			<text class="value">{{ getRecommendedTimeDisplay() }}</text>
 		</view>
 		
-		<view class="time-note2">请小哥自行通过三方导航或者团购平台门店电话确认时间</view>
+		<view class="time-note2">请小哥自行通过其他导航或者团购平台门店电话确认时间</view>
 	<!-- 订单备注 -->
 	<view class="divider"></view>
 	<view class="info-item">
@@ -367,13 +554,12 @@
 				</view> -->
 		</view>
 
-	<!-- 完成反馈卡片 -->
-	<view class="feedback-card" v-if="orderInfo.status === 'finished' || orderInfo.status === 'completed'">
+	<!-- 完成反馈卡片 - 仅在待用户确认状态（finished）显示 -->
+	<view class="feedback-card" v-if="orderInfo.status === 'finished'">
 			<view class="card-title">
 				<text>完成反馈</text>
 				<!-- 再次修改按钮，只在订单状态为待用户确认时显示 -->
 				<button
-					v-if="orderInfo.status === 'finished'"
 					class="modify-btn"
 					@click="modifyFeedback">
 					再次修改
@@ -428,59 +614,6 @@
 			</view>
 		</view>
 	</view>
-
-	<!-- 用户确认卡片 -->
-		<view class="confirm-card" v-if="orderInfo.status === 'completed'">
-			<view class="card-title">
-				<text>用户确认</text>
-			</view>
-			<view class="confirm-content">
-				<view class="confirm-info">
-					<view class="remark" v-if="orderInfo.completed_at">
-						<text class="label">确认时间：</text>
-						<text class="content">{{ formatDateTime(orderInfo.completed_at) }}</text>
-					</view>
-					<!-- 用户评价信息 -->
-					<view class="review-section" v-if="orderInfo.review">
-						<text class="section-title">用户评价：</text>
-						<view class="review-content">
-							<view class="review-rating" v-if="orderInfo.review.rating">
-								<text class="rating-label">评分：</text>
-								<view class="stars">
-									<text
-										v-for="star in 5"
-										:key="star"
-										class="star"
-										:class="{ active: star <= orderInfo.review.rating }">
-										★
-									</text>
-								</view>
-								<text class="rating-text">{{ orderInfo.review.rating }}分</text>
-							</view>
-							<view class="review-tags" v-if="orderInfo.review.tags && orderInfo.review.tags.length > 0">
-								<text class="tags-label">评价标签：</text>
-								<view class="tags-list">
-									<text
-										v-for="(tag, index) in orderInfo.review.tags"
-										:key="index"
-										class="tag-item">
-										{{ tag }}
-									</text>
-								</view>
-							</view>
-							<view class="review-comment" v-if="orderInfo.review.comment">
-								<text class="comment-label">评价内容：</text>
-								<text class="comment-text">{{ orderInfo.review.comment }}</text>
-							</view>
-							<view class="review-time" v-if="orderInfo.review.created_at">
-								<text class="time-label">评价时间：</text>
-								<text class="time-text">{{ formatDateTime(orderInfo.review.created_at) }}</text>
-							</view>
-						</view>
-					</view>
-				</view>
-			</view>
-		</view>
 
 		<!-- 底部按钮 -->
 		<view class="bottom-bar">
@@ -701,7 +834,10 @@
 	</view>
 
 	<!-- 悬浮聊天图标 -->
-	<floating-chat-icon></floating-chat-icon>
+	<floating-chat-icon 
+		:orderId="taskId" 
+		:orderTitle="`${orderInfo.city_name || ''}${orderInfo.district_name || ''} ${taskId}`">
+	</floating-chat-icon>
 </view>
 </template>
 
@@ -777,7 +913,25 @@
 				'云南贵州广西湖北西藏': 'weiazzy',
 				'剩余区域': 'agan-24h'
 			},
-			mapMarkers: [] // 地图标记点
+			mapMarkers: [], // 地图标记点
+			// 预估完单时间相关
+			showEstimatePopup: false, // 控制预估完单时间弹窗显示
+			estimateTimeValue: '', // 选中的预估时间值
+			estimateTimeDisplay: '请选择', // 显示的预估时间文本
+			estimateTimeOptions: [
+				{ value: 'within3h', label: '3小时内' },
+				{ value: 'today', label: '今天内' },
+				{ value: 'tomorrowAM', label: '明天上午' },
+				{ value: 'tomorrowPM', label: '明天下午' },
+				{ value: 'tomorrow', label: '明天内' },
+				{ value: 'customDate', label: '后天内' },
+				{ value: 'uncertain', label: '不确定' }
+			],
+			showEstimateCard: true, // 控制预估完单卡片的显示
+			// 拖拽相关
+			estimateCardPosition: { x: 180, y: 390 }, // 卡片位置（单位：px）
+			estimateDragStart: { x: 0, y: 0 }, // 拖拽起始位置
+			estimateIsDragging: false // 是否正在拖拽
 		}
 	},
 	computed: {
@@ -918,6 +1072,93 @@
 		// 切换完成反馈展示状态
 		toggleFeedbackDisplay() {
 			this.showFeedbackDisplay = !this.showFeedbackDisplay;
+		},
+		
+		// 处理预估完单时间选择
+		onEstimateTimeChange(e) {
+			const index = e.detail.value;
+			const selected = this.estimateTimeOptions[index];
+			this.estimateTimeValue = selected.value;
+			this.estimateTimeDisplay = selected.label;
+		},
+		
+		// 提交预估完单时间
+		async submitEstimateTime() {
+			if (!this.estimateTimeValue) {
+				uni.showToast({
+					title: '请选择预估完单时间',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 这里添加提交逻辑，比如调用API保存预估时间
+			const riderUserInfo = uni.getStorageSync('riderUserInfo');
+
+			// 构建请求参数
+			const params = {
+				task_id: this.taskId,
+				user_id: riderUserInfo.id,
+				predict_complete_type: this.estimateTimeDisplay,
+				sign: 'chongchong'
+			};
+
+			console.log('修改订单参数:', params);
+
+			// 调用修改接口
+			const res = await this.$request('task/update/deadline', params, 'POST');
+			
+			if (res.code === 200) {
+				uni.showToast({
+					title: '提交成功',
+					icon: 'success'
+				});
+				// 提交成功后隐藏卡片
+				this.showEstimateCard = false;
+				// 重新查询订单信息
+				this.getTaskInfo();
+			}
+
+		},
+		
+		// 处理预估卡片拖拽开始
+		handleEstimateTouchStart(e) {
+			this.estimateIsDragging = true;
+			const touch = e.touches[0];
+			this.estimateDragStart = {
+				x: touch.clientX - this.estimateCardPosition.x,
+				y: touch.clientY - this.estimateCardPosition.y
+			};
+		},
+		
+		// 处理预估卡片拖拽移动
+		handleEstimateTouchMove(e) {
+			if (!this.estimateIsDragging) return;
+			
+			const touch = e.touches[0];
+			let newX = touch.clientX - this.estimateDragStart.x;
+			let newY = touch.clientY - this.estimateDragStart.y;
+			
+			// 获取屏幕尺寸和卡片尺寸
+			const systemInfo = uni.getSystemInfoSync();
+			const screenWidth = systemInfo.windowWidth;
+			const screenHeight = systemInfo.windowHeight;
+			const cardWidth = 170; // 340rpx 转换为 px（约170px）
+			const cardHeight = 240; // 估算的卡片高度
+			
+			// 限制拖拽范围，不超出屏幕
+			newX = Math.max(0, Math.min(newX, screenWidth - cardWidth));
+			newY = Math.max(0, Math.min(newY, screenHeight - cardHeight));
+			
+			this.estimateCardPosition = {
+				x: newX,
+				y: newY
+			};
+		},
+		
+		// 处理预估卡片拖拽结束
+		handleEstimateTouchEnd() {
+			this.estimateIsDragging = false;
 		},
 		// 计算倒计时
 		calculateCountdown() {
@@ -1580,7 +1821,7 @@
 			const latitude = Number(this.orderInfo.latitude || detail.latitude);
 			const longitude = Number(this.orderInfo.longitude || detail.longitude);
 			const name = detail.store_name || '门店';
-			const address = this.orderInfo.shop_address || this.orderInfo.address || '';
+			const address = this.orderInfo.shop_address + this.orderInfo.address;
 			if (!latitude || !longitude) {
 				uni.showToast({ title: '无有效门店定位', icon: 'none' });
 				return;
@@ -1923,7 +2164,7 @@
 		copyFullAddress() {
 			const fullAddress = `${this.orderInfo.shop_address || ''}${this.orderInfo.address || ''}`;
 			console.log('复制完整地址:', fullAddress);
-			
+
 			if (!fullAddress || fullAddress.trim() === '') {
 				uni.showToast({
 					title: '地址为空',
@@ -1931,7 +2172,7 @@
 				});
 				return;
 			}
-			
+
 			uni.setClipboardData({
 				data: fullAddress,
 				success: () => {
@@ -1945,6 +2186,36 @@
 					uni.showToast({
 						title: '复制失败',
 						icon: 'none'
+					});
+				}
+			});
+		},
+
+		// 复制文本到剪贴板
+		copyText(text, type) {
+			if (!text || text === '未知门店' || text === '无') {
+				uni.showToast({
+					title: `${type}为空`,
+					icon: 'none',
+					duration: 1500
+				});
+				return;
+			}
+
+			uni.setClipboardData({
+				data: text,
+				success: () => {
+					uni.showToast({
+						title: `${type}已复制`,
+						icon: 'success',
+						duration: 1500
+					});
+				},
+				fail: () => {
+					uni.showToast({
+						title: '复制失败',
+						icon: 'none',
+						duration: 1500
 					});
 				}
 			});
@@ -1972,6 +2243,146 @@
 		height: 180rpx;
 		width: 100%;
 		background-color: #2492F2;
+	}
+
+	// 预估完单时间悬浮卡片
+	.estimate-float-card {
+		position: fixed;
+		z-index: 999;
+		width: 400rpx;
+		height: 106px;
+		cursor: move;
+		touch-action: none;
+		transition: box-shadow 0.2s ease;
+		
+		.estimate-card-content {
+			position: relative;
+			width: 100%;
+			height: 100%;
+			box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.1);
+			overflow: visible;
+
+			// 使用伪元素作为背景图，解决安卓兼容性问题
+			&::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background-image: url('https://ccpt.qiniu.0871.cn/riderend/ygwd.svg');
+				background-size: 100% 100%;
+				background-position: center;
+				background-repeat: no-repeat;
+				z-index: -1;
+			}
+			
+			.estimate-title {
+				font-size: 32rpx;
+				font-weight: bold;
+				color: #FFFFFF;
+				width: 100px;
+				// margin-bottom: 16rpx;
+				text-align: left;
+				text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+			}
+			
+			.estimate-warning {
+				background-color: rgba(255, 255, 255, 0.95);
+				border-radius: 8rpx;
+				padding: 12rpx 16rpx;
+				margin-bottom: 20rpx;
+				
+				text {
+					font-size: 24rpx;
+					color: #FF4D4F;
+					line-height: 1.5;
+					display: block;
+				}
+			}
+			
+			.estimate-selector-row {
+				margin-bottom: 20rpx;
+				padding-top: 47px;
+				width: 100px;
+				padding-left: 26px;
+				
+				.estimate-picker {
+					width: 100%;
+					
+					.estimate-picker-content {
+						// background-color: #FFFFFF;
+						border-radius: 8rpx;
+						// padding: 20rpx 24rpx;
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						
+						.estimate-label {
+							font-size: 24rpx;
+							color: #333333;
+							flex: 1;
+						}
+						
+						.estimate-arrow {
+							font-size: 24rpx;
+							color: #2492F2;
+							margin-left: 16rpx;
+						}
+					}
+				}
+			}
+			
+			.estimate-selector-row-right{
+				position: absolute;
+				top: 48px;
+				right: 12px;
+					
+				.estimate-picker-content {
+					// background-color: #FFFFFF;
+					border-radius: 8rpx;
+					// padding: 20rpx 24rpx;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					
+					.estimate-label {
+						font-size: 24rpx;
+						color: rgba(36, 146, 242, 1);
+						flex: 1;
+					}
+					
+					.estimate-arrow {
+						font-size: 24rpx;
+						color: rgba(36, 146, 242, 1);
+						margin-left: 6rpx;
+					}
+				}
+				
+				.estimate-picker {
+					width: 100%;
+				}
+			}
+			
+			.estimate-submit-btn {
+				margin-top: 10px;
+				width: 100%;
+				background: linear-gradient(135deg, #2492F2 0%, #1E7FD8 100%);
+				color: #FFFFFF;
+				font-size: 23rpx;
+				font-weight: bold;
+				border-radius: 40rpx;
+				// padding: 16rpx 0;
+				width: 96px;
+				border: none;
+				box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.3);
+				
+				&:active {
+					opacity: 0.9;
+					transform: scale(0.98);
+				}
+			}
+		}
 	}
 
 	// 城市平均完单时效卡片容器
@@ -2213,8 +2624,8 @@
 			margin: 0 -6rpx;
 			
 			.shop-image {
-				width: 70rpx;
-				height: 70rpx;
+				width: 120rpx;
+				height: 120rpx;
 				margin: 6rpx;
 				border-radius: 6rpx;
 			}
@@ -2230,30 +2641,69 @@
 			border-radius: 50%;
 		}
 		
-		.info-label {
-			font-size: 28rpx;
-			color: #333;
-			font-weight: 500;
-			min-width: 140rpx;
-			flex-shrink: 0;
+	.info-label {
+		font-size: 28rpx;
+		color: #666;
+		font-weight: 500;
+		min-width: 140rpx;
+		flex-shrink: 0;
+	}
+
+	// 信息值容器（用于包裹值和复制按钮）
+	.info-value-wrapper {
+		display: flex;
+		align-items: center;
+		flex: 1;
+	}
+
+	.info-value {
+		font-size: 28rpx;
+		color: #333;
+		word-wrap: break-word;
+		word-break: break-all;
+		flex: 0 1 auto;
+		}
+
+	// 复制按钮样式
+	.copy-btn {
+		font-size: 22rpx;
+		padding: 0rpx 4rpx;
+		background-color: #f5f5f5;
+		color: #666;
+		border: 1rpx solid #ddd;
+		border-radius: 20rpx;
+		margin-left: 8rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		transition: all 0.2s ease;
+
+		&:active {
+			background-color: #e8e8e8;
+			transform: scale(0.95);
+		}
+	}
+
+	.device-code-value {
+		font-size: 28rpx;
+		color: #666;
+		display: flex;
+		flex-direction: column;
+		gap: 16rpx;
+		
+		.device-code-item {
+			display: flex;
+			align-items: center;
+			gap: 16rpx;
 		}
 		
-		.info-value {
-			font-size: 28rpx;
-			color: #666;
+		.code-text {
 			word-wrap: break-word;
 			word-break: break-all;
+			flex: 1;
 		}
-		
-		.device-code-value {
-			font-size: 28rpx;
-			color: #666;
-			
-			.code-text {
-				word-wrap: break-word;
-				word-break: break-all;
-			}
-		}
+	}
 		
 		.service-tag {
 			font-size: 20rpx;
@@ -2315,26 +2765,26 @@
 				margin-right: 4rpx;
 			}
 		}
-		
-		.copy-btn-small {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 32rpx;
-			height: 32rpx;
-			margin-left: 8rpx;
-			flex-shrink: 0;
-			
-			&:active {
-				opacity: 0.6;
-			}
-			
-			.copy-icon {
-				width: 32rpx;
-				height: 32rpx;
-			}
-		}
-		
+
+		// .copy-btn-small {
+		// 	display: flex;
+		// 	align-items: center;
+		// 	justify-content: center;
+		// 	width: 32rpx;
+		// 	height: 32rpx;
+		// 	margin-left: 8rpx;
+		// 	flex-shrink: 0;
+		//
+		// 	&:active {
+		// 		opacity: 0.6;
+		// 	}
+		//
+		// 	.copy-icon {
+		// 		width: 32rpx;
+		// 		height: 32rpx;
+		// 	}
+		// }
+
 		.deadline-value {
 			font-size: 26rpx;
 			color: #999;
@@ -3701,7 +4151,7 @@
 		}
 	}
 
-	.feedback-card, .confirm-card {
+	.feedback-card, .confirm-card, .review-card {
 		background-color: #fff;
 		margin: 20rpx;
 		border-radius: 12rpx;
@@ -3752,7 +4202,7 @@
 			transition: max-height 0.3s ease;
 		}
 		
-		.feedback-content, .confirm-content {
+		.feedback-content, .confirm-content, .review-card-content {
 			.feedback-info, .confirm-info {
 				.remark {
 					font-size: 26rpx;
@@ -3807,6 +4257,94 @@
 							text-align: center;
 						}
 					}
+				}
+			}
+
+			// 用户评价样式
+			.review-rating {
+				display: flex;
+				align-items: center;
+				margin-bottom: 16rpx;
+
+				.rating-label {
+					font-size: 28rpx;
+					color: #666;
+					margin-right: 12rpx;
+				}
+
+				.stars {
+					display: flex;
+					margin-right: 12rpx;
+
+					.star {
+						font-size: 32rpx;
+						color: #ddd;
+						margin-right: 4rpx;
+
+						&.active {
+							color: #FFB800;
+						}
+					}
+				}
+
+				.rating-text {
+					font-size: 28rpx;
+					color: #666;
+				}
+			}
+
+			.review-tags {
+				margin-bottom: 16rpx;
+
+				.tags-label {
+					font-size: 28rpx;
+					color: #666;
+					margin-bottom: 8rpx;
+					display: block;
+				}
+
+				.tags-list {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 8rpx;
+
+					.tag-item {
+						background-color: #E8F4FF;
+						color: #2492F2;
+						padding: 4rpx 12rpx;
+						border-radius: 4rpx;
+						font-size: 24rpx;
+					}
+				}
+			}
+
+			.review-comment {
+				margin-bottom: 16rpx;
+
+				.comment-label {
+					font-size: 28rpx;
+					color: #666;
+					margin-bottom: 8rpx;
+					display: block;
+				}
+
+				.comment-text {
+					font-size: 26rpx;
+					color: #999;
+					line-height: 1.6;
+				}
+			}
+
+			.review-time {
+				.time-label {
+					font-size: 26rpx;
+					color: #999;
+				}
+
+				.time-text {
+					font-size: 26rpx;
+					color: #999;
+					margin-left: 8rpx;
 				}
 			}
 		}

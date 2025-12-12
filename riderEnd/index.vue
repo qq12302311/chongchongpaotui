@@ -49,34 +49,35 @@
     <!-- 筛选选项卡 -->
     <view class="filter-tabs">
       <view class="tab-item" :class="{ active: activeTab === 'comprehensive' }" @click="setActiveTab('comprehensive')">
-        <text>综合排序</text>
+        <text>接单大厅</text>
         <view class="active-line" v-if="activeTab === 'comprehensive'"></view>
       </view>
-      <view class="tab-item" :class="{ active: activeTab === 'recent' }" @click="setActiveTab('recent')">
-        <text>最近</text>
-        <view class="active-line" v-if="activeTab === 'recent'"></view>
+      <view class="tab-item" :class="{ active: activeTab === 'assigned' }" @click="setActiveTab('assigned')">
+        <text>进行中</text>
+        <view class="active-line" v-if="activeTab === 'assigned'"></view>
       </view>
-      <view class="tab-item" :class="{ active: activeTab === 'price' }" @click="setActiveTab('price')">
-        <text>价格</text>
-        <view class="active-line" v-if="activeTab === 'price'"></view>
+      <view class="tab-item" :class="{ active: activeTab === 'finished' }" @click="setActiveTab('finished')">
+        <text>完成待确认</text>
+        <view class="active-line" v-if="activeTab === 'finished'"></view>
       </view>
-      <view class="tab-item" :class="{ active: activeTab === 'area' }" @click="setActiveTab('area')">
-        <text>地区</text>
-        <image src="https://ccpt.qiniu.0871.cn/rider/xiangxia.png" mode="aspectFit" class="arrow-icon"></image>
-        <view class="active-line" v-if="activeTab === 'area'"></view>
+      <view class="tab-item" :class="{ active: activeTab === 'completed' }" @click="setActiveTab('completed')">
+        <text>已完成</text>
+        <view class="active-line" v-if="activeTab === 'completed'"></view>
       </view>
     </view>
 
     <!-- 订单列表 -->
     <view class="order-list">
-      <!-- 推广条 -->
-      <view class="promotion-bar">
+      <!-- 推广条 - 仅在接单大厅显示 -->
+      <view class="promotion-bar" v-if="activeTab === 'comprehensive'">
         <image src="https://ccpt.qiniu.0871.cn/riderEnd/index/tuiguangtiao.svg" mode="widthFix" class="promotion-image"></image>
       </view>
-      
+
       <!-- 订单列表 -->
       <view>
-        <view class="order-item pos-rel" :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }" v-for="(order, index) in orderList" :key="index" @click="goToOrderDetail(order)">
+        <!-- 接单大厅的订单样式 -->
+        <template v-if="activeTab === 'comprehensive'">
+        <view class="order-item pos-rel" :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }" v-for="(order, index) in orderList" :key="`hall-${index}`" @click="handleOrderClick(order)">
           <!-- 完结订单盖章图片 - 只对recent_tasks显示 -->
           <image
             v-if="order.isCompleted && order.isRecentTask"
@@ -158,9 +159,9 @@
                 <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
               </view>
             </view>
-            <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons" @click.stop="goToOrderDetail(order)">
+            <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons" @click.stop="handleOrderClick(order)">
 				<image class="button-class" src="https://ccpt.qiniu.0871.cn/zhuandanjiedan.svg"></image>
-              <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="goToOrderDetail(order)">去接单</button>
+              <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="handleOrderClick(order)">去接单</button>
               <button v-if="!isTransferredOrder(order)" class="transfer-order-btn" open-type="share" @click.stop="transferOrder(order)">转单</button> -->
             </view>
             <view v-else-if="!order.isCompleted && !order.isAssigned && order.refundRequest" class="refund-label">订单退款中</view>
@@ -175,6 +176,67 @@
             <view v-else class="completed-label">已完结</view>
           </view>
         </view>
+        </template>
+
+        <!-- 进行中、完成待确认、已完成的订单样式（与订单导航页面一致） -->
+        <template v-if="activeTab !== 'comprehensive'">
+        <view class="order-item-standard" v-for="(order, index) in orderList" :key="`order-${index}`" @click="navigateToOrderInfo(order.id)">
+          <view class="status-tag" :class="order.status">
+            <text v-if="order.status === 'waiting'">等待接单</text>
+            <text v-else-if="order.status === 'assigned'">已接单</text>
+            <text v-else-if="order.status === 'finished'">待确认</text>
+            <text v-else-if="order.status === 'completed'">已完成</text>
+          </view>
+          <view class="order-header">
+            <view class="order-info">
+              <text class="order-number">订单编号：{{ order.orderNumber }}</text>
+              <view class="copy-btn" @click.stop="copyOrderNumber(order.orderNumber)">复制</view>
+            </view>
+            <view class="order-time-row">
+              <text class="countdown" v-if="order.status === 'assigned' && order.countdown && order.countdown !== '未知时间'">倒计时：{{ order.countdown }}</text>
+              <text class="countdown" v-else-if="order.status === 'finished' || order.status === 'completed'">任务用时：{{ order.taskDuration }}</text>
+            </view>
+          </view>
+
+          <view class="order-content">
+            <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand), !order.doorImage ? 'no-image' : '']">
+              <image v-if="order.doorImage" :src="order.doorImage" mode="aspectFill" class="door-image" />
+              <view v-else class="icon-content">
+                <text class="brand-text">{{ getBrandText(order.brand) }}</text>
+                <text class="service-text">{{ order.serviceTypeText }}</text>
+              </view>
+            </view>
+
+            <view class="order-details">
+              <view class="store-name-row">
+                <text class="store-name">{{ formatStoreName(order.storeName) }}</text>
+                <view class="price-container">
+                  <text class="price">{{ order.reward ? getTotalAmountWithReward(order) : getDisplayAmount(order) }}</text>
+                  <text v-if="order.reward" class="reward-badge">赏{{ parseInt(getRewardAmount(order)) }}</text>
+                </view>
+              </view>
+              <view class="service-time">服务时间：<text class="highlight" style="white-space: pre-line;">{{ order.serviceTime }}</text></view>
+              <view class="service-item">服务项目：<text class="highlight">{{ order.serviceItem }}</text></view>
+              <view class="service-item" v-if="order.extraServices">附加服务：<text class="highlight">{{ order.extraServices }}</text></view>
+              <view class="service-item" v-if="order.reward">
+                <text style="color: #FF6B00;">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
+              </view>
+            </view>
+
+            <view class="arrow-right">
+              <view class="arrow"></view>
+            </view>
+          </view>
+
+          <view class="order-footer">
+            <view class="distance-info">
+              <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+              <text class="distance-text">距离订单地址<text class="highlight">{{ order.distance }}km</text></text>
+              <text class="location-detail" @click.stop="showLocationDetail(order)">点击导航</text>
+            </view>
+          </view>
+        </view>
+        </template>
 
         <!-- 加载中提示 -->
         <view v-if="loading" class="loading-container">
@@ -184,37 +246,33 @@
 
         <!-- 无更多数据提示 -->
         <view v-if="!loading && !hasMore && orderList.length > 0" class="no-more-tip">
-          <text>仅展示近期10条历史订单...</text>
+          <text v-if="activeTab === 'comprehensive'">仅展示近期10条历史订单...</text>
+          <text v-else>没有更多订单了</text>
         </view>
 
         <!-- 无数据提示 -->
         <view v-if="!loading && orderList.length === 0" class="empty-tip">
           <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
-          <text class="empty-text">本区域暂无待接新订单</text>
-          <text class="empty-subtitle">请持续关注</text>
+          <text class="empty-text" v-if="activeTab === 'comprehensive'">本区域暂无待接新订单</text>
+          <text class="empty-text" v-else>暂无订单</text>
+          <text class="empty-subtitle" v-if="activeTab === 'comprehensive'">请持续关注</text>
 
-          <!-- 推广期提示 -->
-          <view class="promotion-tip">
+          <!-- 推广期提示 - 仅在接单大厅显示 -->
+          <view class="promotion-tip" v-if="activeTab === 'comprehensive'">
             <text class="promotion-text">当前为平台推广期</text>
           </view>
 
-          <!-- 推荐骑手 -->
-          <view class="recommend-item" @click="goToRiderRecommend">
+          <!-- 推荐骑手 - 仅在接单大厅显示 -->
+          <view class="recommend-item" v-if="activeTab === 'comprehensive'" @click="goToRiderRecommend">
             <text class="recommend-text">推荐骑手，得订单2.5%奖金 连拿100天！</text>
             <text class="recommend-btn">去推荐</text>
           </view>
-
-          <!-- 推荐用户 -->
-          <!-- <view class="recommend-item" @click="goToUserRecommend">
-            <text class="recommend-text">推荐用户，得订单1.5%奖金 连续拿一年！</text>
-            <text class="recommend-btn">去推荐</text>
-          </view> -->
         </view>
       </view>
     </view>
 
     <!-- 底部导航栏 -->
-    <tab-bar activeTab="hall"></tab-bar>
+    <tab-bar :activeTab="'hall'"></tab-bar>
 
     <!-- 悬浮小图 -->
     <floating-image
@@ -299,8 +357,8 @@
 			<!-- 关闭按钮 -->
 			<!-- <view class="order-modal-close" @click="closeOrderModal">×</view> -->
 
-			<!-- 转单奖励信息 -->
-			<view v-if="!currentOrderInfo.isTransferOrder" class="order-modal-reward">
+			<!-- 转单奖励信息 - 已隐藏 -->
+			<!-- <view v-if="!currentOrderInfo.isTransferOrder" class="order-modal-reward">
 				<view class="pos-rel">
 					<text class="reward-label">转单奖励</text>
 					<view class="reward-condition">
@@ -311,22 +369,19 @@
 				<view class="reward-amount">
 					{{ getTransferReward(currentOrderInfo) }}
 				</view>
-			  <!-- <text class="reward-amount">{{ getTransferReward(currentOrderInfo) }}</text> -->
-			 <!-- <view class="reward-condition">
-				<text class="reward-condition-text">{{ countdownText || '派出且成功完单' }}</text>
-			  </view> -->
-			</view>
+			</view> -->
 
 			<view class="order-modal-footer">
 			  <button class="modal-btn cancel" @click="closeOrderModal">取消</button>
-			  <button v-if="!currentOrderInfo.isTransferOrder && !currentOrderInfo.isTransferMode && !isTransferredOrder(currentOrderInfo)"
+			  <!-- 订单转派按钮 - 已隐藏 -->
+			  <!-- <button v-if="!currentOrderInfo.isTransferOrder && !currentOrderInfo.isTransferMode && !isTransferredOrder(currentOrderInfo)"
 				  class="modal-btn transfer"
 				  :class="{disabled: !canTransfer}"
 				  :open-type="canTransfer ? 'share' : ''"
 				  @click="transferOrderInModal">
 				<text v-if="!canTransfer">订单转派</text>
 				<text v-else>订单转派</text>
-			  </button>
+			  </button> -->
 			  <button v-if="!currentOrderInfo.isTransferMode" class="modal-btn confirm" :class="{disabled: isAcceptingOrder}" @click="acceptOrder">
 				<text v-if="isAcceptingOrder">接单中...</text>
 				<text v-else>立即接单</text>
@@ -463,6 +518,7 @@ export default {
       per_page: 10,
       hasMore: true,
       isRefreshing: false,
+      isNavigating: false, // 防抖标志
       totalCityCount: 0, // 全国已开通城市数量
       showPosterModal: false, // 海报弹窗显示状态
       showCancelModal: false, // 撤销任务弹窗显示状态
@@ -786,6 +842,18 @@ export default {
     },
     setActiveTab(tab) {
       this.activeTab = tab
+
+      // 如果切换到非接单大厅的标签，加载对应状态的订单
+      if (tab !== 'comprehensive') {
+        this.page = 1
+        this.orderList = []
+        this.getOrdersByStatus(tab)
+      } else {
+        // 切换回接单大厅，重新加载待接单列表
+        this.page = 1
+        this.orderList = []
+        this.getWaitingTasks()
+      }
     },
     takeOrder(orderId) {
       uni.showModal({
@@ -880,7 +948,138 @@ export default {
     loadMore() {
       if (!this.hasMore || this.loading) return
       this.page++
-      this.getWaitingTasks()
+
+      // 根据当前激活的标签加载对应的数据
+      if (this.activeTab === 'comprehensive') {
+        this.getWaitingTasks()
+      } else {
+        this.getOrdersByStatus(this.activeTab)
+      }
+    },
+
+    // 根据状态获取订单列表
+    async getOrdersByStatus(status) {
+      if (!this.riderUserInfo) {
+        this.loading = false
+        this.isRefreshing = false
+        uni.stopPullDownRefresh()
+        return
+      }
+
+      this.loading = true
+      try {
+        const signStr = `service_member_id=${this.riderUserInfo.id}&phone_number=${this.riderUserInfo.phone}`
+        const sign = md5(signStr)
+
+        // 根据状态设置请求参数
+        let requestStatus = status
+        if (status === 'completed') {
+          // 已完成状态包含completed和canceled
+          requestStatus = ['completed', 'canceled']
+        }
+
+        const params = {
+          service_member_id: this.riderUserInfo.id,
+          phone_number: this.riderUserInfo.phone,
+          sign: sign,
+          status: requestStatus,
+          page: this.page,
+          pageSize: this.per_page
+        }
+
+        const res = await this.$request('task/list', params, 'POST')
+
+        if (res.code === 200 && res.data) {
+          const newOrders = res.data.map(item => {
+            // 构建完整地址
+            let fullAddress = '';
+            if (item.shop_address) {
+              fullAddress = [
+                item.province_name,
+                item.city_name,
+                item.district_name,
+                item.shop_address
+              ].filter(Boolean).join('');
+            }
+
+            // 处理打赏信息
+            let rewardInfo = null;
+            if (item.reward && Array.isArray(item.reward) && item.reward.length > 0) {
+              const paidRewards = item.reward.filter(r => r.status === 'paid');
+              if (paidRewards.length > 0) {
+                const totalAmount = paidRewards.reduce((sum, r) => sum + parseFloat(r.order_amount || 0), 0);
+                rewardInfo = {
+                  amount: totalAmount.toFixed(2),
+                  count: paidRewards.length
+                };
+              }
+            }
+
+            return {
+              id: item.task_id,
+              orderNumber: item.task_no,
+              task_date: item.task_date,
+              price: `¥${parseFloat(item.order_amount).toFixed(2)}`,
+              serviceType: this.getServiceTypeClass(item.task_detail?.detail || item.task_name),
+              serviceTypeText: this.getServiceTypeDisplayText(item.task_detail?.detail || item.task_name),
+              storeName: item.task_detail?.store_name || '未知店铺',
+              serviceTime: this.formatServiceTime(item.task_date, item.deadline, item.time_limit),
+              serviceItem: this.formatServiceItems(item.task_detail, item),
+              extraServices: this.formatExtraServices(item.task_detail),
+              contactName: item.name,
+              contactPhone: item.phone_number,
+              distance: this.userLocation ? this.calculateDistance(
+                this.userLocation.latitude,
+                this.userLocation.longitude,
+                item.latitude,
+                item.longitude
+              ) : 0,
+              countdown: this.calculateCountdown(item.deadline, item.start_date),
+              taskDuration: this.calculateTaskDuration(item.start_date, item.task_assignment?.finished_at),
+              deadline: item.deadline,
+              startDate: item.start_date,
+              timeLimit: item.time_limit,
+              latitude: item.latitude,
+              longitude: item.longitude,
+              status: item.status,
+              address: fullAddress || '未知地址',
+              doorImage: item.task_detail && item.task_detail.pic_url && item.task_detail.pic_url.length > 0 ? item.task_detail.pic_url[0] : '',
+              brand: item.brand || '',
+              reward: rewardInfo,
+              task_detail: item.task_detail
+            }
+          })
+
+          // 根据页码更新列表
+          if (this.page === 1) {
+            this.orderList = newOrders
+          } else {
+            this.orderList = [...this.orderList, ...newOrders]
+          }
+
+          // 更新是否有更多数据
+          this.hasMore = newOrders.length === this.per_page
+        } else {
+          if (this.page === 1) {
+            this.orderList = []
+          }
+          this.hasMore = false
+        }
+      } catch (error) {
+        console.error('获取订单列表失败:', error)
+        uni.showToast({
+          title: '获取订单列表失败',
+          icon: 'none'
+        })
+        if (this.page === 1) {
+          this.orderList = []
+        }
+        this.hasMore = false
+      } finally {
+        this.loading = false
+        this.isRefreshing = false
+        uni.stopPullDownRefresh()
+      }
     },
 
     // 修改获取待接单列表方法
@@ -1294,6 +1493,27 @@ export default {
       // }
 
       return items.join('、') || '未知服务项目';
+    },
+    // 跳转到订单信息页（用于进行中、完成待确认、已完成标签页）
+    navigateToOrderInfo(orderId) {
+      if (this.isNavigating) return;
+      this.isNavigating = true;
+      setTimeout(() => { this.isNavigating = false }, 1200); // 1.2秒内不再响应
+
+      let id = orderId;
+      if (typeof orderId === 'object' && orderId !== null && 'id' in orderId) {
+        id = orderId.id;
+      }
+      if (typeof id !== 'string') id = String(id);
+
+      uni.navigateTo({
+        url: `/riderEnd/order-info?id=${id}`
+      });
+    },
+
+    // 处理接单大厅的订单点击
+    handleOrderClick(order) {
+      this.goToOrderDetail(order);
     },
     goToOrderDetail(order) {
       // 如果是recent_tasks的订单，不跳转页面
@@ -1716,6 +1936,41 @@ export default {
       const rate = Number(this.riderUserInfo.rate);
       const realAmount = amount * rate;
       return `¥${realAmount.toFixed(2)}`;
+    },
+    // 格式化店铺名称
+    formatStoreName(name) {
+      if (!name) return '';
+      // 去除所有空格和换行
+      return name.replace(/\s+/g, '');
+    },
+    // 显示位置详情（导航）
+    showLocationDetail(order) {
+      if (!order.latitude || !order.longitude) {
+        uni.showToast({
+          title: '订单地址信息不完整',
+          icon: 'none'
+        });
+        return;
+      }
+
+      // 直接打开地图导航
+      uni.openLocation({
+        latitude: Number(order.latitude),
+        longitude: Number(order.longitude),
+        name: order.storeName || '目标位置',
+        address: order.address || '未知地址',
+        scale: 18,
+        success: () => {
+          console.log('打开地图成功');
+        },
+        fail: (err) => {
+          console.error('打开地图失败:', err);
+          uni.showToast({
+            title: '打开地图失败，请检查是否安装地图应用',
+            icon: 'none'
+          });
+        }
+      });
     },
     // 获取附加服务
     getAdditionalServices(order) {
@@ -2462,6 +2717,94 @@ export default {
           canTransfer: true,
           countdownText: '派出且成功完单'
         };
+      }
+    },
+
+    // 格式化附加服务
+    formatExtraServices(taskDetail) {
+      if (!taskDetail) return '';
+
+      const extraServices = [];
+
+      // 遍历 extra_task_1 到 extra_task_6
+      for (let i = 1; i <= 6; i++) {
+        const taskKey = `extra_task_${i}`;
+        const taskNumberKey = `extra_task_${i}_item_number`;
+
+        if (taskDetail[taskKey]) {
+          const itemNumber = taskDetail[taskNumberKey] || 1;
+          extraServices.push(`${taskDetail[taskKey]}x${itemNumber}`);
+        }
+      }
+
+      return extraServices.join('、');
+    },
+
+    // 计算倒计时
+    calculateCountdown(deadline, startDate) {
+      if (!deadline) return '未知时间';
+
+      try {
+        const now = new Date();
+        const deadlineDate = new Date(deadline);
+
+        // 根据订单时长决定提前时间
+        let advanceHours = 6; // 默认提前6小时
+        if (startDate) {
+          const startDateTime = new Date(startDate);
+          const durationHours = (deadlineDate - startDateTime) / (1000 * 60 * 60);
+
+          if (durationHours >= 48) {
+            advanceHours = 12; // 48小时以上提前12小时
+          } else if (durationHours >= 24) {
+            advanceHours = 6;  // 24小时单提前6小时
+          }
+        }
+
+        // 计算实际截止时间（提前N小时）
+        const actualDeadline = new Date(deadlineDate.getTime() - advanceHours * 60 * 60 * 1000);
+        const timeDiff = actualDeadline - now;
+
+        if (timeDiff <= 0) {
+          return '已超时';
+        }
+
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (hours > 0) {
+          return `${hours}小时${minutes}分钟`;
+        } else {
+          return `${minutes}分钟`;
+        }
+      } catch (error) {
+        console.error('计算倒计时失败:', error);
+        return '未知时间';
+      }
+    },
+
+    // 计算任务用时
+    calculateTaskDuration(startDate, finishedAt) {
+      if (!startDate || !finishedAt) return '未知';
+
+      try {
+        const start = new Date(startDate);
+        const finish = new Date(finishedAt);
+        const duration = finish - start;
+
+        if (duration < 0) return '未知';
+
+        const hours = Math.floor(duration / (1000 * 60 * 60));
+        const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (hours > 0) {
+          return `${hours}小时${minutes}分钟`;
+        } else {
+          return `${minutes}分钟`;
+        }
+      } catch (error) {
+        console.error('计算任务用时失败:', error);
+        return '未知';
       }
     },
 
@@ -3532,6 +3875,329 @@ export default {
       .order-content {
         position: relative;
         z-index: 1;
+      }
+    }
+  }
+
+  // 标准订单列表样式（与order.vue保持一致）
+  .order-item-standard {
+    margin: 30rpx 20rpx;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    width: calc(100% - 40rpx);
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    cursor: pointer;
+    position: relative;
+
+    .status-tag {
+      position: absolute;
+      top: 20rpx;
+      right: 20rpx;
+      padding: 6rpx 16rpx;
+      border-radius: 6rpx;
+      font-size: 22rpx;
+      font-weight: 500;
+      z-index: 1;
+
+      &.waiting {
+        background-color: rgba(255, 107, 0, 0.1);
+        color: #FF6B00;
+      }
+
+      &.assigned {
+        background-color: rgba(36, 146, 242, 0.1);
+        color: #2492F2;
+      }
+
+      &.finished {
+        background-color: rgba(0, 200, 0, 0.1);
+        color: #00C800;
+      }
+
+      &.completed {
+        background-color: rgba(0, 200, 0, 0.1);
+        color: #00C800;
+      }
+    }
+
+    .order-header {
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 15rpx;
+      border-bottom: 1rpx solid #f5f5f5;
+      margin-bottom: 15rpx;
+
+      .order-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10rpx;
+
+        .order-number {
+          font-size: 26rpx;
+          color: #666;
+        }
+
+        .copy-btn {
+          font-size: 22rpx;
+          color: #fff;
+          background-color: rgba(36, 146, 242, 0.6);
+          padding: 4rpx 16rpx;
+          border-radius: 4rpx;
+          margin-left: 10rpx;
+        }
+      }
+
+      .order-time-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .order-time {
+          font-size: 24rpx;
+          color: #999;
+        }
+
+        .countdown {
+          font-size: 24rpx;
+          color: #FF6B00;
+          background-color: rgba(255, 107, 0, 0.1);
+          padding: 4rpx 10rpx;
+          border-radius: 4rpx;
+        }
+      }
+    }
+
+    .order-content {
+      display: flex;
+      align-items: stretch;
+      padding-bottom: 20rpx;
+      border-bottom: 1rpx solid #f5f5f5;
+      position: relative;
+
+      .order-icon {
+        width: 100rpx;
+        height: 110rpx;
+        border-radius: 10rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20rpx;
+        flex-shrink: 0;
+        background: #f5f5f5;
+
+        .icon-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+
+          .brand-text {
+            font-size: 36rpx;
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 16rpx;
+            line-height: 1;
+          }
+
+          .service-text {
+            font-size: 36rpx;
+            color: #fff;
+            font-weight: bold;
+            line-height: 1;
+          }
+        }
+
+        text {
+          font-size: 44rpx;
+          color: #fff;
+          font-weight: bold;
+        }
+
+        &.no-image {
+          background: #2492F2;
+        }
+
+        // 新增异常类型样式
+        &.offline-abnormal.no-image {
+          background: #2492F2;
+        }
+
+        &.income-abnormal.no-image {
+          background: #2492F2;
+        }
+
+        &.other-abnormal.no-image {
+          background: #2492F2;
+        }
+
+        &.supplement.no-image {
+          background: #2492F2;
+        }
+
+        &.repair.no-image {
+          background: #2492F2;
+        }
+
+        // 品牌颜色样式
+        &.brand-meituan {
+          background-color: #F9E34F !important;
+
+          .brand-text, .service-text {
+            color: #333 !important;
+          }
+        }
+
+        &.brand-guaishou {
+          background-color: #27BFC0 !important;
+        }
+
+        &.brand-jiedian {
+          background-color: #2492F2 !important;
+        }
+
+        &.brand-xiaodian {
+          background-color: #2492F2 !important;
+        }
+
+        &.brand-zhumang {
+          background-color: #2492F2 !important;
+        }
+
+        &.brand-default {
+          background-color: #2492F2 !important;
+        }
+
+        .door-image {
+          width: 100rpx;
+          height: 110rpx;
+          object-fit: cover;
+          border-radius: 10rpx;
+        }
+      }
+
+      .order-details {
+        flex: 1;
+        padding-right: 30rpx;
+
+        .store-name-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10rpx;
+
+          .store-name {
+            font-size: 32rpx;
+            color: #333;
+            font-weight: 600;
+            flex: 1;
+          }
+
+          .price-container {
+            display: flex;
+            align-items: center;
+            gap: 8rpx;
+          }
+
+          .price {
+            font-size: 30rpx;
+            color: #FF6B00;
+            font-weight: 500;
+          }
+
+          .reward-badge {
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%);
+            color: #fff;
+            font-size: 20rpx;
+            padding: 4rpx 10rpx;
+            border-radius: 8rpx;
+            font-weight: 500;
+            white-space: nowrap;
+          }
+        }
+
+        .service-time, .service-item, .contact-info {
+          font-size: 24rpx;
+          color: #666;
+          margin-bottom: 6rpx;
+
+          .highlight {
+            color: #2492F2;
+          }
+        }
+      }
+
+      .arrow-right {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40rpx;
+        height: 40rpx;
+
+        .arrow {
+          width: 16rpx;
+          height: 16rpx;
+          border-top: 2rpx solid #ccc;
+          border-right: 2rpx solid #ccc;
+          transform: rotate(45deg);
+        }
+      }
+    }
+
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20rpx;
+
+      .distance-info {
+        display: flex;
+        align-items: center;
+        flex: 1;
+
+        .location-icon {
+          width: 32rpx;
+          height: 32rpx;
+          margin-right: 6rpx;
+        }
+
+        .distance-text {
+          font-size: 24rpx;
+          color: #2492F2;
+
+          .highlight {
+            color: #2492F2;
+          }
+        }
+
+        .location-detail {
+          color: #2492F2;
+          background-color: rgba(36, 146, 242, 0.1);
+          font-size: 24rpx;
+          margin-left: 10rpx;
+          padding: 4rpx 10rpx;
+          border-radius: 4rpx;
+        }
+      }
+
+      .contact-btn {
+        height: 50rpx;
+        line-height: 50rpx;
+        background-color: #fff;
+        color: #666;
+        font-size: 24rpx;
+        border: 1rpx solid #ccc;
+        border-radius: 25rpx;
+        padding: 0 20rpx;
+        margin-left: 20rpx;
       }
     }
   }

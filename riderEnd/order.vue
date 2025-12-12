@@ -25,6 +25,7 @@
       <view
         v-for="(tab, index) in tabs"
         :key="index"
+        v-if="tab.status !== 'canceled'"
         class="tab-item"
         :class="{ active: activeTab === index }"
         @click="switchTab(index)"
@@ -164,9 +165,26 @@ export default {
       isNavigating: false // 新增防抖标志
     }
   },
-  onLoad() {
+  onLoad(options) {
     // 处理 backgroundFetch 错误
     this.handleBackgroundFetchError()
+
+    // 处理从首页传递过来的tab参数
+    if (options.tab !== undefined) {
+      const tabIndex = parseInt(options.tab)
+      // 由于隐藏了"已取消"标签（原索引1），实际显示的标签索引为：
+      // 0: 进行中(assigned), 1: 完成待确认(finished), 2: 已完成(completed)
+      if (tabIndex === 0) {
+        this.activeTab = 0 // 进行中
+        this.currentStatus = 'assigned'
+      } else if (tabIndex === 2) {
+        this.activeTab = 2 // 完成待确认
+        this.currentStatus = 'finished'
+      } else if (tabIndex === 3) {
+        this.activeTab = 3 // 已完成
+        this.currentStatus = ['completed', 'canceled']
+      }
+    }
   },
   onShow() {
     // 获取骑手信息
@@ -290,7 +308,15 @@ export default {
     },
     switchTab(index) {
       this.activeTab = index
-      this.currentStatus = this.tabs[index].status
+      const tabStatus = this.tabs[index].status
+
+      // 如果是已取消或已完成状态，使用数组形式
+      if (tabStatus === 'canceled' || tabStatus === 'completed') {
+        this.currentStatus = ['completed', 'canceled']
+      } else {
+        this.currentStatus = tabStatus
+      }
+
       // 重置页码并获取订单列表
       this.page = 1
       this.orderList = []

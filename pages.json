@@ -197,6 +197,24 @@
 				"navigationBarBackgroundColor": "#2492F2",
 				"navigationBarTitleText": "购物车"
 			}
+		},
+		{
+			"path": "pages/store-manage/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "门店管理"
+			}
+		},
+		{
+			"path": "pages/store-manage/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "门店信息"
+			}
 		}
 	],
 	"subPackages": [
@@ -384,6 +402,14 @@
 				},
 				{
 					"path": "chat-simple",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "quota",
 					"style": {
 						"navigationStyle": "custom",
 						"navigationBarTextStyle": "white",

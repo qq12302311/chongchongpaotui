@@ -1,21 +1,55 @@
 <template>
 	<view class="container">
 		<nav-bar title="个人中心" title-align="center"></nav-bar>
-
+		
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
+			<view class="dis_flex name-cla" @click="goToLogin">
+				<view class="name-1 mar-rig-10">{{isLogin ? userInfo.username : '点击登录'}}</view>
+				<view class="name-1">{{isLogin ? userInfo.phone_number : '登录后查看更多信息'}}</view>
+			</view>
 			<!-- User Section with Blue Background -->
 			<view class="user-section">
+				<view>
+					<view class="dabeijing pos-rel">
+						<view class="jiesuo">未解锁</view>
+						<view class="dis_flex hg-vip">
+							<image class="hg-img mar-rig-5" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/hg.svg"></image>
+							<image class="vip-img" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/VIP1.svg"></image>
+						</view>
+						<view class="hx-cla"></view>
+						<view class="jingy-cla">还需990经验值解锁普通会员，获取经验值 ></view>
+						<view class="dis_flex jus-con" style="margin-bottom: 10px;">
+							<view>
+								<view class="zunx-cla">尊享权益</view>
+								<view class="dengj-cla">了解更多等级权益 ></view>
+							</view>
+							<view class="dis_flex">
+								<view>
+									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/ldkq.svg"></image>
+								</view>
+								<view>
+									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/czzk.svg"></image>
+								</view>
+								<view>
+									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/zskf.svg"></image>
+								</view>
+							</view>
+						</view>
+						<view class="im-pos-1">
+							<image class="toux11" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/toux11.png"></image>
+						</view>
+					</view>
+				</view>
 				<!-- Blue Background -->
-				<view class="blue-bg"></view>
+				<!-- <view class="blue-bg"></view> -->
 
 				<!-- 头像区域 - 独立定位 -->
-				<view class="avatar-container">
-					<!-- <image class="avatar" :src="isLogin ? userInfo.avatar : 'https://ccpt.qiniu.0871.cn/112lbtx.png'" mode="aspectFill" @click="goToLogin"></image> -->
+				<!-- <view class="avatar-container">
 					<image class="avatar" src="https://ccpt.qiniu.0871.cn/112lbtx.png" mode="aspectFill" @click="goToLogin"></image>
-				</view>
+				</view> -->
 
 				<!-- 用户信息卡片 -->
-				<view class="white-card" @click="goToLogin">
+				<!-- <view class="white-card" @click="goToLogin">
 					<view class="user-card">
 						<view class="user-info">
 							<view class="user-details">
@@ -28,10 +62,8 @@
 						</view>
 					</view>
 
-					<!-- Divider Line -->
 					<view class="divider-line"></view>
 
-					<!-- Balance and Coupon -->
 					<view class="balance-coupon">
 						<view class="balance item">
 							<view class="icon-wrap">
@@ -43,7 +75,6 @@
 								<text class="desc">您的余额为¥{{ formattedBalance }}</text>
 							</view>
 						</view>
-						<!-- <view class="divider-vertical"></view> -->
 						<view class="coupon item">
 							<view class="icon-wrap">
 								<image class="icon-image" src="https://ccpt.qiniu.0871.cn/my/youhuiquan.png"
@@ -55,13 +86,38 @@
 							</view>
 						</view>
 					</view>
-				</view>
+				</view> -->
 
-				<!-- 充值活动部分已隐藏 -->
+			</view>
+			
+			<view class="czyh-cla">
+				<!-- <image class="czyh-cla" src="https://ccpt.qiniu.0871.cn/home/my/czyh.png" mode="aspectFit"></image> -->
 			</view>
 
 			<!-- Common Functions -->
 			<view class="common-functions">
+				<view class="padding-10 dis_flex jus-con">
+					<view class="dis_flex">
+						<view>
+							<image class="cygn-cla" src="https://ccpt.qiniu.0871.cn/home/my/qb-11.png" mode="aspectFit"></image>
+						</view>
+						<view>
+							<view class="biti-12">我的钱包</view>
+							<view class="biti-13">可用余额 ¥{{ formattedBalance }}</view>
+						</view>
+					</view>
+					<view class="dis_flex">
+						<view>
+							<image class="cygn-cla" src="https://ccpt.qiniu.0871.cn/home/my/zd-11.png" mode="aspectFit"></image>
+						</view>
+						<view>
+							<view class="biti-12">优惠券</view>
+							<view class="biti-13">优惠券数量0</view>
+						</view>
+					</view>
+				</view>
+				<!-- 分隔线 -->
+				<view class="divider"></view>
 				<text class="section-title">常用功能</text>
 				<view class="function-grid">
 					<view class="function-item" @click="navigateTo('/riderEnd/register')">
@@ -71,11 +127,11 @@
 						<text class="func-name">注册骑手接单</text>
 					</view>
 
-					<view class="function-item" @click="navigateTo('/pages/user-guide/index')">
+					<view class="function-item" @click="navigateTo('/pages/store-manage/index')">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/my/yonghuzhinan.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.0871.cn/home/my/mdgl.png" mode="aspectFit"></image>
 						</view>
-						<text class="func-name">用户指南</text>
+						<text class="func-name">门店管理</text>
 					</view>
 
 					<view class="function-item" @click="navigateTo('/pages/service-standard/index')">
@@ -92,28 +148,27 @@
 						<text class="func-name">在线客服</text>
 					</view>
 
-					<view class="function-item" @click="navigateTo('/pages/community/index')">
+					<view class="function-item" @click="navigateTo('/pages/user-guide/index')">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/my/kehuqunti.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.0871.cn/my/yonghuzhinan.png" mode="aspectFit"></image>
 						</view>
-						<text class="func-name">客户社群</text>
+						<text class="func-name">用户指南</text>
 					</view>
 
 					<view class="function-item" @click="openShareModal">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/qishou.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.0871.cn/home/my/fxtj.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">分享推荐</text>
 					</view>
 				</view>
 			</view>
-		</view>
 
-		<!-- 角色切换区域 -->
-		<view class="role-switch-section">
-			<text class="role-text">您当前是发单客户</text>
-			<view class="switch-role-btn" @click="switchToRider">
-				<text>切换成接单骑手角色></text>
+			<!-- 角色切换区域 -->
+			<view class="role-switch-section">
+				<view class="switch-role-btn" @click="switchToRider">
+					<text>切换成接单骑手角色></text>
+				</view>
 			</view>
 		</view>
 
@@ -362,21 +417,250 @@
 </script>
 
 <style lang="scss" scoped>
+	.biti-12{
+		font-size: 15px;
+		font-weight: 400;
+		letter-spacing: 0px;
+		line-height: 15px;
+		color: rgba(50, 50, 51, 1);
+		text-align: left;
+		vertical-align: top;
+		margin-bottom: 6rpx;
+	}
+	.biti-13{
+		font-size: 11px;
+		font-weight: 400;
+		letter-spacing: 0px;
+		line-height: 15.09px;
+		color: rgba(171, 167, 167, 1);
+		text-align: left;
+		vertical-align: top;
+	}
+	.cygn-cla{
+		width: 27px;
+		height: 27px;
+		margin-right: 20rpx;
+	}
+	.czyh-cla{
+		background-size: cover; /* 覆盖整个容器，保持图片比例 */
+		background-position: center;
+		  background-repeat: no-repeat;
+		  height: 50px;
+		  width: 100%;
+		  margin-bottom: 20px;
+		background-image: url("https://ccpt.qiniu.0871.cn/home/my/czyouhui.svg");
+	}
+	.im-pos-1{
+		position: absolute;
+		top: -15px;
+		right: 15px;
+	}
+	.toux11{
+		width: 210rpx;
+		 height: 210rpx;
+	}
+	.dengj-cla{
+		width: 80px;
+		height: 10px;
+		opacity: 1;
+		/** 文本1 */
+		font-size: 8.5px;
+		font-weight: 400;
+		letter-spacing: 0px;
+		line-height: 9.41px;
+		color: rgba(125, 192, 250, 1);
+		text-align: left;
+		vertical-align: top;
+	}
+	.zunx-cla{
+		width: 80px;
+		height: 21px;
+		opacity: 1;
+		/** 文本1 */
+		font-size: 18px;
+		font-weight: 500;
+		letter-spacing: 0px;
+		line-height: 20.27px;
+		color: rgba(36, 146, 242, 1);
+		text-align: left;
+		vertical-align: top;
+		margin-bottom: 14rpx;
+	}
+	.jingy-cla{
+		margin-top: 16rpx;
+		margin-bottom: 50rpx;
+		width: 100%;
+		max-width: 470rpx;
+		height: auto;
+		opacity: 1;
+		/** 文本1 */
+		font-size: 11px;
+		font-weight: 400;
+		letter-spacing: 0.5px;
+		line-height: 13.03px;
+		color: rgba(10, 132, 240, 1);
+		text-align: left;
+		vertical-align: top;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.hx-cla{
+		margin-top: 60rpx;
+		width: 450rpx;
+		height: 0px;
+		opacity: 1;
+		transform: rotate(0.32deg);
+		border: 3px solid rgba(191, 225, 255, 1);
+	}
+	.hg-vip{
+		margin: 50rpx 0rpx 30rpx -13rpx;
+	}
+	.hg-img{
+		width: 30px;
+		height: 21px;
+	}
+	.tq-1{
+		width: 43px;
+		height: 48px;
+		margin-left: 40rpx;
+	}
+	.vip-img{
+		width: 90px;
+		height: 21px;
+	}
+	.jiesuo{
+		margin-left: -15px;
+		margin-top: -15px;
+		width: 72px;
+		height: 23px;
+		line-height: 23px;
+		opacity: 1;
+		border-radius: 10px 0px;
+		background: rgba(201, 230, 255, 1);
+		/** 文本1 */
+		font-size: 12px;
+		font-weight: 400;
+		letter-spacing: 1px;
+		color: rgba(10, 132, 240, 1);
+		text-align: center;
+	}
+	.name-cla{
+		margin: 14rpx 0rpx;
+	}
+	.name-1{
+		font-size: 14px;
+		font-weight: 400;
+		letter-spacing: 0px;
+		line-height: 20.27px;
+		color: rgba(255, 255, 255, 1);
+		text-align: left;
+		vertical-align: top;
+	}
+	.dabeijing{
+		margin-bottom: 30rpx;
+		padding: 30rpx 30rpx 40rpx 30rpx;
+		height: 175px;
+		opacity: 1;
+		border-radius: 8px;
+		background: linear-gradient(119.22deg, rgba(255, 255, 255, 1) 0%, rgba(197, 227, 252, 1) 100%);
+	}
+
+	/* 会员信息卡片样式 */
+	.member-card {
+		display: flex;
+		align-items: center;
+		padding: 20rpx 30rpx;
+		margin: 0 20rpx;
+		background: rgba(255, 255, 255, 0.95);
+		border-radius: 12rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+
+		.member-avatar {
+			width: 100rpx;
+			height: 100rpx;
+			border-radius: 50%;
+			margin-right: 24rpx;
+			flex-shrink: 0;
+		}
+
+		.member-info {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+
+			.member-name {
+				font-size: 32rpx;
+				font-weight: 600;
+				color: #333;
+				margin-bottom: 8rpx;
+			}
+
+			.member-phone {
+				font-size: 24rpx;
+				color: #999;
+				margin-bottom: 12rpx;
+			}
+
+			.member-level {
+				display: inline-flex;
+				align-items: center;
+				align-self: flex-start;
+
+				.level-text {
+					font-size: 22rpx;
+					color: #FF9800;
+					background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+					padding: 4rpx 16rpx;
+					border-radius: 20rpx;
+					font-weight: 500;
+					color: #fff;
+				}
+			}
+		}
+
+		.member-assets {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 16rpx;
+
+			.asset-item {
+				display: flex;
+				flex-direction: column;
+				align-items: flex-end;
+
+				.asset-label {
+					font-size: 22rpx;
+					color: #999;
+					margin-bottom: 4rpx;
+				}
+
+				.asset-value {
+					font-size: 28rpx;
+					font-weight: 600;
+					color: #333;
+				}
+			}
+		}
+	}
 	.container {
 		min-height: 100vh;
 		background-color: #f5f5f5;
 		font-family: "HarmonyOS Sans SC", sans-serif;
-	}
+		opacity: 1;
+		background: linear-gradient(180deg, rgba(36, 146, 242, 1) 20%, rgba(255, 255, 255, 0) 100%);}
 
 	.content {
-		padding: 0;
+		padding: 0rpx 20rpx;
+		padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
+		padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 		position: relative;
 	}
 
 	.user-section {
 		position: relative;
-		padding: 0;
-		padding-top: 30rpx;
 		margin-bottom: 0;
 	}
 
@@ -452,6 +736,12 @@
 			color: #ccc;
 			font-size: 30rpx;
 		}
+	}
+	.divider {
+		width: 100%;
+		height: 1rpx;
+		background: #eee;
+		margin: 24rpx 0 24rpx 0;
 	}
 
 	.divider-line {
@@ -548,8 +838,6 @@
 		padding: 30rpx 20rpx 20rpx 20rpx;
 		background-color: #FFFFFF;
 		border-radius: 12rpx;
-		margin-left: 20rpx;
-		margin-right: 20rpx;
 		box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
 		position: relative;
 		z-index: 0;
@@ -586,7 +874,8 @@
 					}
 
 					&.bg-blue {
-						background-color: rgba(36, 146, 242, 0.1);
+						// background-color: rgba(36, 146, 242, 0.1);
+						background: rgba(215, 232, 250, 1);
 					}
 				}
 

@@ -19,13 +19,13 @@
 		</view>
 	</view>
 
-	<!-- 骑手完成反馈卡片 - 只在状态为finished时显示 -->
-	<view class="feedback-card" v-if="orderInfo.status === 'finished' && orderInfo.task_assignment">
+	<!-- 骑手完成反馈卡片 - 只在状态为finished或completed时显示 -->
+	<view class="feedback-card" v-if="(orderInfo.status === 'finished' || orderInfo.status === 'completed') && orderInfo.task_assignment">
 		<view class="card-title">
 			<text>骑手完成反馈</text>
 		</view>
 		<view class="detail-list-wrapper">
-			<view class="feedback-content" :style="{ maxHeight: isFeedbackExpanded ? 'none' : '300rpx' }">
+			<view class="feedback-content">
 				<view class="feedback-info">
 					<view class="remark" v-if="orderInfo.task_assignment.finished_at">
 						<text class="label">完成时间：</text>
@@ -58,18 +58,6 @@
 					</view>
 				</view>
 			</view>
-			<!-- 模糊效果层 -->
-			<view class="blur-mask" v-if="!isFeedbackExpanded"></view>
-		</view>
-
-		<!-- 展开/收起按钮 -->
-		<view class="expand-btn" @click="toggleFeedbackExpand">
-			<view class="expand-btn-content">
-				<text class="expand-text">{{ isFeedbackExpanded ? '收起' : '展开' }}</text>
-				<view class="expand-icon" :class="{ 'expanded': isFeedbackExpanded }">
-					<uni-icons type="bottom" size="16" color="#2492F2"></uni-icons>
-				</view>
-			</view>
 		</view>
 	</view>
 
@@ -99,6 +87,11 @@
 						<!-- 步骤2: 作业中 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'assigned' }">
 							<view class="step-icon-wrapper">
+								<!-- 气泡提示 -->
+								<view v-if="orderInfo.status === 'assigned' && orderInfo.task_assignment.predict_complete_type" class="feedback-bubble">
+									<image src="https://ccpt.qiniu.0871.cn/riderend/qipao.svg" class="bubble-bg" mode="aspectFit"></image>
+									<text class="bubble-text">我预计{{orderInfo.task_assignment.predict_complete_type}}完成！</text>
+								</view>
 								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.0871.cn/1112.gif" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
 									'step-dot-half': orderInfo.status === 'assigned',
@@ -120,7 +113,12 @@
 						<!-- 步骤3: 完单反馈 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'finished' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.0871.cn/1112.gif" class="working-gif" mode="aspectFit"></image>
+								<!-- 气泡提示 -->
+								<view v-if="orderInfo.status === 'finished'" class="feedback-bubble">
+									<image src="https://ccpt.qiniu.0871.cn/riderend/qipao.svg" class="bubble-bg" mode="aspectFit"></image>
+									<text class="bubble-text">已完单反馈请确认!</text>
+								</view>
+								<image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.0871.cn/riderend/wandan2.png" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
 								}"></view>
@@ -771,7 +769,9 @@
 		</view>
 
 		<!-- 悬浮聊天图标 -->
-		<FloatingChatIconUser />
+		<FloatingChatIconUser 
+			:orderId="orderId" 
+			:orderTitle="`${orderInfo.city_name || ''}${orderInfo.district_name || ''} ${orderId}`" />
 		
 		<!-- 打赏弹窗 -->
 		<RewardModal 
@@ -779,6 +779,23 @@
 			@close="closeRewardModal"
 			@confirm="handleRewardConfirm"
 		/>
+		
+		<!--骑手预估时间弹窗-->
+		<view class="predict-modal-mask" v-if="showPredictModal" @click="closePredictModal"></view>
+		<view class="predict-modal-container" v-if="showPredictModal">
+			<image src="https://ccpt.qiniu.0871.cn/riderend/toubu.png" mode="widthFix" class="predict-header-img"></image>
+			<view class="popup-content-z">
+				<view class="popup-bj">
+					<view class="text-2 dis_flex jus-cen">您的订单预计<text class="highlight-time">{{orderInfo.task_assignment.predict_complete_type}}</text>完单！</view>
+					<view class="popup-tips">
+						<text class="tips-text">注：反馈供参考，可能有变！</text>
+					</view>
+				</view>
+			</view>
+			<view class="predict-modal-close" @click="closePredictModal">
+				<text>我知道了</text>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -884,7 +901,9 @@
 					deadlineTime: ''
 				},
 				// 打赏相关
-				showRewardModal: false
+				showRewardModal: false,
+				// 预估时间弹窗
+				showPredictModal: false
 			}
 		},
 		computed: {
@@ -916,6 +935,29 @@
 		// 页面显示时的处理
 	},
 		methods: {
+			// 骑手预估弹窗
+			predict_popup(){
+				// 只有进行中的订单且预估时间是今天或明天的时间段时才展示
+				if (this.orderInfo.status === 'assigned' &&
+					this.orderInfo.task_assignment &&
+					this.orderInfo.task_assignment.predict_complete_type) {
+
+					const predictTime = this.orderInfo.task_assignment.predict_complete_type;
+
+					// 判断是否包含"今天"或"明天"关键词
+					const isTodayOrTomorrow = predictTime.includes('今天') ||
+											  predictTime.includes('明天') ||
+											  predictTime.includes('3小时');
+
+					if (isTodayOrTomorrow) {
+						this.showPredictModal = true;
+					}
+				}
+			},
+			// 关闭预估弹窗
+			closePredictModal(){
+				this.showPredictModal = false
+			},
 			// 加载订单详情
 			async loadOrderDetail() {
 				try {
@@ -947,7 +989,7 @@
 
 			if (res.code === 200 && res.data) {
 				this.orderInfo = res.data
-				
+
 				// Check if order has pending refund request
 				if (this.orderInfo.refund_request === 1) {
 					// Delay slightly to ensure DOM is ready
@@ -955,7 +997,7 @@
 						this.showConfirmCancelModal = true;
 					}, 300);
 				}
-				
+
 				// 更新地图标记
 				if (this.orderInfo.latitude && this.orderInfo.longitude) {
 					this.mapMarkers = [{
@@ -968,6 +1010,9 @@
 						title: this.orderInfo.task_detail ? this.orderInfo.task_detail.store_name : '服务门店'
 					}]
 				}
+
+				// 显示骑手预估完单时间弹窗
+				this.predict_popup()
 				} else {
 					uni.showToast({
 						title: res.message || '获取订单详情失败',
@@ -2300,6 +2345,113 @@
 </script>
 
 <style lang="scss" scoped>
+	// 预估时间弹窗样式
+	.predict-modal-mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 999;
+	}
+
+	.predict-modal-container {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 85%;
+		max-width: 600rpx;
+		background-color: transparent;
+		border-radius: 24rpx;
+		overflow: hidden;
+		z-index: 1000;
+		animation: modalSlideIn 0.3s ease;
+
+		.predict-header-img {
+			width: 100%;
+			height: auto;
+			display: block;
+		}
+
+		.predict-modal-close {
+			background: #fff;
+			padding: 24rpx 30rpx 30rpx;
+			border-radius: 0 0 24rpx 24rpx;
+			display: flex;
+			justify-content: center;
+
+			text {
+				display: inline-block;
+				padding: 16rpx 80rpx;
+				background: linear-gradient(135deg, #4FB5FF 0%, #2492F2 100%);
+				color: #fff;
+				font-size: 28rpx;
+				font-weight: 500;
+				border-radius: 40rpx;
+				box-shadow: 0 8rpx 24rpx rgba(36, 146, 242, 0.3);
+			}
+		}
+	}
+
+	.popup-content-z{
+		.popup-bj{
+			.text-2{
+				text-align: center;
+				font-size: 28rpx;
+				font-weight: 500;
+				letter-spacing: 0px;
+				line-height: 1.5;
+				color: rgba(36, 145, 240, 1);
+				vertical-align: top;
+
+				.highlight-time {
+					color: #FF4D4F;
+					text-decoration: underline;
+					text-underline-offset: 6rpx;
+					font-weight: 600;
+				}
+			}
+			.popup-tips {
+				margin-top: 16rpx;
+				text-align: center;
+
+				.tips-text {
+					font-size: 22rpx;
+					color: #FF4D4F;
+					line-height: 1.5;
+				}
+			}
+			padding: 0rpx 30rpx 25rpx 30rpx;
+			height: 70px;
+			opacity: 1;
+			border-radius: 16rpx;
+			background-size: cover;
+			background-image: url('https://ccpt.qiniu.0871.cn/riderend/beij.svg');
+			background-repeat: no-repeat;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+		background: #fff;
+	}
+	.popup-content {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 0;
+			width: 100%;
+
+			image {
+				width: 100%;
+				height: auto;
+				display: block;
+				border-radius: 24rpx 24rpx 0 0;
+			}
+		}
 	.status-btn {
 			/* #ifndef APP-NVUE */
 			display: flex;
@@ -2627,7 +2779,7 @@
 			background: #FFFFFF;
 			border-radius: 8rpx;
 			margin-bottom: 20rpx;
-			padding: 24rpx 0px;
+			padding: 74rpx 0px;
 			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 
 			.state-buzhou {
@@ -4950,6 +5102,44 @@
 				color: #FFFFFF;
 				letter-spacing: 2rpx;
 			}
+		}
+	}
+
+	// 气泡提示样式
+	.feedback-bubble {
+		position: absolute;
+		top: -150rpx;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 4;
+		min-width: 220rpx;
+		max-width: 320rpx;
+		height: auto;
+		min-height: 70rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.bubble-bg {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: -1;
+			pointer-events: none;
+		}
+
+		.bubble-text {
+			position: relative;
+			z-index: 10;
+			font-size: 21rpx;
+			color: #FFFFFF;
+			font-weight: 600;
+			text-align: center;
+			padding-bottom: 19rpx;
+			width: 100%;
+			box-sizing: border-box;
 		}
 	}
 </style>

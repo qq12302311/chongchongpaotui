@@ -55,8 +55,14 @@
             </text>
           </view>
         </view>
+        <view class="info-item" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi !== undefined">
+          <text class="info-label">门店POI</text>
+          <view class="info-value">
+            {{ orderInfo.task_detail.shop_poi }}
+          </view>
+        </view>
         <view class="info-item" v-if="orderInfo.task_detail && orderInfo.task_detail.device_outside !== undefined">
-          <text class="info-label">设备是否外摆</text>
+          <text class="info-label">设备外摆</text>
           <view class="info-value">
             {{ orderInfo.task_detail.device_outside ? '是' : '否' }}
           </view>
@@ -87,13 +93,30 @@
           <text class="info-label">原订单金额</text>
           <text class="info-value original-price">¥{{ calculateOriginalAmount() }}</text>
         </view>
+        <!-- 打赏信息 -->
+        <view class="info-item" v-if="orderInfo.reward && orderInfo.reward.length > 0">
+          <text class="info-label">打赏金额</text>
+          <view class="info-value-wrap">
+            <text class="info-value price">¥{{ calculateRewardAmount(orderInfo.reward) }}</text>
+            <view class="refund-reward-btn" @click="showRewardRefundModal" v-if="canRefundReward(orderInfo.reward)">
+              退款打赏
+            </view>
+          </view>
+        </view>
         <view class="info-item" v-if="orderInfo.task_detail && orderInfo.task_detail.additional_notes">
           <text class="info-label">订单备注</text>
-          <text class="info-value">{{ orderInfo.task_detail.additional_notes }}</text>
+          <view class="info-value-wrap">
+            <text class="info-value">{{ orderInfo.task_detail.additional_notes }}</text>
+            <view class="copy-btn" @click="copyText(orderInfo.task_detail.additional_notes)">复制</view>
+          </view>
         </view>
         <view class="info-item" v-if="orderInfo.recommended_service_time_start && orderInfo.recommended_service_time_end">
-          <text class="info-label">建议骑手上门时间</text>
+          <text class="info-label">建议时间段</text>
           <text class="info-value">{{ formatRecommendedTime(orderInfo.recommended_service_time_start, orderInfo.recommended_service_time_end) }}</text>
+        </view>
+        <view class="info-item" v-if="orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type">
+          <text class="info-label">预估完单</text>
+          <text class="info-value">{{ orderInfo.task_assignment.predict_complete_type }}</text>
         </view>
         <view class="info-item" v-if="orderInfo.ticket">
           <text class="info-label">优惠券</text>
@@ -217,8 +240,47 @@
           <text class="info-value">{{ orderInfo.service_member.rate * 100 }}%</text>
         </view>
         <view class="info-item" v-if="orderInfo.service_member && orderInfo.service_member.rate">
-          <text class="info-label">骑手佣金</text>
-          <text class="info-value price">¥{{ calculateRiderCommission() }}</text>
+          <text class="info-label">接单佣金</text>
+          <text class="info-value">¥{{ calculateRiderCommission() }}</text>
+        </view>
+        <!-- 骑手所得计算过程 -->
+        <view class="info-item earnings-detail" v-if="orderInfo.task_earnings">
+          <text class="info-label">骑手实得</text>
+          <text class="info-value price">¥{{ parseFloat(orderInfo.task_earnings.worker_fee || 0).toFixed(2) }}</text>
+        </view>
+        <view class="info-item earnings-detail-expand" v-if="orderInfo.task_earnings">
+          <view class="info-value-full">
+            <view class="earnings-calculation">
+              <view class="calc-row">
+                <text class="calc-label">订单总额：</text>
+                <text class="calc-value">¥{{ parseFloat(orderInfo.task_earnings.total_amount || 0).toFixed(2) }}</text>
+              </view>
+              <view class="calc-row" v-if="orderInfo.task_earnings.time_out && orderInfo.task_earnings.time_fee">
+                <text class="calc-label">+ 超时费：</text>
+                <text class="calc-value highlight-add">¥{{ parseFloat(orderInfo.task_earnings.time_fee || 0).toFixed(2) }}</text>
+              </view>
+              <view class="calc-row">
+                <text class="calc-label">- 平台抽成 ({{ (parseFloat(orderInfo.task_earnings.platform_rate || 0) * 100).toFixed(1) }}%)：</text>
+                <text class="calc-value highlight-minus">¥{{ parseFloat(orderInfo.task_earnings.platform_fee || 0).toFixed(2) }}</text>
+              </view>
+              <view class="calc-row">
+                <text class="calc-label">- 服务商抽成 ({{ (parseFloat(orderInfo.task_earnings.organization_rate || 0) * 100).toFixed(1) }}%)：</text>
+                <text class="calc-value highlight-minus">¥{{ parseFloat(orderInfo.task_earnings.organization_fee || 0).toFixed(2) }}</text>
+              </view>
+              <view class="calc-row" v-if="orderInfo.task_earnings.referrer_reward_amount && parseFloat(orderInfo.task_earnings.referrer_reward_amount) > 0">
+                <text class="calc-label">- 推荐人奖励：</text>
+                <text class="calc-value highlight-minus">¥{{ parseFloat(orderInfo.task_earnings.referrer_reward_amount || 0).toFixed(2) }}</text>
+              </view>
+              <view class="calc-divider"></view>
+              <view class="calc-row calc-result">
+                <text class="calc-label">骑手实得：</text>
+                <text class="calc-value final-amount">¥{{ parseFloat(orderInfo.task_earnings.worker_fee || 0).toFixed(2) }}</text>
+              </view>
+              <view class="calc-formula">
+                <text class="formula-text">计算公式：{{ parseFloat(orderInfo.task_earnings.total_amount || 0).toFixed(2) }}<text v-if="orderInfo.task_earnings.time_out && orderInfo.task_earnings.time_fee"> + {{ parseFloat(orderInfo.task_earnings.time_fee || 0).toFixed(2) }}</text> - {{ parseFloat(orderInfo.task_earnings.platform_fee || 0).toFixed(2) }} - {{ parseFloat(orderInfo.task_earnings.organization_fee || 0).toFixed(2) }}<text v-if="orderInfo.task_earnings.referrer_reward_amount && parseFloat(orderInfo.task_earnings.referrer_reward_amount) > 0"> - {{ parseFloat(orderInfo.task_earnings.referrer_reward_amount || 0).toFixed(2) }}</text> = {{ parseFloat(orderInfo.task_earnings.worker_fee || 0).toFixed(2) }}</text>
+              </view>
+            </view>
+          </view>
         </view>
         <!-- 订单相关时间 -->
         <view class="info-item" v-if="orderInfo.task_assignment && orderInfo.task_assignment.accepted_at">
@@ -396,6 +458,53 @@
       </view>
     </view>
 
+    <!-- 打赏退款弹窗 -->
+    <view class="modal-mask" v-if="showRewardRefund" @click="closeRewardRefundModal"></view>
+    <view class="modal-container" v-if="showRewardRefund">
+      <view class="modal-header">
+        <text class="modal-title">打赏退款</text>
+        <view class="modal-close" @click="closeRewardRefundModal">×</view>
+      </view>
+      <view class="modal-content">
+        <view class="modal-info">
+          <view class="info-row">
+            <text class="info-label">订单号：</text>
+            <text class="info-value">{{ orderInfo.task_no }}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">打赏总额：</text>
+            <text class="info-value reward-total">¥{{ calculateRewardAmount(orderInfo.reward) }}</text>
+          </view>
+        </view>
+        <view class="reward-list-section">
+          <text class="section-title">打赏明细：</text>
+          <view class="reward-detail-list">
+            <view
+              class="reward-detail-item"
+              v-for="(reward, index) in getPaidRewards(orderInfo.reward)"
+              :key="reward.id"
+            >
+              <view class="reward-item-info">
+                <text class="reward-item-label">打赏{{ index + 1 }}：</text>
+                <text class="reward-item-amount">¥{{ parseFloat(reward.order_amount || 0).toFixed(2) }}</text>
+              </view>
+              <text class="reward-item-time">{{ formatRewardTime(reward.created_at) }}</text>
+            </view>
+          </view>
+        </view>
+        <view class="warning-text">
+          <text>确认要对所有打赏申请退款吗？此操作将退款所有已支付的打赏金额。</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" @click="closeRewardRefundModal">取消</view>
+        <view class="modal-btn confirm" :class="{disabled: rewardRefundLoading}" @click="!rewardRefundLoading && confirmRewardRefund()">
+          <text v-if="rewardRefundLoading">处理中...</text>
+          <text v-else>确认退款</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 时间轴弹窗 -->
     <view class="modal-mask" v-if="showTimeline" @click="closeTimelineModal"></view>
     <view class="modal-container timeline-modal" v-if="showTimeline">
@@ -448,7 +557,10 @@ export default {
       refundReason: '',
       cancelReason: '',
       riderUserInfo: null,
-      ridersInfoCache: {} // 缓存骑手信息
+      ridersInfoCache: {}, // 缓存骑手信息
+      // 打赏退款相关
+      showRewardRefund: false,
+      rewardRefundLoading: false
     }
   },
   computed: {
@@ -981,6 +1093,143 @@ export default {
           title: '网络请求失败',
           icon: 'none'
         });
+      }
+    },
+
+    // 计算打赏总金额
+    calculateRewardAmount(rewardList) {
+      if (!rewardList || !Array.isArray(rewardList)) return '0.00';
+      const paidRewards = rewardList.filter(item => item.status === 'paid');
+      const totalAmount = paidRewards.reduce((sum, item) => sum + parseFloat(item.order_amount || 0), 0);
+      return totalAmount.toFixed(2);
+    },
+
+    // 获取已支付的打赏次数
+    getPaidRewardCount(rewardList) {
+      if (!rewardList || !Array.isArray(rewardList)) return 0;
+      return rewardList.filter(item => item.status === 'paid').length;
+    },
+
+    // 获取已支付的打赏列表
+    getPaidRewards(rewardList) {
+      if (!rewardList || !Array.isArray(rewardList)) return [];
+      return rewardList.filter(item => item.status === 'paid');
+    },
+
+    // 判断是否可以退款打赏
+    canRefundReward(rewardList) {
+      if (!rewardList || !Array.isArray(rewardList)) return false;
+      // 只要有已支付的打赏就可以退款
+      return rewardList.some(item => item.status === 'paid');
+    },
+
+    // 格式化打赏时间
+    formatRewardTime(timeStr) {
+      if (!timeStr) return '未知';
+
+      try {
+        const date = new Date(timeStr);
+
+        if (isNaN(date.getTime())) {
+          return timeStr;
+        }
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      } catch (err) {
+        console.error('时间格式化错误:', err);
+        return timeStr;
+      }
+    },
+
+    // 显示打赏退款弹窗
+    showRewardRefundModal() {
+      this.showRewardRefund = true;
+    },
+
+    // 关闭打赏退款弹窗
+    closeRewardRefundModal() {
+      this.showRewardRefund = false;
+    },
+
+    // 确认打赏退款
+    async confirmRewardRefund() {
+      if (this.rewardRefundLoading) return;
+
+      this.rewardRefundLoading = true;
+
+      try {
+        // 获取用户信息
+        if (!this.riderUserInfo || !this.riderUserInfo.id) {
+          uni.showToast({
+            title: '请先登录',
+            icon: 'none'
+          });
+          return;
+        }
+
+        // 获取所有已支付的打赏
+        const paidRewards = this.getPaidRewards(this.orderInfo.reward);
+
+        if (paidRewards.length === 0) {
+          uni.showToast({
+            title: '没有可退款的打赏',
+            icon: 'none'
+          });
+          return;
+        }
+
+        // 参考 https://ccpt.0871.cn/api/service/reward/list 接口
+        // 对每个打赏调用退款接口
+        const refundPromises = paidRewards.map(reward => {
+          const params = {
+            task_id: this.orderInfo.task_id,
+            id: reward.id, // 打赏ID
+            service_member_id: this.riderUserInfo.id,
+            type: 'reward',
+            sign: 'chongchong'
+          };
+
+          return this.$request('task/cancel', params, 'POST');
+        });
+
+        // 等待所有退款请求完成
+        const results = await Promise.all(refundPromises);
+
+        // 检查是否所有退款都成功
+        const allSuccess = results.every(res => res.code === 200 || res.status === 'success');
+
+        if (allSuccess) {
+          uni.showToast({
+            title: '打赏退款成功',
+            icon: 'success'
+          });
+
+          // 关闭弹窗
+          this.closeRewardRefundModal();
+
+          // 重新加载订单详情
+          this.getOrderDetail();
+        } else {
+          uni.showToast({
+            title: '部分打赏退款失败，请重试',
+            icon: 'none'
+          });
+        }
+      } catch (err) {
+        console.error('打赏退款失败:', err);
+        uni.showToast({
+          title: '网络请求失败',
+          icon: 'none'
+        });
+      } finally {
+        this.rewardRefundLoading = false;
       }
     },
 
@@ -1870,6 +2119,96 @@ export default {
   }
 }
 
+// 骑手所得计算过程样式
+.earnings-detail {
+  display: flex;
+  margin-bottom: 0 !important;
+}
+
+.earnings-detail-expand {
+  display: block;
+  margin-top: 0 !important;
+
+  .info-value-full {
+    width: 100%;
+  }
+
+  .earnings-calculation {
+    background-color: #f8f9fa;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    border: 1rpx solid #e8e8e8;
+  }
+
+  .calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10rpx 0;
+    font-size: 26rpx;
+
+    .calc-label {
+      color: #666;
+      flex: 1;
+    }
+
+    .calc-value {
+      color: #333;
+      font-weight: 500;
+      text-align: right;
+      min-width: 120rpx;
+
+      &.highlight-add {
+        color: #52c41a;
+      }
+
+      &.highlight-minus {
+        color: #ff4d4f;
+      }
+
+      &.final-amount {
+        color: #333;
+        font-size: 28rpx;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .calc-divider {
+    height: 1rpx;
+    background-color: #d9d9d9;
+    margin: 12rpx 0;
+  }
+
+  .calc-result {
+    padding: 12rpx 0 8rpx;
+
+    .calc-label {
+      font-size: 26rpx;
+      font-weight: 500;
+      color: #666;
+    }
+  }
+
+  .calc-formula {
+    margin-top: 16rpx;
+    padding: 12rpx;
+    background-color: #fff;
+    border-radius: 8rpx;
+    border: 1rpx dashed #d9d9d9;
+    overflow-x: auto;
+    white-space: nowrap;
+
+    .formula-text {
+      font-size: 22rpx;
+      color: #999;
+      line-height: 1.6;
+      display: inline-block;
+      white-space: nowrap;
+    }
+  }
+}
+
 .ticket-details {
   margin-top: 16rpx;
   padding: 16rpx;
@@ -1885,6 +2224,86 @@ export default {
   &:last-child {
     margin-bottom: 0;
   }
+}
+
+// 打赏退款按钮样式
+.refund-reward-btn {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  margin-left: 20rpx;
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+
+// 打赏退款弹窗样式
+.reward-list-section {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f0f0f0;
+
+  .section-title {
+    display: block;
+    font-size: 26rpx;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 12rpx;
+  }
+
+  .reward-detail-list {
+    max-height: 300rpx;
+    overflow-y: auto;
+  }
+
+  .reward-detail-item {
+    padding: 12rpx;
+    background-color: #f8f9fa;
+    border-radius: 8rpx;
+    margin-bottom: 8rpx;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .reward-item-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4rpx;
+  }
+
+  .reward-item-label {
+    font-size: 24rpx;
+    color: #666;
+  }
+
+  .reward-item-amount {
+    font-size: 26rpx;
+    color: #FF6B00;
+    font-weight: 600;
+  }
+
+  .reward-item-time {
+    font-size: 22rpx;
+    color: #999;
+  }
+}
+
+.reward-total {
+  color: #FF6B00;
+  font-weight: 600;
+  font-size: 28rpx;
+}
+
+.warning-text {
+  margin-top: 20rpx;
+  padding: 12rpx;
+  background-color: #fff3e0;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  color: #ff9800;
+  line-height: 1.5;
 }
 
 .ticket-detail-label {

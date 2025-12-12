@@ -337,37 +337,33 @@
 				<view class="divider-line" style="margin-bottom: 5px;"></view>
 				
 				<view class="submit-content">
-					<view class="price-section" @tap="togglePriceDetail">
-						<text class="price-label">预估价格</text>
-						<view class="price-value">
-							<text class="currency">¥</text>
-							<text class="amount">{{priceDetails.total.toFixed(2)}}</text>
-							<text class="arrow" :class="{ 'arrow-up': showPricePopup }">▼</text>
-							<!-- 价格疑问提示 -->
-							<view class="price-question" @click.stop="showPriceQuestionModal">
-								<text class="question-text">价格有疑问？</text>
+					<!-- 已登录状态：显示价格和两个按钮 -->
+					<template v-if="isLoggedIn">
+						<view class="price-section" @tap="togglePriceDetail">
+							<text class="price-label">预估价格</text>
+							<view class="price-value">
+								<text class="currency">¥</text>
+								<text class="amount">{{priceDetails.total.toFixed(2)}}</text>
+								<text class="arrow" :class="{ 'arrow-up': showPricePopup }">▼</text>
+								<!-- 价格疑问提示 -->
+								<view class="price-question" @click.stop="showPriceQuestionModal">
+									<text class="question-text">价格有疑问？</text>
+								</view>
+							</view>
+							<view class="coupon-section2">
+								<view class="coupon-reminder2">
+									<text class="reminder-text">价格含：跑腿、备宝</text>
+								</view>
 							</view>
 						</view>
-						<view class="coupon-section2">
-							<view class="coupon-reminder2">
-								<text class="reminder-text">价格含：跑腿、备宝</text>
-							</view>
-						</view>
-					</view>
-					<button
-						class="cart-btn"
-						:style="{
-							'background-color': isLoggedIn ? '#52C41A' : '#52C41A',
-							'color': '#2492F2'
-						}"
-						@click="isLoggedIn ? addToCart() : goToLogin()">{{ isLoggedIn ? '加入购物车' : '去登录' }}</button>
-					<button
-						class="submit-btn"
-						:style="{
-							'background-color': isLoggedIn ? '#2492F2' : '#2492F2',
-							'color': '#FFFFFF'
-						}"
-						@click="isLoggedIn ? submitOrder() : goToLogin()">{{ isLoggedIn ? '提交订单' : '去登录' }}</button>
+						<button class="cart-btn" @click="addToCart()">加入购物车</button>
+						<button class="submit-btn" @click="submitOrder()">提交订单</button>
+					</template>
+					<!-- 未登录状态：只显示一个去登录按钮 -->
+					<template v-else>
+						<view class="login-tip-text">请先登录后再下单</view>
+						<button class="login-btn-full" @click="goToLogin()">去登录</button>
+					</template>
 				</view>
 			</view>
 		</view>
@@ -662,25 +658,35 @@
 					<view class="prefer-member-section">
 						<text class="prefer-member-title">骑手接单偏好</text>
 						<view class="prefer-member-options">
-							<view 
-								class="prefer-option" 
+							<view
+								class="prefer-option"
 								:class="{ 'prefer-option-active': formData.prefer_member === 'same' }"
 								@click="selectPreferMember('same')"
 							>
 								<view class="option-radio">
 									<view class="radio-inner" v-if="formData.prefer_member === 'same'"></view>
 								</view>
-								<text class="option-text">希望同个骑手接单</text>
+								<text class="option-text">希望同个骑手</text>
 							</view>
-							<view 
-								class="prefer-option" 
+							<view
+								class="prefer-option"
 								:class="{ 'prefer-option-active': formData.prefer_member === 'different' }"
 								@click="selectPreferMember('different')"
 							>
 								<view class="option-radio">
 									<view class="radio-inner" v-if="formData.prefer_member === 'different'"></view>
 								</view>
-								<text class="option-text">希望不同骑手接单</text>
+								<text class="option-text">希望不同骑手</text>
+							</view>
+							<view
+								class="prefer-option"
+								:class="{ 'prefer-option-active': formData.prefer_member === 'any' }"
+								@click="selectPreferMember('any')"
+							>
+								<view class="option-radio">
+									<view class="radio-inner" v-if="formData.prefer_member === 'any'"></view>
+								</view>
+								<text class="option-text">都可以</text>
 							</view>
 						</view>
 					</view>
@@ -792,7 +798,7 @@
 			riderTip: 0, // 给骑手的打赏金额
 			shop_poi: '', // 新增POI字段
 			device_outside: false, // 设备是否外摆，默认为否
-			prefer_member: '', // 骑手接单偏好：same-相同骑手 / different-不同骑手
+			prefer_member: 'any', // 骑手接单偏好：any-都可以 / same-相同骑手 / different-不同骑手（默认都可以）
 		},
 				showTimePicker: false,
 				currentTimeType: 'before_deadline',
@@ -2023,7 +2029,7 @@
 						city: this.formData.city,
 						district: this.formData.district,
 						shop_address: this.formData.address,
-						address: this.formData.detailAddress,
+						// address: this.formData.detailAddress, // 不再提交补充地址详情
 						longitude: this.formData.longitude,
 						latitude: this.formData.latitude,
 						base_service_fee: this.priceDetails.baseServiceFee + this.priceDetails.extraDeviceFee + this.priceDetails.distanceFee + this.priceDetails.timeLimitFee,
@@ -2055,7 +2061,6 @@
 				extra_task_2_item_number: this.selectedAdditionalServices.includes('badItemRecycle') ? (this.formData.badItemRecycleQuantity || 0) : 0,
 				extra_task_3: this.selectedAdditionalServices.includes('addPowerCable') ? '加电源线' : null,
 				extra_task_3_item_number: this.selectedAdditionalServices.includes('addPowerCable') ? (this.formData.powerCableQuantity || 0) : 0,
-				description: this.formData.locationDesc,
 						additional_notes: this.formData.additional_notes || '',
 						pic_url: this.formData.doorImages,
 						shop_poi: this.formData.shop_poi,
@@ -2156,7 +2161,7 @@
 						city: this.formData.city,
 						district: this.formData.district,
 						shop_address: this.formData.address,
-						address: this.formData.detailAddress,
+						// address: this.formData.detailAddress, // 不再提交补充地址详情
 						longitude: this.formData.longitude,
 						latitude: this.formData.latitude,
 						order_amount: this.formData.estimatedPrice,
@@ -2190,7 +2195,6 @@
 				extra_task_3: this.selectedAdditionalServices.includes('addPowerCable') ? '加电源线' : null,
 				extra_task_3_item_number: this.selectedAdditionalServices.includes('addPowerCable') ? (this.formData.powerCableQuantity || 0) : 0,
 
-				description: this.formData.locationDesc,
 					store_name: this.formData.storeName,
 					sn_mac_code: this.formData.snMacList,
 					pic_url: this.formData.doorImages ,// 门头照组
@@ -3799,6 +3803,33 @@
 			font-weight: 500;
 			transition: all 0.3s ease;
 			background-color: #2492F2 !important;
+			color: #fff !important;
+
+			&:active {
+				transform: translateY(2rpx);
+				opacity: 0.9;
+			}
+		}
+
+		/* 未登录状态样式 */
+		.login-tip-text {
+			font-size: 28rpx;
+			color: #666666;
+			margin-right: 20rpx;
+		}
+
+		.login-btn-full {
+			flex: 1;
+			height: 80rpx;
+			line-height: 80rpx;
+			text-align: center;
+			font-size: 32rpx;
+			border-radius: 40rpx;
+			border: none;
+			font-weight: 600;
+			background: linear-gradient(135deg, #2492F2, #1890FF);
+			color: #FFFFFF;
+			transition: all 0.3s ease;
 
 			&:active {
 				transform: translateY(2rpx);
@@ -5273,6 +5304,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 15rpx;
+		padding: 10rpx 0;
 	}
 
 	.prefer-member-title {
@@ -5284,33 +5316,37 @@
 
 	.prefer-member-options {
 		display: flex;
-		flex-direction: column;
-		gap: 15rpx;
+		flex-direction: row;
+		justify-content: center;
+		gap: 30rpx;
+		flex-wrap: nowrap;
 	}
 
 	.prefer-option {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		padding: 15rpx;
-		background: #FFFFFF;
-		border: 2rpx solid #E0E0E0;
-		border-radius: 8rpx;
+		justify-content: center;
+		padding: 10rpx;
+		background: transparent;
+		border: none;
 		transition: all 0.3s;
 		position: relative;
 		z-index: 1;
+		flex: 0 0 auto;
+		width: 140rpx;
 	}
 
 	.prefer-option-active {
-		border-color: #FF7F47;
-		background: rgba(255, 127, 71, 0.05);
+		background: transparent;
 	}
 
 	.option-radio {
-		width: 36rpx;
-		height: 36rpx;
+		width: 32rpx;
+		height: 32rpx;
 		border: 2rpx solid #E0E0E0;
 		border-radius: 50%;
-		margin-right: 12rpx;
+		margin-bottom: 8rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -5323,16 +5359,18 @@
 	}
 
 	.radio-inner {
-		width: 20rpx;
-		height: 20rpx;
+		width: 18rpx;
+		height: 18rpx;
 		background: #FF7F47;
 		border-radius: 50%;
 	}
 
 	.option-text {
-		font-size: 28rpx;
+		font-size: 22rpx;
 		color: #333333;
-		font-weight: 500;
+		font-weight: 400;
+		text-align: center;
+		white-space: nowrap;
 	}
 
 

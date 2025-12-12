@@ -128,7 +128,7 @@ export default {
 			classMap: {
 				'1': 'yellow',    // 补宝
 				'2': 'light-blue', // 离线&异常
-				'3': 'blue',      // 装机
+				'3': 'blue',      // 废机卖钱
 				'4': 'pink',      // 撤机
 				'5': 'green',     // 收宝（回收坏宝）
 				'6': 'gray',      // 送装配件
@@ -265,7 +265,9 @@ export default {
 				console.log('任务类型数据:', res);
 				if (res && res.data) {
 					// 确保每个任务项都有type属性和url属性
-					this.taskTypes = res.data.map(item => {
+					this.taskTypes = res.data
+						.filter(item => item.show === 1) // 只显示 show 字段为 1 的项目
+						.map(item => {
 						// 设置type属性
 						if (!item.type) {
 							// 如果没有type属性，根据task_name或其他属性设置默认type
@@ -273,7 +275,7 @@ export default {
 								item.type = '1';
 							} else if (item.task_name.includes('离线') || item.task_name.includes('异常')) {
 								item.type = '2';
-							} else if (item.task_name.includes('装机')) {
+							} else if (item.task_name.includes('废机卖钱') || item.task_name.includes('装机')) {
 								item.type = '3';
 							} else if (item.task_name.includes('撤机')) {
 								item.type = '4';
@@ -331,7 +333,7 @@ export default {
 						'1': 1,  // 补宝
 						'5': 2,  // 收宝
 						'2': 3,  // 离线&异常
-						'3': 4,  // 装机
+						'3': 4,  // 废机卖钱
 						'4': 5,  // 撤机
 						'6': 6,  // 送装配件
 						'7': 7   // 购券充值
@@ -705,7 +707,7 @@ export default {
 					}
 
 					.grid-icon {
-						filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2849%) hue-rotate(190deg) brightness(97%) contrast(95%);
+						// filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2849%) hue-rotate(190deg) brightness(97%) contrast(95%);
 						width: 100rpx !important; // 更小的图标尺寸
 						height: 100rpx !important;
 					}
@@ -717,6 +719,11 @@ export default {
 				border-color: #F5F5F5;
 				.title { color: #2296EA; }
 				.subtitle { color: #464646; }
+
+				.grid-icon {
+					width: 100rpx !important;
+					height: 100rpx !important;
+				}
 			}
 
 			&.light-blue {
@@ -758,6 +765,11 @@ export default {
 				border-color: #F5F5F5;
 				.title { color: #2296EA; }
 				.subtitle { color: #464646; }
+
+				.grid-icon {
+					width: 100rpx !important;
+					height: 100rpx !important;
+				}
 			}
 
 			&.green {
@@ -832,8 +844,8 @@ export default {
 				}
 
 				.grid-icon {
-					width: 50rpx;
-					height: 50rpx;
+					width: 100rpx;
+					height: 100rpx;
 					&.active {
 						filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2849%) hue-rotate(190deg) brightness(97%) contrast(95%);
 					}
@@ -851,7 +863,7 @@ export default {
 					color: #464646;
 				}
 				.grid-icon {
-					filter: brightness(0) saturate(100%) invert(70%) sepia(85%) saturate(2849%) hue-rotate(190deg) brightness(97%) contrast(95%);
+					// filter: brightness(0) saturate(100%) invert(70%) sepia(85%) saturate(2849%) hue-rotate(190deg) brightness(97%) contrast(95%);
 					opacity: 0.5;
 				}
 			}

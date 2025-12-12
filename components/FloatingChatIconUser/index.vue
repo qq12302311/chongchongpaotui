@@ -22,6 +22,18 @@
 <script>
 export default {
   name: 'FloatingChatIconUser',
+  props: {
+    // 订单ID，如果提供则进入订单专属聊天室，否则进入聊天列表
+    orderId: {
+      type: String,
+      default: ''
+    },
+    // 订单标题，用于聊天室标题显示
+    orderTitle: {
+      type: String,
+      default: '订单协办'
+    }
+  },
   data() {
     return {
       // 未读消息数量
@@ -97,17 +109,32 @@ export default {
       }
     },
     goToChat() {
-      // 跳转到用户端聊天列表（普通页面）
-      uni.navigateTo({
-        url: '/pages/chat/chat-list',
-        fail: (err) => {
-          console.error('跳转到聊天列表失败:', err);
-          uni.showToast({
-            title: '跳转失败',
-            icon: 'none'
-          });
-        }
-      });
+      // 如果提供了订单ID，跳转到订单专属聊天室；否则跳转到聊天列表
+      if (this.orderId) {
+        // 跳转到订单专属聊天室
+        uni.navigateTo({
+          url: `/pages/chat/chat-simple?roomId=${this.orderId}&title=${encodeURIComponent(this.orderTitle)}`,
+          fail: (err) => {
+            console.error('跳转到聊天室失败:', err);
+            uni.showToast({
+              title: '跳转失败',
+              icon: 'none'
+            });
+          }
+        });
+      } else {
+        // 跳转到用户端聊天列表（普通页面）
+        uni.navigateTo({
+          url: '/pages/chat/chat-list',
+          fail: (err) => {
+            console.error('跳转到聊天列表失败:', err);
+            uni.showToast({
+              title: '跳转失败',
+              icon: 'none'
+            });
+          }
+        });
+      }
     },
     // 触摸开始
     handleTouchStart(e) {

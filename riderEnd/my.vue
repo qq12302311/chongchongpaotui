@@ -35,7 +35,7 @@
     <!-- 账户信息卡片 -->
     <view class="account-card">
       <view class="account-item-wrapper">
-        <view class="account-item">
+        <view class="account-item" @click="navigateTo('/riderEnd/quota')">
           <view class="account-title">
             <text>接单配额</text>
             <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>

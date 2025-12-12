@@ -17,7 +17,7 @@
         <view v-if="showBadge" class="badge">{{ displayUnreadCount }}</view>
       </view>
       <view @tap.stop="handleClick">
-        <image class="img-2" src="https://ccpt.qiniu.0871.cn/tjyj-gwc.svg" mode="aspectFit"></image>
+        <image class="img-2" src="https://ccpt.qiniu.0871.cn/home/ptyh.svg" mode="aspectFit"></image>
       </view>
     </view>
 
@@ -959,6 +959,7 @@ export default {
       }
     },
     handleClick() {
+		return false;
       if (this.dragging) return; // 拖拽时不触发点击事件
       
       // console.log('点击悬浮小图');
@@ -1057,7 +1058,7 @@ export default {
 
   .img-2 {
 	  margin-top: 4px;
-    width: 100rpx;
+    width: 110rpx;
     height: 100rpx;
     pointer-events: auto; // 确保图片可点击
     &:active {

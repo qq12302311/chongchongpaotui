@@ -57,7 +57,7 @@
         <view class="notice-item">• 独立骑手每月6号、16号、26号，"逢6"均可提现</view>
         <view class="notice-item">• 提现申请提交后，将在1-3个工作日内到账</view>
         <view class="notice-item">• 请确保提现账户信息准确无误</view>
-        <view class="notice-item">• 提现手续费3%（当前暂行0%）</view>
+        <view class="notice-item">• 提现手续费3%+3元/笔（限时免）</view>
         <view class="notice-item" v-if="!isWithdrawDay">• 当前不在提现日期内，下次可提现日期：{{ nextWithdrawDate }}</view>
         <!-- 临时测试按钮 -->
        <!-- <view class="test-button" @click="forceShowPopup" style="margin-top: 20rpx; padding: 10rpx; background-color: #ff6b6b; color: white; text-align: center; border-radius: 8rpx; font-size: 24rpx;">

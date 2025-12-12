@@ -21,25 +21,8 @@
         <view class="search-btn" @click="searchOrders">搜索</view>
       </view>
       
-      <!-- 分段器：订单列表/打赏列表 -->
-      <view class="segmented-control">
-        <view 
-          class="segment-item" 
-          :class="{ active: currentTab === 'orders' }"
-          @click="switchTab('orders')"
-        >
-          订单列表
-        </view>
-        <view 
-          class="segment-item" 
-          :class="{ active: currentTab === 'rewards' }"
-          @click="switchTab('rewards')"
-        >
-          打赏列表
-        </view>
-      </view>
-      
-      <view class="filter-options" v-if="currentTab === 'orders'">
+      <!-- 分段器已取消，直接显示筛选选项 -->
+      <view class="filter-options">
         <view class="filter-section">
           <view class="filter-title">
             <view class="title-icon status-icon"></view>
@@ -174,10 +157,10 @@
     </view>
 
     <!-- 固定顶部区域的占位元素 -->
-    <view class="fixed-top-placeholder" :class="{ 'rewards-mode': currentTab === 'rewards' }"></view>
+    <view class="fixed-top-placeholder"></view>
 
     <!-- 订单列表 -->
-    <view class="order-list" v-if="currentTab === 'orders'">
+    <view class="order-list">
       <!-- 加载中提示 -->
       <view v-if="loading" class="loading-container">
         <view class="loading-spinner"></view>
@@ -203,7 +186,7 @@
               订单号：{{ order.task_no }}
               <view class="copy-btn-small" @click.stop="copyText(order.task_no)">复制</view>
             </view>
-            <view class="order-status" :class="order.payment_status === 'refunded' ? 'refunded' : (order.status === 'assigned' && order.time_out === true ? 'timeout' : order.status)">
+            <view class="order-status" :class="order.payment_status === 'refunded' ? 'refunded' : (order.status === 'waiting' && order.refund_request == 1 ? 'refundPending' : (order.status === 'assigned' && order.time_out === true ? 'timeout' : order.status))">
               {{ order.payment_status === 'refunded' ? '已退款' : getStatusText(order.status, order) }}
             </view>
           </view>
@@ -230,12 +213,22 @@
             </view>
             <view class="info-row">
               <text class="info-label">门店名称：</text>
-              <text class="info-value">{{ order.task_detail.store_name || '未指定门店' }}</text>
+              <view class="info-value-wrapper">
+                <text class="info-value">{{ order.task_detail.store_name || '未指定门店' }}</text>
+                <view class="icon-btn copy-btn copy-btn-inline" v-if="order.task_detail.store_name" @click.stop="copyText(order.task_detail.store_name)">
+                  <view class="copy-icon"></view>
+                </view>
+              </view>
             </view>
             <view class="info-row">
               <text class="info-label">订单地址：</text>
-              <text class="info-value">{{ order.province_name || '' }}{{ order.city_name || '' }}{{ order.district_name || '' }}{{ order.task_detail && order.task_detail.address ? order.task_detail.address : '' }}</text>
-              <text class="order-amount" style="color: #ff4d4f;" v-if="order.refund_request == 1">申请退单中</text>
+              <view class="info-value-wrapper">
+                <text class="info-value">{{ order.province_name || '' }}{{ order.city_name || '' }}{{ order.district_name || '' }}{{ order.task_detail && order.task_detail.address ? order.task_detail.address : '' }}</text>
+                <view class="icon-btn copy-btn copy-btn-inline" @click.stop="copyText((order.province_name || '') + (order.city_name || '') + (order.district_name || '') + (order.task_detail && order.task_detail.address ? order.task_detail.address : ''))">
+                  <view class="copy-icon"></view>
+                </view>
+              </view>
+              <!-- <text class="order-amount" style="color: #ff4d4f;" v-if="order.refund_request == 1">申请退单中</text> -->
             </view>
             <view class="info-row" v-if="order.task_detail && order.task_detail.prefer_member">
               <text class="info-label">接单偏好：</text>
@@ -250,6 +243,11 @@
               <text class="info-value">{{ order.task_date }}</text>
               <text class="order-amount">¥{{ parseFloat(order.order_amount).toFixed(2) }}</text>
             </view>
+            <!-- 打赏信息 -->
+            <view class="info-row reward-info-row" v-if="order.reward && order.reward.length > 0">
+              <text class="info-label">打赏金额：</text>
+              <text class="info-value reward-amount">¥{{ calculateRewardAmount(order.reward) }}</text>
+            </view>
             <view class="info-row user-info-row">
               <text class="info-label">用户信息：</text>
               <view class="info-value">
@@ -257,14 +255,22 @@
                 <view class="repeat-purchase-tag" v-if="order.user && order.user.repeat_purchase" :class="'tag-' + order.user.repeat_purchase">
                   {{ getRepeatPurchaseText(order.user.repeat_purchase) }}
                 </view>
+                <!-- 复制和拨打按钮 -->
+                <view class="icon-btn copy-btn" @click.stop="copyText(order.phone_number)">
+                  <view class="copy-icon"></view>
+                </view>
+                <view class="icon-btn call-btn" @click.stop="makePhoneCall(order.phone_number)">
+                  <view class="call-icon"></view>
+                </view>
               </view>
               <!-- 按钮容器 -->
               <view class="action-buttons">
-                <!-- 进行中的任务显示撤销任务按钮 -->
-                <view class="cancel-order-btn" v-if="order.status === 'assigned'" @click.stop="showCancelModal(order)">撤销任务</view>
+                <!-- 进行中的任务显示撤销任务按钮，同时有退款按钮时显示"操作订单" -->
+                <view class="cancel-order-btn" v-if="order.status === 'assigned' && (order.status === 'canceled' || order.payment_status === 'refunded')" @click.stop="showCancelModal(order)">撤销任务</view>
+                <view class="operation-order-btn" v-else-if="order.status === 'assigned' && order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showOperationModal(order)">操作订单</view>
                 <!-- 退款相关按钮 -->
                 <view class="refund-btn audit-btn" v-if="currentStatus === 'refundPending'" @click.stop="showAuditModal(order)">审核</view>
-                <view class="refund-btn" v-else-if="order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showRefundModal(order)">申请退款</view>
+                <view class="refund-btn" v-else-if="order.status !== 'assigned' && order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showRefundModal(order)">申请退款</view>
               </view>
             </view>
             <!-- 骑手信息 -->
@@ -277,8 +283,12 @@
               <text class="info-label">联系电话：</text>
               <view class="info-value-wrap">
                 <text class="info-value">{{ order.service_member.phone_number }}</text>
-                <view class="call-btn" @click.stop="makePhoneCall(order.service_member.phone_number)">拨打</view>
-                <view class="copy-btn" @click.stop="copyText(order.service_member.phone_number)">复制</view>
+                <view class="icon-btn copy-btn" @click.stop="copyText(order.service_member.phone_number)">
+                  <view class="copy-icon"></view>
+                </view>
+                <view class="icon-btn call-btn" @click.stop="makePhoneCall(order.service_member.phone_number)">
+                  <view class="call-icon"></view>
+                </view>
               </view>
             </view>
           </view>
@@ -295,103 +305,6 @@
         <text>正在加载更多...</text>
       </view>
       <view v-else-if="orderList.length > 0 && !hasMore" class="no-more">
-        <text>没有更多数据了</text>
-      </view>
-    </view>
-    
-    <!-- 打赏列表 -->
-    <view class="reward-list" v-if="currentTab === 'rewards'">
-      <!-- 加载中提示 -->
-      <view v-if="rewardLoading" class="loading-container">
-        <view class="loading-spinner"></view>
-        <text class="loading-text">加载中...</text>
-      </view>
-
-      <!-- 空状态 -->
-      <view v-else-if="rewardList.length === 0" class="empty-state">
-        <view class="empty-icon"></view>
-        <text class="empty-text">暂无打赏记录</text>
-      </view>
-
-      <!-- 打赏列表内容 -->
-      <view v-else class="reward-list-content">
-        <view
-          class="reward-item"
-          v-for="(reward, index) in rewardList"
-          :key="index"
-        >
-          <view class="reward-header">
-            <view class="reward-number">
-              打赏ID：{{ reward.id }}
-            </view>
-            <view class="reward-status" :class="reward.status">
-              {{ getRewardStatusText(reward.status, reward.refund_status) }}
-            </view>
-          </view>
-          <view class="reward-info">
-            <view class="info-row">
-              <text class="info-label">任务ID：</text>
-              <text class="info-value">{{ reward.task_id || '未知' }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">订单金额：</text>
-              <text class="info-value reward-amount-text">¥{{ parseFloat(reward.order_amount || 0).toFixed(2) }}</text>
-            </view>
-            <view class="info-row" v-if="reward.refund_amount && parseFloat(reward.refund_amount) > 0">
-              <text class="info-label">退款金额：</text>
-              <text class="info-value" style="color: #ff9800;">¥{{ parseFloat(reward.refund_amount || 0).toFixed(2) }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">用户ID：</text>
-              <text class="info-value">{{ reward.user_id || '未知' }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">骑手ID：</text>
-              <text class="info-value">{{ reward.service_member_id || '未分配' }}</text>
-            </view>
-            <view class="info-row" v-if="reward.payment_method">
-              <text class="info-label">支付方式：</text>
-              <text class="info-value">{{ getPaymentMethodText(reward.payment_method) }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">骑手费用：</text>
-              <text class="info-value" style="color: #4caf50;">¥{{ parseFloat(reward.worker_fee || 0).toFixed(2) }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">平台费用：</text>
-              <text class="info-value">¥{{ parseFloat(reward.platform_fee || 0).toFixed(2) }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">实收金额：</text>
-              <text class="info-value" style="color: #2196f3; font-weight: 600;">¥{{ parseFloat(reward.net_amount || 0).toFixed(2) }}</text>
-            </view>
-            <view class="info-row full-width">
-              <text class="info-label">创建时间：</text>
-              <text class="info-value">{{ formatRewardTime(reward.created_at) }}</text>
-            </view>
-            <view class="info-row" v-if="reward.is_settled">
-              <text class="info-label">结算状态：</text>
-              <text class="info-value" style="color: #4caf50;">{{ reward.is_settled ? '已结算' : '未结算' }}</text>
-            </view>
-          </view>
-          <!-- 退款按钮 -->
-          <view class="reward-actions" v-if="canRefundReward(reward)">
-            <view class="refund-btn" @click="showRefundConfirm(reward)">
-              <text>申请退款</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 加载更多提示 -->
-      <view v-if="rewardList.length > 0 && hasMoreRewards && !loadingMoreRewards" class="load-more" @click="loadMoreRewards">
-        <text>上拉加载更多 (点击也可加载)</text>
-      </view>
-      <view v-else-if="rewardList.length > 0 && loadingMoreRewards" class="load-more loading">
-        <view class="loading-spinner-small"></view>
-        <text>正在加载更多...</text>
-      </view>
-      <view v-else-if="rewardList.length > 0 && !hasMoreRewards" class="no-more">
         <text>没有更多数据了</text>
       </view>
     </view>
@@ -454,6 +367,10 @@
       </view>
       <view class="modal-content">
         <view class="modal-info">
+          <view class="info-row" v-if="currentOrder.refund_requested_at">
+            <text class="info-label">申请时间：</text>
+            <text class="info-value">{{ currentOrder.refund_requested_at }}</text>
+          </view>
           <view class="info-row">
             <text class="info-label">订单号：</text>
             <text class="info-value">{{ currentOrder.task_no }}</text>
@@ -522,39 +439,26 @@
         <view class="modal-btn confirm" @click="confirmCancel">确认撤销</view>
       </view>
     </view>
-    
-    <!-- 打赏退款确认弹窗 -->
-    <view class="modal-mask" v-if="showRewardRefund" @click="closeRewardRefundModal"></view>
-    <view class="modal-container" v-if="showRewardRefund">
+
+    <!-- 操作订单弹窗 -->
+    <view class="modal-mask" v-if="showOperation" @click="closeOperationModal"></view>
+    <view class="modal-container" v-if="showOperation">
       <view class="modal-header">
-        <text class="modal-title">打赏退款</text>
-        <view class="modal-close" @click="closeRewardRefundModal">×</view>
+        <text class="modal-title">操作订单</text>
+        <view class="modal-close" @click="closeOperationModal">×</view>
       </view>
       <view class="modal-content">
         <view class="modal-info">
           <view class="info-row">
-            <text class="info-label">打赏ID：</text>
-            <text class="info-value">{{ currentReward.id }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">任务ID：</text>
-            <text class="info-value">{{ currentReward.task_id }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">订单金额：</text>
-            <text class="info-value">¥{{ parseFloat(currentReward.order_amount || 0).toFixed(2) }}</text>
-          </view>
-          <view class="confirm-text">
-            <text>确认要对此打赏申请退款吗？</text>
+            <text class="info-label">订单号：</text>
+            <text class="info-value">{{ currentOrder.task_no }}</text>
           </view>
         </view>
       </view>
-      <view class="modal-footer">
-        <view class="modal-btn cancel" @click="closeRewardRefundModal">取消</view>
-        <view class="modal-btn confirm" :class="{disabled: rewardRefundLoading}" @click="!rewardRefundLoading && confirmRewardRefund()">
-          <text v-if="rewardRefundLoading">处理中...</text>
-          <text v-else>确认退款</text>
-        </view>
+      <view class="modal-footer operation-footer">
+        <view class="modal-btn cancel" @click="closeOperationModal">取消</view>
+        <view class="modal-btn operation" @click="handleCancelOrder">撤销任务</view>
+        <view class="modal-btn operation refund" @click="handleRefundOrder">申请退款</view>
       </view>
     </view>
 
@@ -570,7 +474,6 @@ export default {
     return {
       navBarHeight: 0,
       searchKeyword: '',
-      currentTab: 'orders', // 当前tab：orders-订单列表, rewards-打赏列表
       currentStatus: 'waiting',
       currentZone: '',
       statusOptions: [
@@ -604,6 +507,7 @@ export default {
       showRefund: false,
       showCancel: false,
       showAudit: false,
+      showOperation: false,
       currentOrder: {},
       refundAmount: '',
       refundReason: '',
@@ -625,18 +529,7 @@ export default {
         { label: '昨日', value: 'yesterday' },
         { label: '3日前', value: '3days' },
         { label: '7日前', value: '7days' }
-      ],
-      // 打赏列表相关
-      rewardList: [],
-      rewardLoading: false,
-      rewardPage: 1,
-      rewardPageSize: 10,
-      hasMoreRewards: true,
-      loadingMoreRewards: false,
-      // 打赏退款相关
-      showRewardRefund: false,
-      currentReward: {},
-      rewardRefundLoading: false
+      ]
     }
   },
   computed: {
@@ -645,11 +538,7 @@ export default {
 
   onReachBottom() {
     // 页面滚动到底部时加载更多
-    if (this.currentTab === 'orders') {
-      this.onScrollToLower();
-    } else if (this.currentTab === 'rewards') {
-      this.loadMoreRewards();
-    }
+    this.onScrollToLower();
   },
   
   onLoad() {
@@ -678,305 +567,6 @@ export default {
   onShow() {
   },
   methods: {
-    // 切换tab
-    switchTab(tab) {
-      this.currentTab = tab;
-      if (tab === 'rewards') {
-        // 切换到打赏列表，重置并加载数据
-        this.rewardPage = 1;
-        this.rewardList = [];
-        this.hasMoreRewards = true;
-        this.getRewardList();
-      }
-    },
-    
-    // 获取打赏列表
-    async getRewardList() {
-      if (this.rewardLoading) return;
-
-      this.rewardLoading = true;
-      try {
-        // 获取用户信息
-        if (!this.riderUserInfo || !this.riderUserInfo.id) {
-          uni.showToast({
-            title: '请先登录',
-            icon: 'none'
-          });
-          this.rewardLoading = false;
-          return;
-        }
-
-        // 构建请求参数
-        const timestamp = Math.floor(Date.now() / 1000); // 秒级时间戳
-        const params = {
-          service_member_id: this.riderUserInfo.id,
-          timestamp: timestamp,
-          sign: 'chongchong',
-          page: this.rewardPage,
-          per_page: this.rewardPageSize
-        };
-
-        console.log('📋 打赏列表请求参数:', params);
-
-        // 发送请求
-        const res = await this.$request('service/reward/list', params, 'POST');
-
-        if (res.code === 200 && res.data) {
-          // 处理返回的数据
-          let newRewards = Array.isArray(res.data) ? res.data : [];
-
-          // 追加新数据
-          if (this.rewardPage === 1) {
-            this.rewardList = newRewards;
-          } else {
-            this.rewardList = [...this.rewardList, ...newRewards];
-          }
-
-          // 判断是否还有更多数据
-          // 根据返回的分页信息判断
-          if (res.current_page && res.last_page) {
-            this.hasMoreRewards = res.current_page < res.last_page;
-          } else {
-            this.hasMoreRewards = newRewards.length >= this.rewardPageSize;
-          }
-        } else {
-          uni.showToast({
-            title: res.message || '获取打赏列表失败',
-            icon: 'none'
-          });
-        }
-      } catch (err) {
-        console.error('获取打赏列表失败:', err);
-        uni.showToast({
-          title: '网络请求失败',
-          icon: 'none'
-        });
-      } finally {
-        this.rewardLoading = false;
-      }
-    },
-    
-    // 加载更多打赏数据
-    async loadMoreRewards() {
-      console.log('开始加载更多打赏数据，当前页码:', this.rewardPage, '下一页:', this.rewardPage + 1);
-
-      if (this.loadingMoreRewards || !this.hasMoreRewards) {
-        return;
-      }
-
-      this.loadingMoreRewards = true;
-
-      try {
-        // 获取用户信息
-        if (!this.riderUserInfo || !this.riderUserInfo.id) {
-          uni.showToast({
-            title: '请先登录',
-            icon: 'none'
-          });
-          return;
-        }
-
-        // 增加页码
-        const nextPage = this.rewardPage + 1;
-
-        // 构建请求参数
-        const timestamp = Math.floor(Date.now() / 1000); // 秒级时间戳
-        const params = {
-          service_member_id: this.riderUserInfo.id,
-          timestamp: timestamp,
-          sign: 'chongchong',
-          page: nextPage,
-          per_page: this.rewardPageSize
-        };
-
-        console.log('加载更多打赏请求参数:', params);
-
-        // 发送请求
-        const res = await this.$request('service/reward/list', params, 'POST');
-
-        if (res.code === 200 && res.data) {
-          let newRewards = Array.isArray(res.data) ? res.data : [];
-
-          console.log('获取到新打赏数据:', newRewards.length, '条');
-
-          // 追加新数据到现有列表底部
-          this.rewardList = [...this.rewardList, ...newRewards];
-
-          // 更新页码
-          this.rewardPage = nextPage;
-
-          // 判断是否还有更多数据
-          // 根据返回的分页信息判断
-          if (res.current_page && res.last_page) {
-            this.hasMoreRewards = res.current_page < res.last_page;
-          } else {
-            this.hasMoreRewards = newRewards.length >= this.rewardPageSize;
-          }
-
-          console.log('加载更多完成，总打赏数量:', this.rewardList.length, '是否还有更多:', this.hasMoreRewards);
-
-          // 如果没有新数据，提示用户
-          if (newRewards.length === 0) {
-            uni.showToast({
-              title: '没有更多数据了',
-              icon: 'none'
-            });
-          }
-        } else {
-          uni.showToast({
-            title: res.message || '加载失败',
-            icon: 'none'
-          });
-        }
-      } catch (error) {
-        console.error('加载更多打赏失败:', error);
-        uni.showToast({
-          title: '加载失败，请重试',
-          icon: 'none'
-        });
-      } finally {
-        this.loadingMoreRewards = false;
-      }
-    },
-    
-    // 获取打赏状态文本
-    getRewardStatusText(status, refundStatus) {
-      // 如果有退款状态，优先显示退款信息
-      if (refundStatus === 'full') {
-        return '全额退款';
-      } else if (refundStatus === 'partial') {
-        return '部分退款';
-      }
-      
-      // 显示主状态
-      const statusMap = {
-        'pending': '待支付',
-        'paid': '已支付',
-        'refunded': '已退款',
-        'canceled': '已取消',
-        'completed': '已完成',
-        'processing': '处理中'
-      };
-      return statusMap[status] || status || '未知';
-    },
-    
-    // 获取支付方式文本
-    getPaymentMethodText(method) {
-      const methodMap = {
-        'lkl': '拉卡拉',
-        'wechat': '微信支付',
-        'alipay': '支付宝',
-        'wx': '微信支付',
-        'balance': '余额支付'
-      };
-      return methodMap[method] || method || '未知';
-    },
-    
-    // 格式化打赏时间
-    formatRewardTime(timeStr) {
-      if (!timeStr) return '未知';
-      
-      try {
-        // 处理格式如 "2025-10-22T12:42:36.000000Z"
-        const date = new Date(timeStr);
-        
-        if (isNaN(date.getTime())) {
-          return timeStr;
-        }
-        
-        // 格式化为 YYYY-MM-DD HH:mm:ss
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-      } catch (err) {
-        console.error('时间格式化错误:', err);
-        return timeStr;
-      }
-    },
-    
-    // 判断打赏是否可以退款
-    canRefundReward(reward) {
-      // 只有未退款或未申请退款的打赏才能申请退款
-      return reward.status !== 'refunded' && reward.refund_status !== 'full' && reward.refund_status !== 'partial';
-    },
-    
-    // 显示打赏退款确认弹窗
-    showRefundConfirm(reward) {
-      this.currentReward = reward;
-      this.showRewardRefund = true;
-    },
-    
-    // 关闭打赏退款弹窗
-    closeRewardRefundModal() {
-      this.showRewardRefund = false;
-      this.currentReward = {};
-    },
-    
-    // 确认打赏退款
-    async confirmRewardRefund() {
-      if (this.rewardRefundLoading) return;
-      
-      this.rewardRefundLoading = true;
-      
-      try {
-        // 获取用户信息
-        if (!this.riderUserInfo || !this.riderUserInfo.id) {
-          uni.showToast({
-            title: '请先登录',
-            icon: 'none'
-          });
-          return;
-        }
-        
-        // 构建请求参数
-        const params = {
-          task_id: this.currentReward.task_id,
-          id: this.currentReward.id, // 打赏ID
-          service_member_id: this.riderUserInfo.id,
-          type: 'reward',
-          sign: 'chongchong'
-        };
-        
-        console.log('📋 打赏退款请求参数:', params);
-        
-        // 调用接口
-        const res = await this.$request('task/cancel', params, 'POST');
-        
-        if (res.code === 200 || res.status === 'success') {
-          uni.showToast({
-            title: '退款申请成功',
-            icon: 'success'
-          });
-          
-          // 关闭弹窗
-          this.closeRewardRefundModal();
-          
-          // 重新加载打赏列表
-          this.rewardPage = 1;
-          this.rewardList = [];
-          this.getRewardList();
-        } else {
-          uni.showToast({
-            title: res.message || '退款申请失败',
-            icon: 'none'
-          });
-        }
-      } catch (err) {
-        console.error('打赏退款失败:', err);
-        uni.showToast({
-          title: '网络请求失败',
-          icon: 'none'
-        });
-      } finally {
-        this.rewardRefundLoading = false;
-      }
-    },
-    
     // 获取区域列表
     async getZoneList() {
       try {
@@ -1782,6 +1372,29 @@ export default {
       }
     },
 
+    // 显示操作订单弹窗
+    showOperationModal(order) {
+      this.currentOrder = order;
+      this.showOperation = true;
+    },
+
+    // 关闭操作订单弹窗
+    closeOperationModal() {
+      this.showOperation = false;
+    },
+
+    // 处理撤销任务（从操作订单弹窗）
+    handleCancelOrder() {
+      this.closeOperationModal();
+      this.showCancelModal(this.currentOrder);
+    },
+
+    // 处理申请退款（从操作订单弹窗）
+    handleRefundOrder() {
+      this.closeOperationModal();
+      this.showRefundModal(this.currentOrder);
+    },
+
     // 显示撤销任务弹窗
     showCancelModal(order) {
       this.currentOrder = order;
@@ -1963,6 +1576,10 @@ export default {
 
     // 获取订单状态文本
     getStatusText(status, order = null) {
+      // 待接单状态下，如果有退款申请，显示为申请退款中
+      if (status === 'waiting' && order && order.refund_request == 1) {
+        return '申请退款中';
+      }
       // 如果是assigned状态且time_out为true，显示为进行中（超时订单）
       if (status === 'assigned' && order && order.time_out === true) {
         return '进行中（超时）';
@@ -1999,9 +1616,19 @@ export default {
       return textMap[repeatPurchase] || '';
     },
 
+    // 计算打赏总金额
+    calculateRewardAmount(rewardList) {
+      if (!rewardList || !Array.isArray(rewardList)) return '0.00';
+      const paidRewards = rewardList.filter(item => item.status === 'paid');
+      const totalAmount = paidRewards.reduce((sum, item) => sum + parseFloat(item.order_amount || 0), 0);
+      return totalAmount.toFixed(2);
+    },
 
-
-
+    // 获取已支付的打赏次数
+    getPaidRewardCount(rewardList) {
+      if (!rewardList || !Array.isArray(rewardList)) return 0;
+      return rewardList.filter(item => item.status === 'paid').length;
+    }
   }
 }
 </script>
@@ -2510,14 +2137,13 @@ export default {
 
 .order-list {
   min-height: 400rpx;
-  padding: 20rpx 10rpx;
+  padding: 10rpx 10rpx;
   background: transparent;
   width: 100%;
   box-sizing: border-box;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .order-list-content {
-  margin-top: 70rpx;
 }
 
 .order-item {
@@ -2653,7 +2279,7 @@ export default {
 
 .info-value {
   color: #333;
-  flex: 1;
+  // flex: 1;
   word-break: break-all;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -2683,6 +2309,29 @@ export default {
   }
 }
 
+.info-value-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 4rpx;
+  flex: 1;
+  max-width: calc(100% - 140rpx);
+
+  .info-value {
+    color: #333;
+    word-break: break-all;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .copy-btn-inline {
+    flex-shrink: 0;
+    margin-left: 0;
+    margin-top: 2rpx;
+  }
+}
+
 .order-time-row {
   position: relative;
 
@@ -2693,6 +2342,12 @@ export default {
     color: #ff4d4f;
     font-weight: 600;
     font-size: 26rpx;
+  }
+}
+
+.reward-info-row {
+  .reward-amount {
+    color: #333;
   }
 }
 
@@ -2768,6 +2423,7 @@ export default {
     flex-shrink: 0;
 
     .cancel-order-btn,
+    .operation-order-btn,
     .refund-btn {
       padding: 8rpx 12rpx;
       font-size: 20rpx;
@@ -2786,6 +2442,15 @@ export default {
 
     .cancel-order-btn {
       background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
+      color: #fff;
+
+      &:active {
+        opacity: 0.8;
+      }
+    }
+
+    .operation-order-btn {
+      background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
       color: #fff;
 
       &:active {
@@ -2813,6 +2478,57 @@ export default {
   }
 }
 
+// 图标按钮样式（全局）
+.icon-btn {
+  width: 36rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  margin-left: 8rpx;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.copy-btn {
+    background-color: rgba(36, 146, 242, 0.15);
+
+    &:active {
+      background-color: rgba(36, 146, 242, 0.25);
+    }
+
+    .copy-icon {
+      width: 20rpx;
+      height: 20rpx;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIwIDlIMTFDOS44OTU0MyA5IDkgOS44OTU0MyA5IDExVjIwQzkgMjEuMTA0NiA5Ljg5NTQzIDIyIDExIDIySDIwQzIxLjEwNDYgMjIgMjIgMjEuMTA0NiAyMiAyMFYxMUMyMiA5Ljg5NTQzIDIxLjEwNDYgOSAyMCA5WiIgc3Ryb2tlPSIjMjQ5MkYyIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNNSAxNUg0QzMuNDY5NTcgMTUgMi45NjA4NiAxNC43ODkzIDIuNTg1NzkgMTQuNDE0MkMyLjIxMDcxIDE0LjAzOTEgMiAxMy41MzA0IDIgMTNWNEMyIDMuNDY5NTcgMi4yMTA3MSAyLjk2MDg2IDIuNTg1NzkgMi41ODU3OUMyLjk2MDg2IDIuMjEwNzEgMy40Njk1NyAyIDQgMkgxM0MxMy41MzA0IDIgMTQuMDM5MSAyLjIxMDcxIDE0LjQxNDIgMi41ODU3OUMxNC43ODkzIDIuOTYwODYgMTUgMy40Njk1NyAxNSA0VjUiIHN0cm9rZT0iIzI0OTJGMiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+  }
+
+  &.call-btn {
+    background-color: rgba(102, 187, 106, 0.15);
+
+    &:active {
+      background-color: rgba(102, 187, 106, 0.25);
+    }
+
+    .call-icon {
+      width: 20rpx;
+      height: 20rpx;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIyIDE2LjkyVjE5LjkyQzIyLjAwMTEgMjAuMTk4NSAyMS45NDQxIDIwLjQ3NDIgMjEuODMzMSAyMC43MjkzQzIxLjcyMjEgMjAuOTg0MyAyMS41NTk3IDIxLjIxMzYgMjEuMzU2MSAyMS40MDI3QzIxLjE1MjUgMjEuNTkxNyAyMC45MTI0IDIxLjczNjggMjAuNjUwOCAyMS44Mjg3QzIwLjM4OTEgMjEuOTIwNiAyMC4xMTEzIDIxLjk1NjkgMTkuODMgMjEuOTNDMTYuNzQyOCAyMS41ODU2IDEzLjc4NzEgMjAuNTM0MSAxMS4xOSAxOC44NkM4Ljc3MzgyIDE3LjMzNzEgNi43NjYxMSAxNS4zMjk0IDUuMjQgMTIuOTFDMy40NjAwMyAxMC4yOTQ0IDIuNDA4MjggNy4zMTI4IDIuMDcgNC4yQzIuMDQzMDggMy45MTU2MSAyLjA3ODkgMy42Mjk0NyAyLjE3MDM4IDMuMzYwNDVDMi4yNjE4NiAzLjA5MTQzIDIuNDA2NzYgMi44NDU3NiAyLjU5NTEzIDIuNjM4MzlDMi43ODM1IDIuNDMxMDIgMy4wMTE4NyAyLjI2NjQ0IDMuMjY2MjIgMi4xNTQ3MUMzLjUyMDU3IDIuMDQyOTggMy43OTU2MyAxLjk4NjQ5IDQuMDczIDJIMTcuMDczQzE3LjYyNTUgMS45OTUyMiAxOC4xNjA4IDIuMTg3MzggMTguNTg0MyAyLjU0MzYyQzE5LjAwNzggMi44OTk4NiAxOS4yOTM0IDMuMzk3MjcgMTkuMzkgMy45NEMyMC4xOTU3IDcuMzI3NjYgMjAuMTk1NyAxMC44NTIzIDE5LjM5IDE0LjI0QzE5LjI5NzggMTQuNzg5MSAxOS4wMTM2IDE1LjI5MjggMTguNTg5IDE1LjY1MzFDMTguMTY0NSAxNi4wMTM0IDE3LjYyNTUgMTYuMjA3OCAxNy4wNyAxNi4yMEgxNy4wNzNaIiBzdHJva2U9IiM2NkJCNkEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+  }
+}
+
 .info-divider {
   height: 1rpx;
   background-color: #f0f0f0;
@@ -2824,44 +2540,21 @@ export default {
   align-items: center;
   gap: 6rpx;
   flex-wrap: nowrap;
+  flex: 1;
+  color: #333;
 
   .info-value {
-    flex: 1;
-    min-width: 0;
+    flex: 0 0 auto;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 24rpx;
   }
 
-  .call-btn,
-  .copy-btn {
-    padding: 6rpx 10rpx;
-    background-color: #f0f0f0;
-    color: #666;
-    font-size: 20rpx;
-    border-radius: 6rpx;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-    min-width: 50rpx;
-    text-align: center;
-
-    &:active {
-      background-color: #e0e0e0;
-      transform: scale(0.95);
-    }
-  }
-
-  .call-btn {
-    background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
-    color: #fff;
-  }
-
-  .copy-btn {
-    background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
-    color: #fff;
+  // 骑手联系电话的图标按钮，移除左边距
+  .icon-btn {
+    margin-left: 0;
   }
 }
+
 // 加载状态样式
 .loading-container {
   padding: 60rpx 30rpx;
@@ -3141,6 +2834,10 @@ export default {
   border-top: 1rpx solid #f0f0f0;
   gap: 16rpx;
   background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+
+  &.operation-footer {
+    justify-content: space-between;
+  }
 }
 
 .modal-btn {
@@ -3182,6 +2879,23 @@ export default {
         transform: none;
         opacity: 0.6;
       }
+    }
+  }
+
+  &.operation {
+    background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
+    color: #fff;
+    border: 1rpx solid #FFA726;
+    flex: 1;
+
+    &:active {
+      opacity: 0.9;
+      transform: scale(0.95);
+    }
+
+    &.refund {
+      background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
+      border: 1rpx solid #EF5350;
     }
   }
 

@@ -92,7 +92,10 @@
         <text class="info-text">• 工作时间：周一至周五 9:00-18:00</text>
       </view>
       <view class="info-item">
-        <text class="info-text">• 独立骑手每月5日、15日、20日可提现</text>
+        <text class="info-text">• 独立骑手每月6日、16日、26日可提现</text>
+      </view>
+      <view class="info-item">
+        <text class="info-text">• 提现手续费：提现额3%+3元/笔</text>
       </view>
     </view>
 

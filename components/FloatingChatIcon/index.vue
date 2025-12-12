@@ -135,6 +135,16 @@ export default {
     isTabPage: {
       type: Boolean,
       default: false
+    },
+    // 订单ID，如果提供则进入订单专属聊天室
+    orderId: {
+      type: String,
+      default: ''
+    },
+    // 订单标题，用于聊天室标题显示
+    orderTitle: {
+      type: String,
+      default: '订单协办'
     }
   },
   data() {
@@ -889,6 +899,24 @@ export default {
       this.closeWebSocket();
       // 重置自动显示标记（允许用户从聊天列表回来后再次自动弹出）
       this.hasAutoShown = false;
+      
+      // 如果提供了订单ID，跳转到订单专属聊天室
+      if (this.orderId) {
+        uni.navigateTo({
+          url: `/riderEnd/chat-simple?roomId=${this.orderId}&title=${encodeURIComponent(this.orderTitle)}`,
+          success: () => {
+            console.log('跳转到订单聊天室成功');
+          },
+          fail: (err) => {
+            console.error('跳转到订单聊天室失败:', err);
+            uni.showToast({
+              title: '跳转失败',
+              icon: 'none'
+            });
+          }
+        });
+        return;
+      }
       
       // 根据isTabPage决定使用switchTab还是navigateTo
       const navigationMethod = this.isTabPage ? 'switchTab' : 'navigateTo';

@@ -812,7 +812,7 @@
 				businessModules: [
 					{ key: 'bubao', name: '补宝', status: 'available' },
 					{ key: 'offline_abnormal', name: '离线异常', status: 'available' },
-					{ key: 'installation', name: '装机', status: 'development' },
+					{ key: 'installation', name: '废机卖钱', status: 'development' },
 					{ key: 'removal', name: '撤机', status: 'development' },
 					{ key: 'recycle', name: '回收坏宝', status: 'development' },
 					{ key: 'delivery', name: '送装配件', status: 'development' },
@@ -1087,7 +1087,7 @@
 				const titleMap = {
 					'bubao': '补宝服务设置',
 					'offline_abnormal': '离线异常服务设置',
-					'installation': '装机服务设置',
+					'installation': '废机卖钱服务设置',
 					'removal': '撤机服务设置',
 					'recycle': '回收坏宝服务设置',
 					'delivery': '送装配件服务设置',
@@ -1101,7 +1101,7 @@
 				const titleMap = {
 					'bubao': '补宝',
 					'offline_abnormal': '离线异常',
-					'installation': '装机',
+					'installation': '废机卖钱',
 					'removal': '撤机',
 					'recycle': '回收坏宝',
 					'delivery': '送装配件',

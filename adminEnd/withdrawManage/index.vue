@@ -33,6 +33,20 @@
 			</view>
 		</view>
 
+		<!-- 批量操作栏 -->
+		<view class="batch-actions" v-if="currentStatus === 'pending' && withdrawList.length > 0">
+			<view class="batch-left">
+				<checkbox-group @change="toggleSelectAll">
+					<checkbox :checked="isAllSelected" color="#2492F2" />
+				</checkbox-group>
+				<text class="batch-text">全选 ({{ selectedIds.length }})</text>
+			</view>
+			<view class="batch-right" v-if="selectedIds.length > 0">
+				<view class="batch-btn reject" @click="batchReject">批量拒绝</view>
+				<view class="batch-btn approve" @click="batchApprove">批量同意</view>
+			</view>
+		</view>
+
 		<!-- 提现记录列表 -->
 		<scroll-view class="withdraw-list" scroll-y>
 			<!-- 加载中提示 -->
@@ -53,14 +67,22 @@
 					@click="showWithdrawDetail(withdraw)">
 				<view class="withdraw-header">
 					<view class="withdraw-info">
-						<text
-							class="rider-name">{{ withdraw.real_name || (withdraw.applicant && withdraw.applicant.contact_person) || '未知骑手' }}</text>
+						<view class="rider-name-wrapper">
+							<text class="rider-name">{{ withdraw.real_name || (withdraw.applicant && withdraw.applicant.contact_person) || '未知骑手' }}</text>
+							<!-- 待审核状态显示复选框 -->
+							<view class="checkbox-wrapper" v-if="withdraw.status === 'pending'" @click.stop="toggleSelect(withdraw.id)">
+								<checkbox-group>
+									<checkbox :checked="selectedIds.includes(withdraw.id)" color="#2492F2" style="transform: scale(0.8);" />
+								</checkbox-group>
+							</view>
+						</view>
 						<view class="withdraw-stats" v-if="withdraw.status === 'pending'">
 							<text class="stat-item">累计完单: ¥{{ parseFloat(withdraw.total_commission_amount || 0).toFixed(2) }}</text>
 							<text class="stat-divider">|</text>
 							<text class="stat-item">累计提现: ¥{{ parseFloat(withdraw.total_withdrawal_amount || 0).toFixed(2) }}</text>
-							<text class="stat-divider">|</text>
-							<text class="stat-item">提现比例: {{ (parseFloat(withdraw.withdraw_rate || 0) * 100).toFixed(0) }}%</text>
+						</view>
+						<view class="withdraw-rate" v-if="withdraw.status === 'pending'">
+							<text class="rate-item">提现比例: {{ (parseFloat(withdraw.withdraw_rate || 0) * 100).toFixed(0) }}%</text>
 						</view>
 						<text class="withdraw-time">{{ formatDateTime(withdraw.created_at) }}</text>
 					</view>
@@ -79,11 +101,16 @@
 						<text class="info-value">
 							{{ getPaymentMethodText(withdraw.payment_method) }}
 							<template v-if="withdraw.status === 'pending' && withdraw.payment_method === 'alipay' && withdraw.withdraw_info">
-								<text class="extra-info"> | {{ withdraw.withdraw_info.real_name || '未填写' }}</text>
-								<text class="extra-info"> | {{ withdraw.withdraw_info.alipay_id || '未填写' }}</text>
-								<text class="extra-info"> | 提现比例: {{ (parseFloat(withdraw.withdraw_rate || 0) * 100).toFixed(0) }}%</text>
+								<text class="extra-info">（{{ withdraw.withdraw_info.real_name || '未填写' }} {{ withdraw.withdraw_info.alipay_id || '未填写' }}）</text>
 							</template>
 						</text>
+						<view class="copy-btn" v-if="withdraw.status === 'pending' && withdraw.payment_method === 'alipay' && withdraw.withdraw_info" @click.stop="copyText((withdraw.withdraw_info.real_name || '') + ' ' + (withdraw.withdraw_info.alipay_id || ''))">
+							<view class="copy-icon"></view>
+						</view>
+					</view>
+					<view class="info-row" v-if="withdraw.status === 'pending'">
+						<text class="info-label">提现比例：</text>
+						<text class="info-value">{{ (parseFloat(withdraw.withdraw_rate || 0) * 100).toFixed(0) }}%</text>
 					</view>
 
 						<!-- 银行卡信息展示 -->
@@ -283,7 +310,9 @@
 			// 展开状态管理
 			expandedItems: new Set(), // 使用Set来存储展开的项目ID
 			// 调试模式
-			debugMode: false // 设置为true启用虚拟数据调试
+			debugMode: false, // 设置为true启用虚拟数据调试
+			// 批量操作
+			selectedIds: []
 			}
 		},
 		onShow() {
@@ -299,7 +328,94 @@
 			// 加载提现记录列表
 			this.getWithdrawList();
 		},
+		computed: {
+			isAllSelected() {
+				const pendingList = this.withdrawList.filter(w => w.status === 'pending');
+				return pendingList.length > 0 && this.selectedIds.length === pendingList.length;
+			}
+		},
 		methods: {
+			// 切换单个选择
+			toggleSelect(id) {
+				const index = this.selectedIds.indexOf(id);
+				if (index > -1) {
+					this.selectedIds.splice(index, 1);
+				} else {
+					this.selectedIds.push(id);
+				}
+			},
+
+			// 切换全选
+			toggleSelectAll() {
+				if (this.isAllSelected) {
+					this.selectedIds = [];
+				} else {
+					this.selectedIds = this.withdrawList.filter(w => w.status === 'pending').map(w => w.id);
+				}
+			},
+
+			// 批量同意
+			batchApprove() {
+				uni.showModal({
+					title: '确认操作',
+					content: `确定要批量同意 ${this.selectedIds.length} 条提现申请吗？`,
+					success: async (res) => {
+						if (res.confirm) {
+							await this.processBatchWithdraw(this.selectedIds, 'approve');
+						}
+					}
+				});
+			},
+
+			// 批量拒绝
+			batchReject() {
+				this.currentWithdraw = { ids: this.selectedIds };
+				this.showReject = true;
+				this.rejectReason = '';
+			},
+
+			// 批量处理提现
+			async processBatchWithdraw(ids, action, reason = '') {
+				this.processing = true;
+				try {
+					const params = {
+						service_member_id: this.riderUserInfo.id,
+						ids: ids,
+						action: action,
+						sign: "chongchong",
+						timestamp: Math.floor(Date.now() / 1000)
+					};
+
+					if (reason) {
+						params.reason = reason;
+					}
+
+					const res = await this.$request('withdraw/process/batch', params, 'POST');
+
+					if (res.status === 'success') {
+						uni.showToast({
+							title: action === 'approve' ? '批量审核通过' : '批量已拒绝',
+							icon: 'success'
+						});
+						this.selectedIds = [];
+						this.getWithdrawList();
+					} else {
+						uni.showToast({
+							title: res.msg || '操作失败',
+							icon: 'none'
+						});
+					}
+				} catch (err) {
+					console.error('批量处理提现失败:', err);
+					uni.showToast({
+						title: '网络请求失败',
+						icon: 'none'
+					});
+				} finally {
+					this.processing = false;
+				}
+			},
+
 			// 生成待审核虚拟数据（用于调试）
 			generateMockPendingData() {
 				const now = new Date();
@@ -825,7 +941,12 @@
 					return;
 				}
 
-				await this.processWithdraw(this.currentWithdraw.id, 'reject', this.rejectReason);
+				// 批量拒绝
+				if (this.currentWithdraw.ids) {
+					await this.processBatchWithdraw(this.currentWithdraw.ids, 'reject', this.rejectReason);
+				} else {
+					await this.processWithdraw(this.currentWithdraw.id, 'reject', this.rejectReason);
+				}
 				this.closeRejectModal();
 			},
 
@@ -947,6 +1068,50 @@
 
 	.nav-placeholder {
 		background-color: #fff;
+	}
+
+	// 批量操作栏
+	.batch-actions {
+		background-color: #fff;
+		padding: 20rpx;
+		margin-bottom: 20rpx;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+
+		.batch-left {
+			display: flex;
+			align-items: center;
+			gap: 10rpx;
+
+			.batch-text {
+				font-size: 28rpx;
+				color: #333;
+			}
+		}
+
+		.batch-right {
+			display: flex;
+			gap: 16rpx;
+
+			.batch-btn {
+				padding: 12rpx 24rpx;
+				border-radius: 20rpx;
+				font-size: 26rpx;
+
+				&.reject {
+					background-color: #fff;
+					color: #dc3545;
+					border: 1rpx solid #dc3545;
+				}
+
+				&.approve {
+					background-color: #2492F2;
+					color: #fff;
+				}
+			}
+		}
 	}
 
 	// 搜索和筛选区域
@@ -1146,17 +1311,22 @@
 
 		.withdraw-info {
 			flex: 1;
-			min-width: 0; // 允许flex项目收缩
+			min-width: 0;
 
-			.rider-name {
-				font-size: 32rpx;
-				color: #333;
-				font-weight: 500;
-				display: block;
+			.rider-name-wrapper {
+				display: flex;
+				align-items: center;
 				margin-bottom: 8rpx;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
+
+				.rider-name {
+					font-size: 32rpx;
+					color: #333;
+					font-weight: 500;
+				}
+
+				.checkbox-wrapper {
+					margin-left: 16rpx;
+				}
 			}
 
 			.withdraw-stats {
@@ -1181,12 +1351,18 @@
 				}
 			}
 
+			.withdraw-rate {
+				margin-bottom: 8rpx;
+
+				.rate-item {
+					font-size: 22rpx;
+					color: #666;
+				}
+			}
+
 			.withdraw-time {
 				font-size: 24rpx;
 				color: #999;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
 			}
 		}
 

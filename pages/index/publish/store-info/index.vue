@@ -106,8 +106,8 @@
 				</view>
 			</view>
 
-			<!-- 补充地址详情 -->
-			<view class="form-item">
+			<!-- 补充地址详情 - 已取消 -->
+			<!-- <view class="form-item">
 				<view class="input-row">
 					<view class="label-container">
 						<text>补充地址详情</text>
@@ -124,7 +124,7 @@
 						</view>
 					</view>
 				</view>
-			</view>
+			</view> -->
 
 			<!-- 联系电话 -->
 			<view class="form-item">
@@ -306,7 +306,7 @@
 		</view> -->
 
 		<!-- 分隔线 -->
-		<view class="divider"></view>
+		<!-- <view class="divider"></view> -->
 		</view>
 
 			<!-- 上传门头 -->
