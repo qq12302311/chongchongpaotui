@@ -803,11 +803,12 @@
 					<!-- 取消原因 -->
 					<view class="cancel-body">
 						<view class="cancel-reason-section">
-							<text class="cancel-reason-title">取消原因（必填）：</text>
+							<text class="cancel-reason-title">取消原因（必填 不少于5个汉字）：</text>
 							<textarea 
 								class="cancel-reason-input" 
 								v-model="cancelReason" 
-								placeholder="请在此处填写" 
+								placeholder="请认真填写，原因将同步给客户！客户可能重新下单或追加打赏下单..." 
+								minlength="5"
 								maxlength="100"
 							></textarea>
 							<text class="cancel-word-count">{{ cancelReason.length }}/100字</text>
