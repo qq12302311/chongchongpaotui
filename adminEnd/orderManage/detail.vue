@@ -1106,8 +1106,8 @@ export default {
     // 计算打赏总金额
     calculateRewardAmount(rewardList) {
       if (!rewardList || !Array.isArray(rewardList)) return '0.00';
-      const paidRewards = rewardList.filter(item => item.status === 'paid');
-      const totalAmount = paidRewards.reduce((sum, item) => sum + parseFloat(item.order_amount || 0), 0);
+      // const paidRewards = rewardList.filter(item => item.status === 'paid');
+      const totalAmount = rewardList.reduce((sum, item) => sum + parseFloat(item.order_amount || 0), 0);
       return totalAmount.toFixed(2);
     },
 
