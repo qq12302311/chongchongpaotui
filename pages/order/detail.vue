@@ -90,7 +90,8 @@
 								<!-- 气泡提示 -->
 								<view v-if="orderInfo.status === 'assigned' && orderInfo.task_assignment.predict_complete_type" class="feedback-bubble">
 									<image src="https://ccpt.qiniu.0871.cn/riderend/qipao.svg" class="bubble-bg" mode="aspectFit"></image>
-									<text class="bubble-text">我预计{{orderInfo.task_assignment.predict_complete_type}}完成！</text>
+									<text class="bubble-text" v-if="orderInfo.task_assignment.predict_complete_type == '不确定'">我已接单 将尽快完成！</text>
+									<text class="bubble-text" v-else>我预计{{orderInfo.task_assignment.predict_complete_type}}完成！</text>
 								</view>
 								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.0871.cn/1112.gif" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
