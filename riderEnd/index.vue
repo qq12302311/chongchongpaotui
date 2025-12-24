@@ -1,13 +1,21 @@
 <template>
   <view class="order-hall">
     <!-- 顶部导航栏 -->
-	<nav-bar title="充充跑腿骑手端" title-align="left" :showBackButton="false"></nav-bar>
+	<nav-bar title-align="left" :showBackButton="false">
+		<template #title>
+			<view style="display: flex; align-items: baseline;">
+				<text style="font-size: 14px; font-weight: 500; color: #ffffff;">骑手端</text>
+				<text style="font-size: 10px; font-weight: 400; color: #ffffff; margin-left: 4px;">（全国已开{{totalCityCount}}城）</text>
+				<text @click="selectCity" style="font-size: 10px; font-weight: 400; color: #ffffff; margin-left: 4px;">{{ currentCity }}▼</text>
+			</view>
+		</template>
+	</nav-bar>
 
     <!-- 导航栏占位元素 -->
     <view class="nav-placeholder"></view>
 
     <!-- 城市选择器 -->
-    <view class="city-selector-container">
+    <!-- <view class="city-selector-container">
       <view class="city-selector" @click="selectCity">
         <text class="city-name">{{ currentCity }}</text>
         <text class="arrow">▼</text>
@@ -15,7 +23,7 @@
       <view class="city-count-badge">
         <text class="city-count-text">全国已开{{totalCityCount}}城</text>
       </view>
-    </view>
+    </view> -->
 
     <!-- 广告横幅 -->
     <view class="banner">
@@ -37,23 +45,26 @@
 
     <!-- 接单大厅标题和搜索 -->
     <view class="hall-header">
-      <view class="hall-title">接单大厅</view>
+	  <!-- 推广条 - 仅在接单大厅显示 -->
+		<image style="width:100%;" src="https://ccpt.qiniu.0871.cn/riderend/tuigtiao.png" mode="widthFix" class="promotion-image"></image>
+      <!-- <view class="hall-title">接单大厅</view>
       <view class="header-right">
         <view class="search-box">
           <image src="https://ccpt.qiniu.0871.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
           <input type="text" placeholder="请输入搜索关键字" class="search-input" />
         </view>
-      </view>
+      </view> -->
     </view>
 
     <!-- 筛选选项卡 -->
     <view class="filter-tabs">
       <view class="tab-item" :class="{ active: activeTab === 'comprehensive' }" @click="setActiveTab('comprehensive')">
-        <text>接单大厅</text>
+        <text>抢单大厅</text>
         <view class="active-line" v-if="activeTab === 'comprehensive'"></view>
       </view>
       <view class="tab-item" :class="{ active: activeTab === 'assigned' }" @click="setActiveTab('assigned')">
         <text>进行中</text>
+        <view class="tab-badge" v-if="inProgressTasksCount > 0">{{ inProgressTasksCount }}</view>
         <view class="active-line" v-if="activeTab === 'assigned'"></view>
       </view>
       <view class="tab-item" :class="{ active: activeTab === 'finished' }" @click="setActiveTab('finished')">
@@ -68,17 +79,19 @@
 
     <!-- 订单列表 -->
     <view class="order-list">
-      <!-- 推广条 - 仅在接单大厅显示 -->
-      <view class="promotion-bar" v-if="activeTab === 'comprehensive'">
-        <image src="https://ccpt.qiniu.0871.cn/riderEnd/index/tuiguangtiao.svg" mode="widthFix" class="promotion-image"></image>
-      </view>
 
       <!-- 订单列表 -->
       <view>
         <!-- 接单大厅的订单样式 -->
         <template v-if="activeTab === 'comprehensive'">
-        <view class="order-item pos-rel" :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }" v-for="(order, index) in orderList" :key="`hall-${index}`" @click="handleOrderClick(order)">
-          <!-- 完结订单盖章图片 - 只对recent_tasks显示 -->
+          <view
+            class="order-item pos-rel"
+            :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }"
+            v-for="(order, index) in orderList"
+            :key="`hall-${index}`"
+            :data-index="index"
+            @click="handleOrderClick">
+            <!-- 完结订单盖章图片 - 只对recent_tasks显示 -->
           <image
             v-if="order.isCompleted && order.isRecentTask"
             class="completed-stamp-image-gray"
@@ -137,15 +150,16 @@
           <view class="order-content">
             <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand)]">
               <view class="icon-content">
-                <text class="brand-text">{{ order.brandText || '充充' }}</text>
-                <text class="service-text">{{ order.serviceTypeText }}</text>
+                <text class="brand-text">{{ getServiceTypeFirstChar(order.serviceTypeText) }}</text>
+                <!-- <text class="brand-text">{{ order.brandText || '充充' }}</text> -->
+                <text class="service-text">{{ getBrandText(order.brand) }}{{ order.serviceTypeText }}</text>
               </view>
             </view>
 
             <view class="order-details">
               <view class="address">{{ formatAddress(order) }}</view>
               <view class="distance-info">
-                <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+                <image src="https://ccpt.qiniu.0871.cn/riderend/logo11.png" mode="aspectFit" class="location-icon"></image>
                 <text class="distance-text"><text class="highlight">{{ order.distance || 0 }}km</text></text>
               </view>
               <view class="service-item" :data-content="order.serviceItem">任务：</view>
@@ -159,8 +173,8 @@
                 <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
               </view>
             </view>
-            <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons" @click.stop="handleOrderClick(order)">
-				<image class="button-class" src="https://ccpt.qiniu.0871.cn/zhuandanjiedan.svg"></image>
+            <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons">
+				<image class="button-class" src="https://ccpt.qiniu.0871.cn/riderend/qujiedan.png"></image>
               <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="handleOrderClick(order)">去接单</button>
               <button v-if="!isTransferredOrder(order)" class="transfer-order-btn" open-type="share" @click.stop="transferOrder(order)">转单</button> -->
             </view>
@@ -175,12 +189,17 @@
             </view>
             <view v-else class="completed-label">已完结</view>
           </view>
-        </view>
+          </view>
         </template>
 
         <!-- 进行中、完成待确认、已完成的订单样式（与订单导航页面一致） -->
         <template v-if="activeTab !== 'comprehensive'">
-        <view class="order-item-standard" v-for="(order, index) in orderList" :key="`order-${index}`" @click="navigateToOrderInfo(order.id)">
+          <view
+            class="order-item-standard"
+            v-for="(order, index) in orderList"
+            :key="`order-${index}`"
+            :data-index="index"
+            @click="navigateToOrderInfo">
           <view class="status-tag" :class="order.status">
             <text v-if="order.status === 'waiting'">等待接单</text>
             <text v-else-if="order.status === 'assigned'">已接单</text>
@@ -202,8 +221,8 @@
             <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand), !order.doorImage ? 'no-image' : '']">
               <image v-if="order.doorImage" :src="order.doorImage" mode="aspectFill" class="door-image" />
               <view v-else class="icon-content">
-                <text class="brand-text">{{ getBrandText(order.brand) }}</text>
-                <text class="service-text">{{ order.serviceTypeText }}</text>
+                <text class="brand-text">{{ getServiceTypeFirstChar(order.serviceTypeText) }}</text>
+                <text class="service-text">{{ getBrandText(order.brand) }}{{ order.serviceTypeText }}</text>
               </view>
             </view>
 
@@ -230,7 +249,7 @@
 
           <view class="order-footer">
             <view class="distance-info">
-              <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+              <image src="https://ccpt.qiniu.0871.cn/riderend/logo11.png" mode="aspectFit" class="location-icon"></image>
               <text class="distance-text">距离订单地址<text class="highlight">{{ order.distance }}km</text></text>
               <text class="location-detail" @click.stop="showLocationDetail(order)">点击导航</text>
             </view>
@@ -353,6 +372,26 @@
 				</view>
 			  </view>
 			</view>
+			
+			<!--预估完单时间-->
+			<view class="order-modal-content mar-top-10">
+			  <view class="order-modal-info">
+				<view class="completion-time-label">
+				  <text style="color: #FF4D4F;">*</text>
+				  <text>请选择预估完单时间</text>
+				  <text class="time-hint-red">（供参考 无关佣金）</text>
+				</view>
+				<view class="time-options">
+				  <view class="time-option" :class="{ selected: selectedTimeOption === '马上去（3h内）' }" @click="selectTimeOption('马上去（3h内）')">马上去<text class="time-small">（3h内）</text></view>
+				  <view class="time-option" :class="{ selected: selectedTimeOption === '明天上午' }" @click="selectTimeOption('明天上午')">明天上午</view>
+				  <view class="time-option" :class="{ selected: selectedTimeOption === '明天内' }" @click="selectTimeOption('明天内')">明天内</view>
+				  <view class="time-option" :class="{ selected: selectedTimeOption === '今天内' }" @click="selectTimeOption('今天内')">今天内</view>
+				  <view class="time-option" :class="{ selected: selectedTimeOption === '明天下午' }" @click="selectTimeOption('明天下午')">明天下午</view>
+				  <view class="time-option" :class="{ selected: selectedTimeOption === '不确定' }" @click="selectTimeOption('不确定')">不确定</view>
+				</view>
+				<view class="time-warning">提交后可于【我的】修改时间 取消请联系客服</view>
+			  </view>
+			</view>
 
 			<!-- 关闭按钮 -->
 			<!-- <view class="order-modal-close" @click="closeOrderModal">×</view> -->
@@ -396,7 +435,8 @@
       
       <!-- 剩余接单配额 -->
       <view class="order-quota-bar" @click.stop>
-        <text class="quota-text">剩余接单配额数：18次</text>
+        <view class="quota-text">剩余接单配额数：18次</view>
+        <view class="quota-link">通过这些任务为自己加配额 ></view>
       </view>
     </view>
 
@@ -493,7 +533,7 @@ import TabBar from '@/components/rider/tab-bar/index.vue'
 import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/riderEnd_index.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
-import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
+// import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
 	import md5 from 'md5'
 
 export default {
@@ -503,7 +543,7 @@ export default {
     PosterModal,
     FloatingImage,
     AuthModal,
-    FloatingChatIcon
+    // FloatingChatIcon
   },
   data() {
     return {
@@ -523,6 +563,8 @@ export default {
       showPosterModal: false, // 海报弹窗显示状态
       showCancelModal: false, // 撤销任务弹窗显示状态
       canceledTasks: [], // 撤销的任务列表
+      selectedTimeOption: '', // 选中的预估完单时间
+      inProgressTasksCount: 0, // 进行中任务数量
       posterList: [ // 海报列表
         {
           id: 1,
@@ -754,7 +796,7 @@ export default {
   // 微信分享到朋友圈
   onShareTimeline() {
     return {
-      title: '充充跑腿骑手端 - 接单大厅',
+      title: '充充跑腿骑手端 - 抢单大厅',
       query: 'from=timeline',
       imageUrl: 'https://ccpt.qiniu.0871.cn/qs-bn.png'
     }
@@ -909,8 +951,8 @@ export default {
             latitude: res.latitude,
             longitude: res.longitude
           }
-          // 获取到位置后重新获取订单列表
-          this.getWaitingTasks()
+          // 获取到位置后根据当前标签状态加载对应的订单列表
+          this.refreshCurrentTabData()
         },
         fail: (err) => {
           console.error('获取位置失败:', err)
@@ -920,6 +962,17 @@ export default {
           })
         }
       })
+    },
+
+    // 根据当前标签状态刷新数据
+    refreshCurrentTabData() {
+      if (this.activeTab === 'comprehensive') {
+        // 接单大厅
+        this.getWaitingTasks()
+      } else {
+        // 其他标签（进行中、完成待确认、已完成）
+        this.getOrdersByStatus(this.activeTab)
+      }
     },
     // 计算两点之间的距离
     calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1122,6 +1175,9 @@ export default {
 		console.log(res)
 
         if (res.code === 200) {
+          // 保存进行中任务数量
+          this.inProgressTasksCount = res.in_progress_tasks_count || 0
+
           // 处理主要数据（data数组）
           const mainOrders = (res.data || []).map(order => {
             return this.formatOrderData(order, false);
@@ -1263,6 +1319,23 @@ export default {
         'zhumang': '竹芒'
       };
       return brandMap[brand] || '充充';
+    },
+
+    // 获取服务类型首字（用于大字显示）
+    getServiceTypeFirstChar(serviceTypeText) {
+      if (!serviceTypeText) return '补';
+
+      // 如果包含"异常"，则显示"异"
+      if (serviceTypeText.includes('异常')) {
+        return '异';
+      }
+
+      const firstChar = serviceTypeText.charAt(0);
+      // 如果首字是"好"或"坏"，则显示"收"
+      if (firstChar === '好' || firstChar === '坏') {
+        return '收';
+      }
+      return firstChar;
     },
 
     // 获取品牌对应的CSS类名
@@ -1495,16 +1568,27 @@ export default {
       return items.join('、') || '未知服务项目';
     },
     // 跳转到订单信息页（用于进行中、完成待确认、已完成标签页）
-    navigateToOrderInfo(orderId) {
+    navigateToOrderInfo(event) {
       if (this.isNavigating) return;
       this.isNavigating = true;
       setTimeout(() => { this.isNavigating = false }, 1200); // 1.2秒内不再响应
 
-      let id = orderId;
-      if (typeof orderId === 'object' && orderId !== null && 'id' in orderId) {
-        id = orderId.id;
+      // 从事件对象的dataset中获取索引
+      const index = event.currentTarget.dataset.index;
+
+      // 通过索引从orderList获取订单数据
+      const order = this.orderList[index];
+
+      if (!order || !order.id) {
+        console.error('无法获取订单ID，index:', index);
+        uni.showToast({
+          title: '订单信息获取失败',
+          icon: 'none'
+        });
+        return;
       }
-      if (typeof id !== 'string') id = String(id);
+
+      const id = String(order.id);
 
       uni.navigateTo({
         url: `/riderEnd/order-info?id=${id}`
@@ -1512,10 +1596,27 @@ export default {
     },
 
     // 处理接单大厅的订单点击
-    handleOrderClick(order) {
+    handleOrderClick(event) {
+      // 从事件对象的dataset中获取索引
+      const index = event.currentTarget.dataset.index;
+
+      // 通过索引从orderList获取订单数据
+      const order = this.orderList[index];
+
+      if (!order) {
+        console.error('无法从orderList中获取订单，index:', index);
+        return;
+      }
+
       this.goToOrderDetail(order);
     },
     goToOrderDetail(order) {
+      // 防御性检查：确保order对象存在
+      if (!order) {
+        console.error('goToOrderDetail: order对象为undefined');
+        return;
+      }
+
       // 如果是recent_tasks的订单，不跳转页面
       if (order.isRecentTask) {
         if (order.isAssigned && !order.isCompleted) {
@@ -1660,6 +1761,14 @@ export default {
       // 重置转单状态
       this.canTransfer = true;
       this.countdownText = '';
+      // 重置选中的时间选项
+      this.selectedTimeOption = '';
+    },
+
+    // 选择预估完单时间
+    selectTimeOption(option) {
+      this.selectedTimeOption = option;
+      console.log('选中的预估完单时间:', option);
     },
 
     // 导航到订单地址
@@ -1696,6 +1805,16 @@ export default {
     async acceptOrder() {
       if (this.isAcceptingOrder) return;
 
+      // 验证是否已选择预估完单时间
+      if (!this.selectedTimeOption) {
+        uni.showToast({
+          title: '请选择预估完单时间',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+
       this.isAcceptingOrder = true;
 
       try {
@@ -1708,6 +1827,7 @@ export default {
           task_id: this.currentOrderInfo.id,
           service_provider_id: this.riderUserInfo.provider_id,
           service_member_id: this.riderUserInfo.id,
+		  predict_complete_type: this.selectedTimeOption, // 预估完单
           sign: sign
         };
 
@@ -3019,7 +3139,7 @@ export default {
 			text-align: center;
 	}
 	.button-class{
-		width:200rpx;
+		width:160rpx;
 		height:52rpx;
 	}
 .order-hall {
@@ -3113,6 +3233,7 @@ export default {
 }
 
 .banner {
+  padding: 20rpx 20rpx 0rpx 20rpx;
   width: 100%;
   height: 300rpx;
   // padding: 0 20rpx;
@@ -3140,10 +3261,10 @@ export default {
 }
 
 .hall-header {
-  padding: 20rpx 30rpx;
+  padding: 20rpx 20rpx;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  // align-items: center;
+  // justify-content: space-between;
 
   .hall-title {
     font-size: 36rpx;
@@ -3230,6 +3351,24 @@ export default {
       width: 24rpx;
       height: 24rpx;
       margin-left: 6rpx;
+    }
+
+    .tab-badge {
+      position: absolute;
+      top: 0rpx;
+      right: 0rpx;
+      min-width: 32rpx;
+      height: 32rpx;
+      line-height: 32rpx;
+      background-color: #FF4D4F;
+      color: #fff;
+      font-size: 20rpx;
+      font-weight: 500;
+      text-align: center;
+      border-radius: 16rpx;
+      padding: 0 8rpx;
+      box-sizing: border-box;
+      z-index: 10;
     }
 
     .active-line {
@@ -3567,15 +3706,16 @@ export default {
           text-align: center;
 
           .brand-text {
-            font-size: 36rpx;
+            font-size: 50rpx;
             color: #fff;
             font-weight: bold;
-            margin-bottom: 16rpx;
+            // margin-bottom: 16rpx;
             line-height: 1;
           }
 
           .service-text {
-            font-size: 36rpx;
+            font-size: 18rpx;
+			padding-top: 18rpx;
             color: #fff;
             font-weight: bold;
             line-height: 1;
@@ -3610,35 +3750,81 @@ export default {
 
         // 品牌颜色样式
         &.brand-meituan {
-          background-color: rgba(255, 195, 0, 1) !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/meituan-b.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
 
           .brand-text, .service-text {
-            color: rgba(0, 0, 0, 1) !important;
+            color: #000000 !important;
           }
         }
 
         &.brand-guaishou {
-          background-color: rgba(42, 193, 194, 1) !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/guaishou-b.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
 
-          .brand-text, .service-text {
-            color: rgba(255, 255, 255, 1) !important;
+          .brand-text{
+            color: #fff !important;
+          }
+
+          .service-text {
+            color: rgba(0, 0, 0, 1) !important;
           }
         }
 
         &.brand-jiedian {
-          background-color: rgba(37, 196, 67, 1) !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/zhumang-b2.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text{
+            color: #fff !important;
+		  }
+		  .service-text {
+            color: #333 !important;
+          }
         }
 
         &.brand-xiaodian {
-          background-color: #2492F2 !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/xiaodian-b.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text{
+            color: #FFFFFF !important;
+          }
+		  .service-text {
+            color: #333 !important;
+          }
         }
 
         &.brand-zhumang {
-          background-color: #2492F2 !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/zhumang-b2.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text, .service-text {
+            color: #FFFFFF !important;
+          }
         }
 
         &.brand-default {
           background-color: #2492F2 !important;
+
+          .brand-text, .service-text {
+            color: #FFFFFF !important;
+          }
         }
       }
 
@@ -3997,15 +4183,16 @@ export default {
           text-align: center;
 
           .brand-text {
-            font-size: 36rpx;
+            font-size: 50rpx;
             color: #fff;
             font-weight: bold;
-            margin-bottom: 16rpx;
+            // margin-bottom: 16rpx;
             line-height: 1;
           }
 
           .service-text {
-            font-size: 36rpx;
+            font-size: 18rpx;
+			padding-top: 18rpx;
             color: #fff;
             font-weight: bold;
             line-height: 1;
@@ -4045,31 +4232,75 @@ export default {
 
         // 品牌颜色样式
         &.brand-meituan {
-          background-color: #F9E34F !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/meituan-b.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
 
           .brand-text, .service-text {
-            color: #333 !important;
+            color: #000000 !important;
           }
         }
 
         &.brand-guaishou {
-          background-color: #27BFC0 !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/guaishou-b.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text{
+            color: #fff !important;
+          }
+
+		  .service-text {
+            color: rgba(0, 0, 0, 1) !important;
+          }
         }
 
         &.brand-jiedian {
-          background-color: #2492F2 !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/zhumang-b2.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text, .service-text {
+            color: #FFFFFF !important;
+          }
         }
 
         &.brand-xiaodian {
-          background-color: #2492F2 !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/xiaodian-b.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text, .service-text {
+            color: #FFFFFF !important;
+          }
         }
 
         &.brand-zhumang {
-          background-color: #2492F2 !important;
+          background-image: url('https://ccpt.qiniu.0871.cn/riderend/zhumang-b2.png') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          background-color: transparent !important;
+
+          .brand-text, .service-text {
+            color: #FFFFFF !important;
+          }
         }
 
         &.brand-default {
           background-color: #2492F2 !important;
+
+          .brand-text, .service-text {
+            color: #FFFFFF !important;
+          }
         }
 
         .door-image {
@@ -4436,6 +4667,75 @@ export default {
 	background-color: #e6f1fa;
 	padding: 10px;
 	border-radius: 8px;
+
+  // 预估完单时间样式
+  .completion-time-label {
+    font-size: 26rpx;
+    color: #333;
+    margin-bottom: 20rpx;
+    font-weight: 500;
+
+    .time-hint {
+      color: #999;
+      font-size: 22rpx;
+      margin-left: 8rpx;
+    }
+
+    .time-hint-red {
+      color: #FF4D4F;
+      font-size: 22rpx;
+      margin-left: 8rpx;
+    }
+  }
+
+  .time-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16rpx;
+    margin-bottom: 20rpx;
+
+    .time-option {
+      background-color: #fff;
+      border: 1rpx solid #2492F2;
+      border-radius: 20rpx;
+      padding: 9rpx 10rpx;
+      text-align: center;
+      font-size: 24rpx;
+      color: #2492F2;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+
+      .time-small {
+        font-size: 18rpx;
+      }
+
+      &:active {
+        background-color: #1E7FD8;
+        color: #fff;
+        transform: scale(0.95);
+      }
+
+      &.selected {
+        background-color: #1E7FD8;
+        color: #fff;
+        border-color: #1E7FD8;
+      }
+    }
+  }
+
+  .time-warning {
+    font-size: 20rpx;
+    color: #FF6B6B;
+    background-color: #FFF1F0;
+    text-align: center;
+    line-height: 1.5;
+    width: 85%;
+    padding: 8rpx 16rpx;
+    border-radius: 8rpx;
+    margin: 0 auto;
+  }
+
   .info-row {
     display: flex;
 	justify-content: space-between;
@@ -4681,6 +4981,7 @@ export default {
   padding: 20rpx 30rpx;
   border-radius: 20rpx;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   margin-top: 10px;
@@ -4688,6 +4989,18 @@ export default {
   .quota-text {
     font-size: 26rpx;
     color: rgba(97, 97, 97, 1);
+    margin-bottom: 10rpx;
+  }
+
+  .quota-link {
+    font-size: 24rpx;
+    color: #616161;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+
+    &:active {
+      opacity: 0.7;
+    }
   }
 }
 

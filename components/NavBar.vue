@@ -8,7 +8,9 @@
       </view>
 
       <view class="location" :class="[titleAlign === 'center' ? 'center' : 'left']">
-        <text :style="{ color: textColor }">{{ title || currentCity }}</text>
+        <slot name="title">
+          <text :style="{ color: textColor }">{{ title || currentCity }}</text>
+        </slot>
       </view>
 
       <!-- 占位元素，保持居中标题的居中效果 -->

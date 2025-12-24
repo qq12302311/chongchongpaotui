@@ -12,55 +12,41 @@
 
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
 
-
-		<!-- 服务门店信息-->
-		<view class="mar-top-10">
-			<store-info
-				:formData.sync="formData"
-				@address-select="handleAddressSelect"
-				@remove-sn-mac="removeSnMacInput"
-				@add-sn-mac="addSnMacInput"
-				@delete-image="deleteImage"
-				@upload-image="uploadImage"
-			/>
-		</view>
-
-		<!-- 服务品牌 - 独立卡片 -->
-		<view class="info-card">
-			<view class="form-label section-title main-service-title">
-				<view class="title-left">
-					<text class="dot"></text>
-					<text>服务品牌</text>
-				</view>
-			</view>
-			<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }" style="background: rgba(247, 247, 247, 1);">
-				<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
-					<image src="https://ccpt.qiniu.0871.cn/publish/meituan.png" mode="aspectFit"></image>
-					<text>美团</text>
-				</view>
-				<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
-					<image src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" mode="aspectFit"></image>
-					<text>怪兽</text>
-				</view>
-				<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-					<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
-					<text>街电搜电</text>
-				</view>
-				<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
-					<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
-					<text>小电</text>
-				</view>
-			</view>
-		</view>
-
-		<view class="info-card">
+			<!-- 选择品牌 - 独立卡片 -->
+			<view class="info-card mar-top-4">
 				<view class="form-item">
-					<view class="form-label section-title main-service-title">
-					<view class="title-left">
+					<view class="form-label section-title">
 						<text class="dot"></text>
-						<text>主项服务</text>
+						<text>选择品牌</text>
+					</view>
+					<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }">
+						<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
+							<image src="https://ccpt.qiniu.0871.cn/publish/meituan.png" mode="aspectFit"></image>
+							<text>美团</text>
+						</view>
+						<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
+							<image src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" mode="aspectFit"></image>
+							<text>怪兽</text>
+						</view>
+						<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
+							<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
+							<text>街电搜电</text>
+						</view>
+						<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
+							<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
+							<text>小电</text>
+						</view>
 					</view>
 				</view>
+			</view>
+
+			<!-- 服务项目 - 独立卡片 -->
+			<view class="info-card">
+				<view class="form-item">
+					<view class="form-label section-title">
+						<text class="dot"></text>
+						<text>服务项目</text>
+					</view>
 					<view class="service-options">
 						<!-- 离线异常选项 -->
 						<view class="service-option" :class="{'service-option-active': selectedService === 'offline_abnormal'}" @click="selectService('offline_abnormal')">
@@ -157,6 +143,15 @@
 				</view>
 			</view>
 
+			<!-- 服务门店信息-->
+			<store-info
+				:formData.sync="formData"
+				@address-select="handleAddressSelect"
+				@remove-sn-mac="removeSnMacInput"
+				@add-sn-mac="addSnMacInput"
+				@delete-image="deleteImage"
+				@upload-image="uploadImage"
+			/>
 
 			<!-- 附加服务 - 独立卡片 -->
 			<!-- <view class="info-card">
@@ -2248,11 +2243,6 @@
 		align-items: center;
 		margin-bottom: 20rpx;
 
-		.title-left {
-			display: flex;
-			align-items: center;
-		}
-
 		.dot {
 			width: 10rpx;
 			height: 10rpx;
@@ -2269,12 +2259,6 @@
 		.optional-tag {
 			font-size: 24rpx;
 			color: #999;
-			margin-left: 10rpx;
-		}
-
-		.optional-tag-red {
-			font-size: 24rpx;
-			color: #f00;
 			margin-left: 10rpx;
 		}
 

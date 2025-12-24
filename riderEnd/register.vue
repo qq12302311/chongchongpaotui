@@ -679,22 +679,18 @@ export default {
     // 在注册时验证验证码
     async verifyCodeForRegister() {
       try {
-        // 调用云函数验证验证码（使用云端正式环境）
-        const result = await uniCloud.callFunction({
-          name: 'verify-sms',
-          data: {
-            phone_number: this.formData.phone,
-            verification_code: this.formData.verificationCode
-          },
-          local: false // 禁用本地调试，使用云端环境
-        });
+        // 调用后端 Laravel API 验证验证码
+        const response = await this.$request('service/member/code/verify', {
+          phone_number: this.formData.phone,
+          verification_code: this.formData.verificationCode
+        }, 'POST');
 
-        console.log('验证码验证结果:', result);
+        console.log('验证码验证结果:', response);
 
-        if (result.result && result.result.code === 200) {
+        if (response.code === 200 || response.status === 'success') {
           return true;
         } else {
-          const errorMsg = result.result?.message || '验证码错误';
+          const errorMsg = response.message || response.msg || '验证码错误';
           uni.showToast({
             title: errorMsg,
             icon: 'none'
@@ -703,16 +699,11 @@ export default {
         }
       } catch (error) {
         console.error('验证码验证失败:', error);
-        // 如果云函数验证失败，回退到本地验证
-        if (this.formData.verificationCode === this.generatedCode) {
-          return true;
-        } else {
-          uni.showToast({
-            title: '验证码验证失败',
-            icon: 'none'
-          });
-          return false;
-        }
+        uni.showToast({
+          title: '验证码验证失败，请重试',
+          icon: 'none'
+        });
+        return false;
       }
     },
 
@@ -727,174 +718,62 @@ export default {
         return;
       }
 
-      // 重试机制参数
-      const maxRetries = 2; // 最大重试次数
-      let retryCount = 0;
+      try {
+        // 显示加载提示
+        uni.showLoading({
+          title: '发送中...'
+        });
 
-      while (retryCount <= maxRetries) {
-        try {
-          // 显示加载提示（包含重试信息）
-          const loadingTitle = retryCount === 0 ? '发送中...' : `重试中(${retryCount}/${maxRetries})...`;
-          uni.showLoading({
-            title: loadingTitle
+        console.log('准备发送验证码，手机号:', this.formData.phone);
+
+        // 调用后端 Laravel API 发送验证码
+        const response = await this.$request('service/member/code/send', {
+          phone_number: this.formData.phone
+        }, 'POST');
+
+        console.log('验证码发送响应:', response);
+
+        // 判断发送是否成功
+        if (response.code === 200 || response.status === 'success') {
+          // 发送成功
+          uni.showToast({
+            title: '验证码已发送',
+            icon: 'success'
           });
 
-          // 详细的环境信息收集
-          const systemInfo = uni.getSystemInfoSync();
-          const debugInfo = {
-            phone: this.formData.phone,
-            timestamp: new Date().toISOString(),
-            retryCount: retryCount,
-            userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : 'unknown',
-            platform: systemInfo.platform || 'unknown',
-            appVersion: systemInfo.version || 'unknown'
-          };
-
-          console.log('=== 短信发送调试信息 ===', debugInfo);
-
-          // 网络状态检查（所有平台）
-          try {
-            const networkStatus = await uni.getNetworkType();
-            debugInfo.networkType = networkStatus.networkType;
-            debugInfo.networkConnected = networkStatus.networkType !== 'none';
-            console.log('网络状态详情:', networkStatus);
-
-            if (networkStatus.networkType === 'none') {
-              throw new Error('NETWORK_DISCONNECTED: 网络未连接');
-            }
-          } catch (netError) {
-            console.log('获取网络状态失败:', netError);
-            debugInfo.networkError = netError.message;
-          }
-
-          console.log('准备发送短信，调试信息:', debugInfo);
-
-          // 设置更长的超时时间
-          const startTime = Date.now();
-
-          // 调用云函数发送短信（使用云端正式环境，禁用本地调试）
-          const result = await uniCloud.callFunction({
-            name: 'send-sms',
-            data: {
-              phone_number: this.formData.phone
-            },
-            timeout: 15000, // 15秒超时
-            // 禁用本地调试，强制使用云端环境（解决iOS真机无法连接本地服务问题）
-            local: false
-          });
-
-          const responseTime = Date.now() - startTime;
-          console.log(`云函数响应时间: ${responseTime}ms`);
-          console.log('云函数完整响应:', JSON.stringify(result, null, 2));
-
-          // 检查云函数调用是否成功
-          if (!result) {
-            throw new Error('CLOUD_FUNCTION_NO_RESPONSE: 云函数无响应');
-          }
-
-          if (!result.result) {
-            throw new Error('CLOUD_FUNCTION_INVALID_FORMAT: 云函数返回格式异常');
-          }
-
-          if (result.result.code === 200) {
-            // 发送成功
-            console.log('✅ 短信发送成功，重试次数:', retryCount);
-            uni.showToast({
-              title: '验证码已发送',
-              icon: 'success'
-            });
-
-            // 保存验证码（仅用于调试）
-            if (result.result.data && result.result.data.verification_code) {
-              this.generatedCode = result.result.data.verification_code;
-              console.log('验证码已保存（仅调试）');
-            }
-
-            // 开始倒计时
-            this.startCountdown();
-            return; // 成功后直接返回
-          } else {
-            // 发送失败，记录详细错误信息
-            const errorCode = result.result.code;
-            const errorMessage = result.result.message || result.result.msg || '未知错误';
-            console.error(`❌ 短信发送失败 - 错误代码: ${errorCode}, 错误信息: ${errorMessage}, 重试次数: ${retryCount}`);
-
-            // 某些错误不需要重试（如手机号格式错误、余额不足等）
-            const noRetryErrors = [400, 401, 403, 422]; // 客户端错误，不重试
-            if (noRetryErrors.includes(errorCode) || retryCount >= maxRetries) {
-              uni.showModal({
-                title: '发送失败',
-                content: `${errorMessage}${retryCount > 0 ? `（已重试${retryCount}次）` : ''}`,
-                showCancel: false,
-                confirmText: '确定'
-              });
-              return;
-            }
-
-            // 服务器错误，可以重试
-            throw new Error(`SERVER_ERROR_${errorCode}: ${errorMessage}`);
-          }
-        } catch (error) {
-          console.error(`❌ 发送验证码异常 (第${retryCount + 1}次尝试):`, error);
-
-          // 如果还有重试机会，继续重试
-          if (retryCount < maxRetries) {
-            retryCount++;
-            console.log(`🔄 准备第${retryCount}次重试...`);
-
-            // 等待1秒后重试
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            continue;
-          }
-
-          // 重试用完，显示最终错误信息
-          let errorTitle = '发送失败';
-          let errorContent = `验证码发送失败，请重试（已尝试${retryCount + 1}次）`;
-
-          if (error.message) {
-            console.log('最终错误详情:', error.message);
-
-            // 分析错误类型，提供更精准的错误提示
-            if (error.message.includes('NETWORK_DISCONNECTED')) {
-              errorTitle = '网络未连接';
-              errorContent = '请检查网络连接后重试';
-            } else if (error.message.includes('timeout') || error.message.includes('超时') || error.message.includes('TIMEOUT')) {
-              errorTitle = '请求超时';
-              errorContent = '网络响应超时，请检查网络状况后重试';
-            } else if (error.message.includes('network') || error.message.includes('网络') || error.message.includes('NETWORK')) {
-              errorTitle = '网络错误';
-              errorContent = '网络连接不稳定，请检查网络后重试';
-            } else if (error.message.includes('CLOUD_FUNCTION')) {
-              errorTitle = '服务异常';
-              errorContent = '短信服务暂时不可用，请稍后重试';
-            } else if (error.message.includes('SERVER_ERROR')) {
-              errorTitle = '服务器错误';
-              errorContent = '服务器暂时繁忙，请稍后重试';
-            } else if (error.message.includes('格式异常') || error.message.includes('数据')) {
-              errorTitle = '数据异常';
-              errorContent = '服务响应异常，请稍后重试';
-            }
-          }
-
+          // 开始倒计时
+          this.startCountdown();
+        } else {
+          // 发送失败
+          const errorMsg = response.message || response.msg || '验证码发送失败';
           uni.showModal({
-            title: errorTitle,
-            content: errorContent,
-            showCancel: true,
-            cancelText: '取消',
-            confirmText: '重新发送',
-            success: (res) => {
-              if (res.confirm) {
-                // 用户选择重新发送，重置重试计数器
-                setTimeout(() => {
-                  this.sendVerificationCode();
-                }, 500);
-              }
-            }
+            title: '发送失败',
+            content: errorMsg,
+            showCancel: false,
+            confirmText: '确定'
           });
-          return;
-        } finally {
-          uni.hideLoading();
         }
+      } catch (error) {
+        console.error('发送验证码异常:', error);
+
+        // 显示错误提示
+        uni.showModal({
+          title: '发送失败',
+          content: '验证码发送失败，请检查网络后重试',
+          showCancel: true,
+          cancelText: '取消',
+          confirmText: '重新发送',
+          success: (res) => {
+            if (res.confirm) {
+              // 用户选择重新发送
+              setTimeout(() => {
+                this.sendVerificationCode();
+              }, 500);
+            }
+          }
+        });
+      } finally {
+        uni.hideLoading();
       }
     },
 

@@ -114,6 +114,13 @@
           <text class="info-label">建议时间段</text>
           <text class="info-value">{{ formatRecommendedTime(orderInfo.recommended_service_time_start, orderInfo.recommended_service_time_end) }}</text>
         </view>
+        <view class="info-item" v-if="orderInfo.referrer_member_id">
+          <text class="info-label">推荐人ID</text>
+          <view class="info-value-wrap">
+            <text class="info-value">{{ orderInfo.referrer_member_id }}</text>
+            <view class="copy-btn" @click="copyText(orderInfo.referrer_member_id)">复制</view>
+          </view>
+        </view>
         <view class="info-item" v-if="orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type">
           <text class="info-label">预估完单</text>
           <text class="info-value">{{ orderInfo.task_assignment.predict_complete_type }}</text>

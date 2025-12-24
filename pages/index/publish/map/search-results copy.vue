@@ -312,8 +312,7 @@ export default {
 			console.log('🔍 查询行政区域编码，关键词:', districtKeywords);
 			
 			uni.request({
-				url: 'https://ccpt.0871.cn/api/task/district',
-				method: 'POST',
+				url: 'https://restapi.amap.com/v3/config/district',
 				data: {
 					key: 'e3a5024683cf405c94c5f158b05729b6',
 					keywords: districtKeywords,  // 🔥 使用"城市名 区县名"避免重名
@@ -321,14 +320,14 @@ export default {
 					extensions: 'base'
 				},
 				success: (districtRes) => {
-					console.log('📍 行政区域查询返回:', districtRes.data.data);
-
+					console.log('📍 行政区域查询返回:', districtRes.data);
+					
 					let adcode = '';
 					let useAdcode = false;
-
+					
 					// 获取adcode
-					if (districtRes.data.data.status === '1' && districtRes.data.data.districts && districtRes.data.data.districts.length > 0) {
-						const mainDistrict = districtRes.data.data.districts[0];
+					if (districtRes.data.status === '1' && districtRes.data.districts && districtRes.data.districts.length > 0) {
+						const mainDistrict = districtRes.data.districts[0];
 						console.log('📍 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
 						
 						// 如果有区县，尝试在下级中精确匹配
@@ -364,8 +363,7 @@ export default {
 					console.log('🔍 POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
 					
 					uni.request({
-						url: `https://ccpt.0871.cn/api/task/place/search`,
-						method: 'POST',
+						url: `https://restapi.amap.com/v3/place/text`,
 						data: {
 							key: 'e3a5024683cf405c94c5f158b05729b6',
 							keywords: this.searchKeyword,
@@ -379,12 +377,12 @@ export default {
 						success: (res) => {
 							// 隐藏加载提示
 							uni.hideLoading()
-
-							console.log('📍 高德地址搜索返回数据:', res.data.data);
-							console.log('📍 返回POI数量:', res.data.data.pois ? res.data.data.pois.length : 0);
-
+							
+							console.log('📍 高德地址搜索返回数据:', res.data);
+							console.log('📍 返回POI数量:', res.data.pois ? res.data.pois.length : 0);
+							
 							// 🔥 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
-							if (useAdcode && (!res.data.data.pois || res.data.data.pois.length === 0) && (res.data.data.status === '1' || res.data.data.status === 'OK')) {
+							if (useAdcode && (!res.data.pois || res.data.pois.length === 0) && (res.data.status === '1' || res.data.status === 'OK')) {
 								console.log('⚠️ adcode搜索无结果，降级使用城市级别重新搜索（去掉区县限制）');
 								uni.showLoading({
 									title: '搜索中...',
@@ -393,8 +391,7 @@ export default {
 								
 								// 🔥 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
 								uni.request({
-									url: `https://ccpt.0871.cn/api/task/place/search`,
-									method: 'POST',
+									url: `https://restapi.amap.com/v3/place/text`,
 									data: {
 										key: 'e3a5024683cf405c94c5f158b05729b6',
 										keywords: this.searchKeyword,
@@ -407,8 +404,8 @@ export default {
 									},
 									success: (retryRes) => {
 										uni.hideLoading();
-										console.log('🔄 降级搜索返回数据:', retryRes.data.data);
-										console.log('🔄 降级搜索返回POI数量:', retryRes.data.data.pois ? retryRes.data.data.pois.length : 0);
+										console.log('🔄 降级搜索返回数据:', retryRes.data);
+										console.log('🔄 降级搜索返回POI数量:', retryRes.data.pois ? retryRes.data.pois.length : 0);
 										// 处理降级搜索结果
 										this.handleSearchResults(retryRes, originalCityName, originalDistrictName, false);
 									},
@@ -451,12 +448,12 @@ export default {
 		// 【新增方法】统一处理搜索结果
 		handleSearchResults(res, originalCityName, originalDistrictName, skipFilter = false) {
 			console.log('📍 处理搜索结果 - skipFilter:', skipFilter);
-
+			
 			// 检查返回状态
-			if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.pois && res.data.data.pois.length > 0) {
-				console.log('📍 搜索返回POI数量:', res.data.data.pois.length);
-
-				let searchResults = res.data.data.pois
+			if ((res.data.status === '1' || res.data.status === 'OK') && res.data.pois && res.data.pois.length > 0) {
+				console.log('📍 搜索返回POI数量:', res.data.pois.length);
+				
+				let searchResults = res.data.pois
 					.filter(item => {
 						// 🔥 如果使用adcode搜索且skipFilter为true，不进行二次过滤
 						if (skipFilter) {
@@ -558,8 +555,8 @@ export default {
 					})
 				}
 			} else {
-				console.log('地址搜索无结果或状态异常:', res.data.data);
-				if (res.data.data.info === 'USER_DAILY_QUERY_OVER_LIMIT') {
+				console.log('地址搜索无结果或状态异常:', res.data);
+				if (res.data.info === 'USER_DAILY_QUERY_OVER_LIMIT') {
 					console.log('高德地图配额已达上限，切换到腾讯地图搜索');
 					// 显示加载提示
 					uni.showLoading({
@@ -588,24 +585,23 @@ export default {
 				citylimit: true,
 				city: searchCity
 			};
-
+			
 			console.log('降级搜索参数:', searchParams);
-
+			
 			uni.request({
-				url: `https://ccpt.0871.cn/api/task/place/search`,
-				method: 'POST',
+				url: `https://restapi.amap.com/v3/place/text`,
 				data: searchParams,
 				success: (res) => {
 					// 隐藏加载提示
 					uni.hideLoading()
-
-					if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.pois && res.data.data.pois.length > 0) {
-						console.log('降级搜索返回数据:', res.data.data);
+					
+					if ((res.data.status === '1' || res.data.status === 'OK') && res.data.pois && res.data.pois.length > 0) {
+						console.log('降级搜索返回数据:', res.data);
 						// 处理搜索结果（不进行过滤）
 						this.handleSearchResults(res, originalCityName, '', false);
 					} else {
-						console.log('地址搜索无结果或状态异常:', res.data.data);
-						if (res.data.data.info === 'USER_DAILY_QUERY_OVER_LIMIT') {
+						console.log('地址搜索无结果或状态异常:', res.data);
+						if (res.data.info === 'USER_DAILY_QUERY_OVER_LIMIT') {
 							console.log('高德地图配额已达上限，切换到腾讯地图搜索');
 							// 显示加载提示
 							uni.showLoading({
@@ -817,8 +813,7 @@ export default {
 		// 降级到高德地图逆地理编码
 		fallbackToAmapGeocode(item, cacheKey) {
 			uni.request({
-				url: 'https://ccpt.0871.cn/api/task/geocode',
-				method: 'POST',
+				url: 'https://restapi.amap.com/v3/geocode/regeo',
 				data: {
 					key: 'e3a5024683cf405c94c5f158b05729b6',
 					location: `${item.longitude},${item.latitude}`,
@@ -826,13 +821,13 @@ export default {
 					output: 'json'
 				},
 				success: (res) => {
-					console.log('高德地图逆地理编码返回数据:', res.data.data);
-					if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.regeocode) {
-						const addressComponent = res.data.data.regeocode.addressComponent;
+					console.log('高德地图逆地理编码返回数据:', res.data);
+					if ((res.data.status === '1' || res.data.status === 'OK') && res.data.regeocode) {
+						const addressComponent = res.data.regeocode.addressComponent;
 
 						// 构建地址信息
 						const addressInfo = {
-							formatted_address: res.data.data.regeocode.formatted_address,
+							formatted_address: res.data.regeocode.formatted_address,
 							address_component: addressComponent,
 							api_source: 'amap'
 						};

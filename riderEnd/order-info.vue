@@ -7,7 +7,7 @@
 	<view class="nav-placeholder"></view>
 
 	<!-- 悬浮预估完单时间卡片 - 可拖拽 -->
-	<view
+	<!-- <view
 		class="estimate-float-card"
 		v-if="showEstimateCard && orderInfo.status === 'assigned' && orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type == null"
 		:style="{
@@ -18,10 +18,6 @@
 		@touchmove="handleEstimateTouchMove"
 		@touchend="handleEstimateTouchEnd">
 		<view class="estimate-card-content">
-			<!-- <view class="estimate-title">填写预估完单时间</view> -->
-			<!-- <view class="estimate-warning">
-				<text>避免客户不确定完成时间，造成撤单损失！</text>
-			</view> -->
 			<view class="estimate-selector-row">
 				<picker 
 					mode="selector" 
@@ -31,7 +27,6 @@
 					class="estimate-picker">
 					<view class="estimate-picker-content">
 						<text class="estimate-label">请选择</text>
-						<!-- <text class="estimate-arrow">▼</text> -->
 					</view>
 				</picker>
 			</view>
@@ -43,7 +38,7 @@
 			</view>
 			<button class="estimate-submit-btn" @click="submitEstimateTime">确认提交</button>
 		</view>
-	</view>
+	</view> -->
 
 	<!-- 订单城市平均完单时效 -->
 	<view class="city-efficiency-wrapper" v-if="orderInfo.estimated_completion_hours">

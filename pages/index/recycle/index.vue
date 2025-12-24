@@ -11,30 +11,53 @@
 		></view>
 
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
-		<!-- 主项服务 - 独立卡片 -->
-		<view class="info-card mar-top-10">
-			<view class="form-item">
-			<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }" style="background: rgba(247, 247, 247, 1);">
-				<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
-					<image src="https://ccpt.qiniu.0871.cn/meituan.svg" mode="aspectFit"></image>
-				</view>
-				<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
-					<image src="https://ccpt.qiniu.0871.cn/guaishou.svg" mode="aspectFit"></image>
-				</view>
-				<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-					<image src="https://ccpt.qiniu.0871.cn/zhumang.svg" mode="aspectFit"></image>
-				</view>
-				<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
-					<image src="https://ccpt.qiniu.0871.cn/xiaodian.svg" mode="aspectFit"></image>
-				</view>
+
+
+	<!-- 服务门店信息-->
+	<view class="mar-top-10">
+		<store-info
+			:formData.sync="formData"
+			@address-select="handleAddressSelect"
+			@remove-sn-mac="removeSnMacInput"
+			@add-sn-mac="addSnMacInput"
+			@delete-image="deleteImage"
+			@upload-image="uploadImage"
+		/>
+	</view>
+	<!-- 服务品牌 - 独立卡片 -->
+	<view class="info-card">
+		<view class="form-label section-title main-service-title">
+			<view class="title-left">
+				<text class="dot"></text>
+				<text>服务品牌</text>
 			</view>
-			<view class="form-label section-title main-service-title" style="margin-top:20px;">
-				<view class="title-left">
-					<text class="dot"></text>
-					<text>主项服务</text>
-				</view>
-				<text class="optional-tag-red">必填</text>
+			<!-- <text class="optional-tag-red">必填</text> -->
+		</view>
+		<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }" style="background: rgba(247, 247, 247, 1);">
+			<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
+				<image src="https://ccpt.qiniu.0871.cn/meituan.svg" mode="aspectFit"></image>
 			</view>
+			<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
+				<image src="https://ccpt.qiniu.0871.cn/guaishou.svg" mode="aspectFit"></image>
+			</view>
+			<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
+				<image src="https://ccpt.qiniu.0871.cn/zhumang.svg" mode="aspectFit"></image>
+			</view>
+			<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
+				<image src="https://ccpt.qiniu.0871.cn/xiaodian.svg" mode="aspectFit"></image>
+			</view>
+		</view>
+	</view>
+	<!-- 主项服务 - 独立卡片 -->
+	<view class="info-card">
+		<view class="form-item">
+		<view class="form-label section-title main-service-title">
+			<view class="title-left">
+				<text class="dot"></text>
+				<text>主项服务</text>
+			</view>
+			<text class="optional-tag-red">必填</text>
+		</view>
 			<view class="service-options">
 				<!-- 好宝回收选项 -->
 				<view class="service-row-with-quantity">
@@ -161,16 +184,6 @@
 		</view>
 		</view>
 	</view>
-
-	<!-- 服务门店信息-->
-	<store-info
-			:formData.sync="formData"
-			@address-select="handleAddressSelect"
-			@remove-sn-mac="removeSnMacInput"
-			@add-sn-mac="addSnMacInput"
-			@delete-image="deleteImage"
-			@upload-image="uploadImage"
-		/>
 
 		<!-- 附加服务 - 独立卡片 -->
 			<!-- <view class="info-card">
@@ -3195,7 +3208,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 	.form-label {
 		display: flex;
 		align-items: center;
-		margin-top: 20px;
+		// margin-top: 20px;
 		margin-bottom: 20rpx;
 
 		.dot {
@@ -3281,7 +3294,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		justify-content: space-between;
 		padding: 30rpx 30rpx;
 		border-radius: 8px;
-		margin-bottom: 30rpx;
+		// margin-bottom: 30rpx;
 		&.two-brands {
 			justify-content: flex-start;
 			.brand-item {
@@ -4377,7 +4390,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 					font-size: 30rpx;
 					color: #333333;
 					font-weight: 500;
-					margin-top: 20rpx;
+					// margin-top: 20rpx;
 
 					&:first-child {
 						margin-top: 0;

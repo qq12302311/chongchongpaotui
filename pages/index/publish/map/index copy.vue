@@ -341,8 +341,7 @@
 				}
 
 				uni.request({
-					url: 'https://ccpt.0871.cn/api/task/geocode',
-					method: 'POST',
+					url: 'https://restapi.amap.com/v3/geocode/regeo',
 					data: {
 						key: 'e3a5024683cf405c94c5f158b05729b6',
 						location: `${longitude},${latitude}`,
@@ -350,12 +349,12 @@
 						output: 'json'
 					},
 					success: (res) => {
-						console.log('高德逆地理编码返回数据2:', res.data.data);
+						console.log('高德逆地理编码返回数据:', res.data);
 						// 检查返回状态，高德地图API可能返回"OK"或"1"表示成功
-						if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.regeocode) {
-							const addressComponent = res.data.data.regeocode.addressComponent;
-							const formattedAddress = res.data.data.regeocode.formatted_address;
-							
+						if ((res.data.status === '1' || res.data.status === 'OK') && res.data.regeocode) {
+							const addressComponent = res.data.regeocode.addressComponent;
+							const formattedAddress = res.data.regeocode.formatted_address;
+
 							if (isDragLocation) {
 								// 如果是拖拽位置，计算与当前位置的距离
 								const lat1 = this.currentLocation.latitude;
@@ -409,9 +408,9 @@
 								});
 							}
 						} else {
-							console.log('高德地图逆地理编码无结果或状态异常:', res.data.data);
+							console.log('高德地图逆地理编码无结果或状态异常:', res.data);
 							// 检查是否是配额超限，如果是则尝试备用API
-							if (res.data.data.infocode === '10044') {
+							if (res.data.infocode === '10044') {
 								console.log('高德地图配额超限，尝试使用腾讯地图逆地理编码');
 								this.getReverseGeocodingWithFallback(latitude, longitude, (addressComponent) => {
 									if (addressComponent && isDragLocation) {
@@ -607,65 +606,65 @@
 
 				console.log('创建的当前位置项:', this.addressList[0]);
 
-				// 获取当前选择的城市，提取城市名和区县名
-				let cityName = this.currentCity;
-				let districtName = '';
-				
-				// 检查是否包含区县信息（如"海口市 · 龙华区"）
-				if (this.currentCity.includes(' · ')) {
-					const parts = this.currentCity.split(' · ');
-					cityName = parts[0];
-					districtName = parts[1];
-					console.log('搜索范围 - 城市名:', cityName);
-					console.log('搜索范围 - 区县名:', districtName);
-				}
+			// 获取当前选择的城市，提取城市名和区县名
+			let cityName = this.currentCity;
+			let districtName = '';
 			
-				// 保存原始城市名和区县名（用于后续过滤）
-				const originalCityName = cityName;
-				const originalDistrictName = districtName;
-				
-				// 🔥 新增：从cityListData获取省份信息，避免城市重名
-				let provinceName = '';
-				if (this.cityListData && this.cityListData.length > 0) {
-					for (const province of this.cityListData) {
-						if (province.children && Array.isArray(province.children)) {
-							for (const city of province.children) {
-								if (city.name === cityName) {
-									provinceName = province.name;
-									console.log('✅ 找到对应省份:', provinceName);
-									break;
-								}
+			// 检查是否包含区县信息（如"海口市 · 龙华区"）
+			if (this.currentCity.includes(' · ')) {
+				const parts = this.currentCity.split(' · ');
+				cityName = parts[0];
+				districtName = parts[1];
+				console.log('搜索范围 - 城市名:', cityName);
+				console.log('搜索范围 - 区县名:', districtName);
+			}
+			
+			// 保存原始城市名和区县名（用于后续过滤）
+			const originalCityName = cityName;
+			const originalDistrictName = districtName;
+			
+			// 🔥 新增：从cityListData获取省份信息，避免城市重名
+			let provinceName = '';
+			if (this.cityListData && this.cityListData.length > 0) {
+				for (const province of this.cityListData) {
+					if (province.children && Array.isArray(province.children)) {
+						for (const city of province.children) {
+							if (city.name === cityName) {
+								provinceName = province.name;
+								console.log('✅ 找到对应省份:', provinceName);
+								break;
 							}
 						}
-						if (provinceName) break;
 					}
+					if (provinceName) break;
 				}
+			}
 			
-				// 处理城市名称，去除后缀（用于API搜索）
-				let searchCity = cityName.replace('市', '').replace('特别行政区', '').replace('自治州', '').replace('地区', '').replace('盟', '');
-				// 🔥 如果找到省份，将省份+城市组合作为搜索条件，避免重名
-				if (provinceName) {
-					// 只去除"省"后缀，保留"自治区"等完整名称，避免像"新疆维吾尔自治区"被错误处理
-					searchCity = provinceName.replace('省', '') + searchCity;
-					console.log('🔥 使用省份+城市组合:', searchCity);
-				}
-				if (districtName) {
-					districtName = districtName.replace('区', '').replace('县', '').replace('市', '');
-				}
+		// 处理城市名称，去除后缀（用于API搜索）
+		let searchCity = cityName.replace('市', '').replace('特别行政区', '').replace('自治州', '').replace('地区', '').replace('盟', '');
+		// 🔥 如果找到省份，将省份+城市组合作为搜索条件，避免重名
+		if (provinceName) {
+			// 只去除"省"后缀，保留"自治区"等完整名称，避免像"新疆维吾尔自治区"被错误处理
+			searchCity = provinceName.replace('省', '') + searchCity;
+			console.log('🔥 使用省份+城市组合:', searchCity);
+		}
+			if (districtName) {
+				districtName = districtName.replace('区', '').replace('县', '').replace('市', '');
+			}
 
-				console.log('处理后的搜索城市:', searchCity);
-				console.log('处理后的区县名:', districtName);
-				console.log('地图中心位置:', this.latitude, this.longitude);
-				console.log('用户当前位置:', this.currentLocation.latitude, this.currentLocation.longitude);
+			console.log('处理后的搜索城市:', searchCity);
+			console.log('处理后的区县名:', districtName);
+			console.log('地图中心位置:', this.latitude, this.longitude);
+			console.log('用户当前位置:', this.currentLocation.latitude, this.currentLocation.longitude);
 
-				// 检查当前位置是否有效
-				if (!this.currentLocation.latitude || !this.currentLocation.longitude) {
-					console.error('用户当前位置信息缺失，这将导致距离计算失败！');
-					console.log('尝试使用地图中心位置作为当前位置');
-					this.currentLocation.latitude = this.latitude;
-					this.currentLocation.longitude = this.longitude;
-					console.log('修正后的用户位置:', this.currentLocation.latitude, this.currentLocation.longitude);
-				}
+			// 检查当前位置是否有效
+			if (!this.currentLocation.latitude || !this.currentLocation.longitude) {
+				console.error('用户当前位置信息缺失，这将导致距离计算失败！');
+				console.log('尝试使用地图中心位置作为当前位置');
+				this.currentLocation.latitude = this.latitude;
+				this.currentLocation.longitude = this.longitude;
+				console.log('修正后的用户位置:', this.currentLocation.latitude, this.currentLocation.longitude);
+			}
 			
 				// qqmapsdk.search({
 				// 	keyword: this.searchKeyword,  // 使用用户输入的搜索关键词，而不是固定的'酒店'
@@ -755,235 +754,231 @@
 				// 	}
 				// })
 
-				// 🔥 修复：先获取行政区域编码，使用adcode进行精确搜索
-				// 🔥 关键修复：如果有区县，使用"城市名 区县名"作为关键词，避免重名问题
-				const districtKeywords = districtName ? `${cityName} ${districtName}` : cityName;
-				console.log('🔍 查询行政区域编码，关键词:', districtKeywords);
+			// 🔥 修复：先获取行政区域编码，使用adcode进行精确搜索
+			// 🔥 关键修复：如果有区县，使用"城市名 区县名"作为关键词，避免重名问题
+			const districtKeywords = districtName ? `${cityName} ${districtName}` : cityName;
+			console.log('🔍 查询行政区域编码，关键词:', districtKeywords);
 			
-				uni.request({
-					url: 'https://ccpt.0871.cn/api/task/district',
-					method: 'POST',
-					data: {
-						key: 'e3a5024683cf405c94c5f158b05729b6',
-						keywords: districtKeywords,  // 🔥 使用"城市名 区县名"避免重名
-						subdistrict: 1,  // 🔥 查询下一级，以便精确匹配区县
-						extensions: 'base'
-					},
-					success: (districtRes) => {
-						console.log('📍 行政区域查询返回:', districtRes.data.data);
+			uni.request({
+				url: 'https://restapi.amap.com/v3/config/district',
+				data: {
+					key: 'e3a5024683cf405c94c5f158b05729b6',
+					keywords: districtKeywords,  // 🔥 使用"城市名 区县名"避免重名
+					subdistrict: 1,  // 🔥 查询下一级，以便精确匹配区县
+					extensions: 'base'
+				},
+				success: (districtRes) => {
+					console.log('📍 行政区域查询返回:', districtRes.data);
+					
+					let adcode = '';
+					let useAdcode = false;
+					
+					// 获取adcode
+					if (districtRes.data.status === '1' && districtRes.data.districts && districtRes.data.districts.length > 0) {
+						const mainDistrict = districtRes.data.districts[0];
+						console.log('📍 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
 						
-						let adcode = '';
-						let useAdcode = false;
-						
-						// 获取adcode
-						if (districtRes.data.data.status === '1' && districtRes.data.data.districts && districtRes.data.data.districts.length > 0) {
-							const mainDistrict = districtRes.data.data.districts[0];
-							console.log('📍 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
-							
-							// 如果有区县，尝试在下级中精确匹配
-							if (districtName && mainDistrict.districts && mainDistrict.districts.length > 0) {
-								console.log('📍 开始在下级区域中查找:', districtName);
-								for (const subDistrict of mainDistrict.districts) {
-									console.log('   - 检查:', subDistrict.name, 'adcode:', subDistrict.adcode);
-									// 精确匹配区县名（去除"区"、"县"等后缀）
-									const subName = subDistrict.name.replace(/区$|县$|市$/,'');
-									const targetName = districtName.replace(/区$|县$|市$/,'');
-									if (subName === targetName || subDistrict.name === districtName) {
-										adcode = subDistrict.adcode;
-										console.log('✅ 找到匹配的区县:', subDistrict.name, 'adcode:', adcode);
-										break;
-									}
+						// 如果有区县，尝试在下级中精确匹配
+						if (districtName && mainDistrict.districts && mainDistrict.districts.length > 0) {
+							console.log('📍 开始在下级区域中查找:', districtName);
+							for (const subDistrict of mainDistrict.districts) {
+								console.log('   - 检查:', subDistrict.name, 'adcode:', subDistrict.adcode);
+								// 精确匹配区县名（去除"区"、"县"等后缀）
+								const subName = subDistrict.name.replace(/区$|县$|市$/,'');
+								const targetName = districtName.replace(/区$|县$|市$/,'');
+								if (subName === targetName || subDistrict.name === districtName) {
+									adcode = subDistrict.adcode;
+									console.log('✅ 找到匹配的区县:', subDistrict.name, 'adcode:', adcode);
+									break;
 								}
 							}
-							
-							// 如果没找到区县adcode，使用城市级别的adcode
-							if (!adcode) {
-								adcode = mainDistrict.adcode;
-								console.log('📍 未找到精确区县，使用上级区域 adcode:', adcode, mainDistrict.name);
-							}
-							
-							useAdcode = true;
-							console.log('✅ 最终使用的行政区域编码:', adcode, '将使用adcode进行精确搜索');
-						} else {
-							console.warn('⚠️ 未获取到行政区域编码，使用城市名称搜索');
 						}
 						
-						// 🔥 优先使用adcode进行POI搜索，如果无结果再降级使用城市名称
-						const searchCityParam = useAdcode ? adcode : originalCityName;
-						console.log('🔍 POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
+						// 如果没找到区县adcode，使用城市级别的adcode
+						if (!adcode) {
+							adcode = mainDistrict.adcode;
+							console.log('📍 未找到精确区县，使用上级区域 adcode:', adcode, mainDistrict.name);
+						}
 						
-						uni.request({
-							url: `https://ccpt.0871.cn/api/task/place/search`,
-							method: 'POST',
-							data: {
-								key: 'e3a5024683cf405c94c5f158b05729b6',
-								keywords: this.searchKeyword,
-								city: searchCityParam,  // 使用adcode或原始城市名
-								offset: 20,
-								page: 1,
-								extensions: 'all',
-								citylimit: true,  // 严格限制在城市内搜索
-								output: 'json'
-							},
-							success: (res) => {
-								// 隐藏加载提示
-								uni.hideLoading();
+						useAdcode = true;
+						console.log('✅ 最终使用的行政区域编码:', adcode, '将使用adcode进行精确搜索');
+					} else {
+						console.warn('⚠️ 未获取到行政区域编码，使用城市名称搜索');
+					}
+					
+					// 🔥 优先使用adcode进行POI搜索，如果无结果再降级使用城市名称
+					const searchCityParam = useAdcode ? adcode : originalCityName;
+					console.log('🔍 POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
+					
+					uni.request({
+						url: `https://restapi.amap.com/v3/place/text`,
+						data: {
+							key: 'e3a5024683cf405c94c5f158b05729b6',
+							keywords: this.searchKeyword,
+							city: searchCityParam,  // 使用adcode或原始城市名
+							offset: 20,
+							page: 1,
+							extensions: 'all',
+							citylimit: true,  // 严格限制在城市内搜索
+							output: 'json'
+						},
+						success: (res) => {
+							// 隐藏加载提示
+							uni.hideLoading();
 
-								console.log('📍 高德地址搜索返回数据:', res.data.data);
-								console.log('📍 返回POI数量:', res.data.data.pois ? res.data.data.pois.length : 0);
-								
-								// 🔥 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
-								if (useAdcode && (!res.data.data.pois || res.data.data.pois.length === 0) && (res.data.data.status === '1' || res.data.data.status === 'OK')) {
-									console.log('⚠️ adcode搜索无结果，降级使用城市级别重新搜索（去掉区县限制）');
-									uni.showLoading({
-										title: '搜索中...',
-										mask: true
-									});
-									
-									// 🔥 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
-									uni.request({
-										url: `https://ccpt.0871.cn/api/task/place/search`,
-										method: 'POST',
-										data: {
-											key: 'e3a5024683cf405c94c5f158b05729b6',
-											keywords: this.searchKeyword,
-											city: originalCityName,  // 使用城市名（不含区县）
-											offset: 20,
-											page: 1,
-											extensions: 'all',
-											citylimit: true,  // 仍然限制在城市内，但允许其他区县的结果
-											output: 'json'
-										},
-										success: (retryRes) => {
-											uni.hideLoading();
-											console.log('🔄 降级搜索返回数据:', retryRes.data.data);
-											console.log('🔄 降级搜索返回POI数量:', retryRes.data.pois ? retryRes.data.data.pois.length : 0);
-											// 降级搜索时进行过滤，优先显示原区县的结果
-											this.handleSearchResults(retryRes.data.data, originalCityName, originalDistrictName, false);
-										},
-										fail: (retryErr) => {
-											uni.hideLoading();
-											console.error('❌ 降级搜索失败，切换到腾讯地图:', retryErr);
-											uni.showLoading({
-												title: '努力搜索中...',
-												mask: true
-											});
-											this.searchWithTencentMap(originalCityName);
-										}
-									});
-									return;
-								}
-								
-								// 正常处理搜索结果
-								// 🔥 如果使用adcode搜索，不需要二次过滤；否则需要过滤
-								console.log('📍 使用', useAdcode ? 'adcode' : '城市名', '搜索，skipFilter:', useAdcode);
-								this.handleSearchResults(res.data.data, originalCityName, originalDistrictName, useAdcode);
-							},
-							fail: (err) => {
-								console.error('高德地图搜索请求失败，切换到腾讯地图:', err);
-								// 显示加载提示
+							console.log('📍 高德地址搜索返回数据:', res.data);
+							console.log('📍 返回POI数量:', res.data.pois ? res.data.pois.length : 0);
+							
+							// 🔥 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
+							if (useAdcode && (!res.data.pois || res.data.pois.length === 0) && (res.data.status === '1' || res.data.status === 'OK')) {
+								console.log('⚠️ adcode搜索无结果，降级使用城市级别重新搜索（去掉区县限制）');
 								uni.showLoading({
-									title: '努力搜索中...',
+									title: '搜索中...',
 									mask: true
 								});
-								// 高德地图请求失败时，切换到腾讯地图搜索
-								this.searchWithTencentMap(originalCityName);
-							}
-						});
-					},
-					fail: (err) => {
-						console.error('获取行政区域编码失败，使用原始城市名称搜索:', err);
-						// 降级方案：直接使用原始城市名称搜索
-						uni.request({
-							url: `https://ccpt.0871.cn/api/task/place/search`,
-							method: 'POST',
-							data: {
-								key: 'e3a5024683cf405c94c5f158b05729b6',
-								keywords: this.searchKeyword,
-								city: originalCityName,  // 使用原始城市名而不是处理后的名称
-								offset: 20,
-								page: 1,
-								extensions: 'all',
-								citylimit: true,
-								output: 'json'
-							},
-							success: (res) => {
-								// 隐藏加载提示
-								uni.hideLoading();
-
-								console.log('高德测试地址搜索返回数据2:', res.data);
-								if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.pois && res.data.data.pois.length > 0) {
-									const searchResults = res.data.data.pois.map(item => {
-										const lat2 = parseFloat(item.location.split(',')[1]);
-										const lon2 = parseFloat(item.location.split(',')[0]);
-
-										if (!this.isValidLatLng(lat2, lon2)) {
-											console.warn('搜索结果中的经纬度无效:', lat2, lon2, item.name);
-											return null;
-										}
-
-										let distance = '0.0';
-										if (this.currentLocation.latitude && this.currentLocation.longitude) {
-											distance = this.calculateDistanceBetweenPoints(
-												this.currentLocation.latitude,
-												this.currentLocation.longitude,
-												lat2,
-												lon2
-											);
-										}
-
-										let address_new = item.name
-										if(item.address !== '' && !Array.isArray(item.address)) {
-											address_new = item.address
-										} else if (Array.isArray(item.address) && item.address.length > 0) {
-											address_new = item.address
-										}
-
-										return {
-											name: item.name,
-											address: address_new,
-											latitude: lat2,
-											longitude: lon2,
-											distance: distance
-										};
-									}).filter(item => item !== null);
-
-									this.addressList = [...this.addressList, ...searchResults];
-									uni.setStorageSync('addressList', JSON.stringify(this.addressList));
-									uni.setStorageSync('currentCity', this.currentCity);
-									uni.setStorageSync('searchKeyword', this.searchKeyword);
-
-									uni.navigateTo({
-										url: '/pages/index/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.currentLocation.latitude + '&longitude=' + this.currentLocation.longitude
-									});
-								} else {
-									if(res.data.info === 'USER_DAILY_QUERY_OVER_LIMIT'){
-										console.log('高德地图配额已达上限，切换到腾讯地图搜索');
+								
+								// 🔥 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
+								uni.request({
+									url: `https://restapi.amap.com/v3/place/text`,
+									data: {
+										key: 'e3a5024683cf405c94c5f158b05729b6',
+										keywords: this.searchKeyword,
+										city: originalCityName,  // 使用城市名（不含区县）
+										offset: 20,
+										page: 1,
+										extensions: 'all',
+										citylimit: true,  // 仍然限制在城市内，但允许其他区县的结果
+										output: 'json'
+									},
+									success: (retryRes) => {
+										uni.hideLoading();
+										console.log('🔄 降级搜索返回数据:', retryRes.data);
+										console.log('🔄 降级搜索返回POI数量:', retryRes.data.pois ? retryRes.data.pois.length : 0);
+										// 降级搜索时进行过滤，优先显示原区县的结果
+										this.handleSearchResults(retryRes.data, originalCityName, originalDistrictName, false);
+									},
+									fail: (retryErr) => {
+										uni.hideLoading();
+										console.error('❌ 降级搜索失败，切换到腾讯地图:', retryErr);
 										uni.showLoading({
 											title: '努力搜索中...',
 											mask: true
 										});
-										this.searchWithTencentMap(searchCity);
-									} else {
-										console.log('地址搜索无结果或状态异常:', res.data);
-										uni.showToast({
-											title: '未找到相关地址',
-											icon: 'none'
-										});
+										this.searchWithTencentMap(originalCityName);
 									}
-								}
-							},
-							fail: (err) => {
-								console.error('高德地图搜索请求失败，切换到腾讯地图:', err);
-								uni.showLoading({
-									title: '努力搜索中...',
-									mask: true
 								});
-								this.searchWithTencentMap(searchCity);
+								return;
 							}
-						});
-					}
-				});
+							
+							// 正常处理搜索结果
+							// 🔥 如果使用adcode搜索，不需要二次过滤；否则需要过滤
+							console.log('📍 使用', useAdcode ? 'adcode' : '城市名', '搜索，skipFilter:', useAdcode);
+							this.handleSearchResults(res.data, originalCityName, originalDistrictName, useAdcode);
+						},
+						fail: (err) => {
+							console.error('高德地图搜索请求失败，切换到腾讯地图:', err);
+							// 显示加载提示
+							uni.showLoading({
+								title: '努力搜索中...',
+								mask: true
+							});
+							// 高德地图请求失败时，切换到腾讯地图搜索
+							this.searchWithTencentMap(originalCityName);
+						}
+					});
+				},
+				fail: (err) => {
+					console.error('获取行政区域编码失败，使用原始城市名称搜索:', err);
+					// 降级方案：直接使用原始城市名称搜索
+					uni.request({
+						url: `https://restapi.amap.com/v3/place/text`,
+						data: {
+							key: 'e3a5024683cf405c94c5f158b05729b6',
+							keywords: this.searchKeyword,
+							city: originalCityName,  // 使用原始城市名而不是处理后的名称
+							offset: 20,
+							page: 1,
+							extensions: 'all',
+							citylimit: true,
+							output: 'json'
+						},
+						success: (res) => {
+							// 隐藏加载提示
+							uni.hideLoading();
+
+							console.log('高德测试地址搜索返回数据2:', res.data);
+							if ((res.data.status === '1' || res.data.status === 'OK') && res.data.pois && res.data.pois.length > 0) {
+								const searchResults = res.data.pois.map(item => {
+									const lat2 = parseFloat(item.location.split(',')[1]);
+									const lon2 = parseFloat(item.location.split(',')[0]);
+
+									if (!this.isValidLatLng(lat2, lon2)) {
+										console.warn('搜索结果中的经纬度无效:', lat2, lon2, item.name);
+										return null;
+									}
+
+									let distance = '0.0';
+									if (this.currentLocation.latitude && this.currentLocation.longitude) {
+										distance = this.calculateDistanceBetweenPoints(
+											this.currentLocation.latitude,
+											this.currentLocation.longitude,
+											lat2,
+											lon2
+										);
+									}
+
+									let address_new = item.name
+									if(item.address !== '' && !Array.isArray(item.address)) {
+										address_new = item.address
+									} else if (Array.isArray(item.address) && item.address.length > 0) {
+										address_new = item.address
+									}
+
+									return {
+										name: item.name,
+										address: address_new,
+										latitude: lat2,
+										longitude: lon2,
+										distance: distance
+									};
+								}).filter(item => item !== null);
+
+								this.addressList = [...this.addressList, ...searchResults];
+								uni.setStorageSync('addressList', JSON.stringify(this.addressList));
+								uni.setStorageSync('currentCity', this.currentCity);
+								uni.setStorageSync('searchKeyword', this.searchKeyword);
+
+								uni.navigateTo({
+									url: '/pages/index/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.currentLocation.latitude + '&longitude=' + this.currentLocation.longitude
+								});
+							} else {
+								if(res.data.info === 'USER_DAILY_QUERY_OVER_LIMIT'){
+									console.log('高德地图配额已达上限，切换到腾讯地图搜索');
+									uni.showLoading({
+										title: '努力搜索中...',
+										mask: true
+									});
+									this.searchWithTencentMap(searchCity);
+								} else {
+									console.log('地址搜索无结果或状态异常:', res.data);
+									uni.showToast({
+										title: '未找到相关地址',
+										icon: 'none'
+									});
+								}
+							}
+						},
+						fail: (err) => {
+							console.error('高德地图搜索请求失败，切换到腾讯地图:', err);
+							uni.showLoading({
+								title: '努力搜索中...',
+								mask: true
+							});
+							this.searchWithTencentMap(searchCity);
+						}
+					});
+				}
+			});
 			},
 			// 百度地图搜索方法
 			bmapsearch(searchCity) {
@@ -1878,8 +1873,7 @@
 
 				console.log('开始获取城市信息，经纬度:', longitude, latitude);
 				uni.request({
-					url: 'https://ccpt.0871.cn/api/task/geocode',
-					method: 'POST',
+					url: 'https://restapi.amap.com/v3/geocode/regeo',
 					data: {
 						key: 'e3a5024683cf405c94c5f158b05729b6',
 						location: `${longitude},${latitude}`,
@@ -1887,9 +1881,9 @@
 						output: 'json'
 					},
 					success: (res) => {
-						console.log('逆地理编码返回数据:', res.data.data);
-						if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.regeocode) {
-							const addressComponent = res.data.data.regeocode.addressComponent;
+						console.log('逆地理编码返回数据:', res.data);
+						if ((res.data.status === '1' || res.data.status === 'OK') && res.data.regeocode) {
+							const addressComponent = res.data.regeocode.addressComponent;
 							console.log('地址组件:', addressComponent);
 
 							if (addressComponent) {
@@ -1930,8 +1924,8 @@
 									console.log('cityName值:', cityName);
 
 									// 尝试从formatted_address中提取城市名称
-									if (res.data.data.regeocode.formatted_address) {
-										const formattedAddress = res.data.data.regeocode.formatted_address;
+									if (res.data.regeocode.formatted_address) {
+										const formattedAddress = res.data.regeocode.formatted_address;
 										console.log('格式化地址:', formattedAddress);
 
 										// 尝试从格式化地址中提取城市名称
@@ -1961,7 +1955,7 @@
 								console.log('使用默认城市:', this.currentCity);
 							}
 						} else {
-							console.error('逆地理编码返回数据异常:', res.data.data);
+							console.error('逆地理编码返回数据异常:', res.data);
 							// 如果返回数据异常，使用默认城市
 							this.currentCity = '成都市';
 							uni.setStorageSync('currentCity', this.currentCity);

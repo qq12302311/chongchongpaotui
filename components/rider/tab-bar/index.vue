@@ -3,12 +3,12 @@
     <view class="tab-bar">
       <view class="tab-item" :class="{ active: activeTab === 'hall' }" @click="switchTab('hall')">
         <image :src="activeTab === 'hall' ? 'https://ccpt.qiniu.0871.cn/home-active.svg' : 'https://ccpt.qiniu.0871.cn/home2.svg'" mode="aspectFit" class="tab-icon"></image>
-        <text class="tab-text">接单大厅</text>
+        <text class="tab-text">工单中心</text>
       </view>
-      <view class="tab-item" :class="{ active: activeTab === 'order' }" @click="switchTab('order')">
+      <!-- <view class="tab-item" :class="{ active: activeTab === 'order' }" @click="switchTab('order')">
         <image :src="activeTab === 'order' ? 'https://ccpt.qiniu.0871.cn/order-active.svg' : 'https://ccpt.qiniu.0871.cn/order.svg'" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">订单</text>
-      </view>
+      </view> -->
       <view class="tab-item" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">
         <image :src="activeTab === 'chat' ? 'https://ccpt.qiniu.0871.cn/duihua2-active.svg' : 'https://ccpt.qiniu.0871.cn/duihua2.svg'" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">对话</text>
