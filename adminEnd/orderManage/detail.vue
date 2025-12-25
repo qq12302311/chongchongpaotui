@@ -514,13 +514,11 @@
 
     <!-- 时间轴弹窗 -->
     <view class="modal-mask" v-if="showTimeline" @click="closeTimelineModal"></view>
-    <view class="modal-container timeline-modal" v-if="showTimeline">
-      <view class="modal-header">
-        <text class="modal-title">订单时间轴</text>
-        <view class="modal-close" @click="closeTimelineModal">×</view>
-      </view>
-      <view class="modal-content">
-        <view class="timeline-container">
+    <view class="modal-container timeline-modal" v-if="showTimeline" style="background: none;">
+		<uni-icons size="32" color="#fff" type="close" @click="closeTimelineModal" style="position: absolute; right: 0px; top: 0px;"></uni-icons>
+		<image src="https://ccpt.qiniu.0871.cn/adminEnd/ddsjz.png" mode="widthFix" style="vertical-align: top;"></image>
+      <view class="modal-content" style="padding-top: 0;">
+        <view class="timeline-container" style="padding: 8px;">
           <view
             class="timeline-item"
             v-for="(event, index) in getSortedTimelineEvents()"
@@ -2611,6 +2609,7 @@ export default {
 }
 
 .modal-content {
+	background-color: #fff;
   padding: 30rpx;
 }
 
@@ -2687,6 +2686,7 @@ export default {
 }
 
 .timeline-container {
+	background: #F5FAFF;
   padding: 20rpx 0;
 }
 

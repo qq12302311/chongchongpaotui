@@ -803,7 +803,10 @@
 					<!-- 取消原因 -->
 					<view class="cancel-body">
 						<view class="cancel-reason-section">
-							<text class="cancel-reason-title">取消原因（必填 不少于5个汉字）：</text>
+							<text class="cancel-reason-title">
+								<text>取消原因：</text>
+								<text style="color: red; font-size: 12px;">（必填 不少于5个汉字）</text>
+							</text>
 							<textarea 
 								class="cancel-reason-input" 
 								v-model="cancelReason" 
@@ -1383,6 +1386,13 @@
 				if (!this.cancelReason || this.cancelReason.trim().length === 0) {
 					uni.showToast({
 						title: '请填写取消原因',
+						icon: 'none'
+					});
+					return;
+				}
+				if (this.cancelReason.trim().length < 5) {
+					uni.showToast({
+						title: '内容不少于5个汉字',
 						icon: 'none'
 					});
 					return;
