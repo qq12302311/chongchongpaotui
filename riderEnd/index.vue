@@ -832,8 +832,12 @@ export default {
         if (res.status === 'success' && res.data) {
           // 更新本地存储的用户信息
           const updatedUserInfo = {
+<<<<<<< HEAD
 			...riderUserInfo,
 			...res.data,
+=======
+			      ...res.data,
+>>>>>>> c91ba07 (骑手获取用户信息为最新数据)
             balance: res.data.balance || 0,
             month_commission: res.data.month_commission || 0,
             month_completed_tasks_count: res.data.month_completed_tasks_count || 0,
