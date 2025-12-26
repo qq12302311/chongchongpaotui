@@ -63,7 +63,7 @@
 
 	<!-- 骑手状态步骤 -->
 	<view class="rider-info-card-2">
-				<view class="state-buzhou mar-bot-15 mar-top-30">
+				<view class="state-buzhou mar-bot-15 mar-top-30" @click="showTimeline=true">
 					<!-- 步骤条容器 -->
 					<view class="steps-container">
 						<!-- 步骤1: 骑手已接单/待接单 -->
@@ -797,6 +797,36 @@
 				<text>我知道了</text>
 			</view>
 		</view>
+	
+		
+		<!-- 时间轴弹窗 -->
+		<view class="predict-modal-mask" v-if="showTimeline" @click="showTimeline=false"></view>
+		<view class="predict-modal-container timeline-modal" v-if="showTimeline" style="background: none;">
+			<uni-icons size="32" color="#fff" type="close" @click="showTimeline=false" style="position: absolute; right: 0px; top: 0px;"></uni-icons>
+			<image src="https://ccpt.qiniu.0871.cn/adminEnd/ddsjz.png" mode="widthFix" style="vertical-align: top;"></image>
+		  <view class="modal-content" style="padding-top: 0;">
+			<view class="timeline-container" style="padding: 8px;">
+			  <view
+				class="timeline-item"
+				v-for="(event, index) in getSortedTimelineEvents()"
+				:key="index"
+			  >
+				<view class="timeline-dot" :class="event.dotClass">
+				  <text :class="event.iconClass" v-if="event.icon">{{ event.icon }}</text>
+				</view>
+				<view class="timeline-content">
+				  <text class="timeline-title">{{ event.title }}</text>
+				  <text class="timeline-time" :class="{ pending: !event.time }">
+					{{ event.time ? formatDateTime(event.time) : event.pendingText || '待完成' }}
+				  </text>
+				  <text class="timeline-detail" v-if="event.detail">{{ event.detail }}</text>
+				</view>
+			  </view>
+			</view>
+		  </view>
+		</view>
+	
+	
 	</view>
 </template>
 
@@ -816,6 +846,7 @@
 		},
 		data() {
 			return {
+				showTimeline: false,
 				// active: 1,
 				// list1: [{
 				// 	title: '事件一'
@@ -936,6 +967,441 @@
 		// 页面显示时的处理
 	},
 		methods: {
+			// 获取时间轴数据
+			getTimelineData() {
+			  if (!this.orderInfo) {
+				return {
+				  assigned_at: null,
+				  finished_at: null,
+				  abandoned_at: null,
+				  canceled_at: null,
+				  refunded_at: null,
+				  started_at: null,
+				  timeout_notification: false,
+				  assignments: []
+				};
+			  }
+		
+			  // 如果有timelind对象，使用timelind数据
+			  if (this.orderInfo.timelind) {
+				const timelind = this.orderInfo.timelind;
+				const result = {
+				  assigned_at: null,
+				  finished_at: timelind.finished_at,
+				  abandoned_at: null,
+				  canceled_at: null,
+				  refunded_at: null,
+				  started_at: null,
+				  timeout_notification: timelind.timeout_notification || false,
+				  assignments: timelind.assignments || []
+				};
+		
+				// 从assignments数组中获取分配信息
+				if (timelind.assignments && timelind.assignments.length > 0) {
+				  const assignment = timelind.assignments[0]; // 取第一个分配记录
+				  result.assigned_at = assignment.assigned_at;
+				  result.abandoned_at = assignment.abandoned_at;
+				  result.finished_at = assignment.finished_at || result.finished_at;
+				}
+		
+				return result;
+			  }
+		
+			  // 兼容原有数据结构
+			  return {
+				assigned_at: this.orderInfo.assigned_at || (this.orderInfo.task_assignment && this.orderInfo.task_assignment.assigned_at) || this.orderInfo.accepted_at,
+				finished_at: (this.orderInfo.task_assignment && this.orderInfo.task_assignment.finished_at) || this.orderInfo.finished_at,
+				abandoned_at: (this.orderInfo.task_assignment && this.orderInfo.task_assignment.abandoned_at) || null,
+				canceled_at: this.orderInfo.canceled_at || null,
+				refunded_at: this.orderInfo.refunded_at || null,
+				started_at: (this.orderInfo.task_assignment && this.orderInfo.task_assignment.started_at) || null,
+				timeout_notification: this.orderInfo.timeout_notification || false,
+				assignments: []
+			  };
+			},
+			// 获取按时间排序的时间轴事件
+			getSortedTimelineEvents() {
+			  if (!this.orderInfo) return [];
+		
+			  const timelineData = this.getTimelineData();
+			  const events = [];
+		
+			  // 1. 客户下单
+			  if (this.orderInfo.task_date) {
+				let orderDetail = '订单已创建，等待骑手接单';
+		
+				// 添加客户信息
+				// if (this.orderInfo.name && this.orderInfo.phone_number) {
+				//   orderDetail = `客户${this.orderInfo.name} (${this.orderInfo.phone_number})下单`;
+				// }
+		
+				// // 添加服务类型信息
+				// if (this.orderInfo.task_name) {
+				//   orderDetail += `\n服务类型：${this.orderInfo.task_name}`;
+				// }
+		
+				// // 添加订单金额
+				// if (this.orderInfo.order_amount) {
+				//   orderDetail += `\n订单金额：¥${this.orderInfo.order_amount}`;
+				// }
+		
+				// // 添加服务地址
+				// if (this.orderInfo.task_detail && this.orderInfo.task_detail.store_name) {
+				//   orderDetail += `\n门店：${this.orderInfo.task_detail.store_name}`;
+				// }
+		
+				events.push({
+				  time: this.orderInfo.task_date,
+				  title: '客户下单',
+				  detail: orderDetail,
+				  dotClass: 'active',
+				  iconClass: 'timeline-check',
+				  icon: '✓'
+				});
+			  }
+		
+			  // 2. 遍历所有的assignments，显示接单和放弃记录
+			  if (timelineData.assignments && timelineData.assignments.length > 0) {
+				timelineData.assignments.forEach((assignment, index) => {
+				  // 获取当前assignment对应的骑手信息
+				  let riderInfo = null;
+				  
+				  // 优先从缓存中获取骑手信息
+				  if (this.ridersInfoCache[assignment.service_member_id]) {
+					riderInfo = this.ridersInfoCache[assignment.service_member_id];
+				  }
+				  
+				  // 如果缓存中没有，从多个可能的位置查找骑手信息
+				  if (!riderInfo && this.orderInfo.timelind && this.orderInfo.timelind.riders) {
+					// 如果timelind中有riders数组
+					riderInfo = this.orderInfo.timelind.riders.find(r => r.service_member_id === assignment.service_member_id);
+				  } else if (!riderInfo && this.orderInfo.timelind && this.orderInfo.timelind.service_members) {
+					// 如果timelind中有service_members数组
+					riderInfo = this.orderInfo.timelind.service_members.find(r => r.service_member_id === assignment.service_member_id);
+				  }
+				  
+				  // 如果没找到，检查assignment本身是否包含骑手信息
+				  if (!riderInfo && assignment.service_member) {
+					riderInfo = assignment.service_member;
+				  }
+				  
+				  // 如果还是没找到，检查是否是当前骑手
+				  if (!riderInfo) {
+					const currentRider = this.orderInfo.riderDetail || this.orderInfo.service_member;
+					if (currentRider && currentRider.service_member_id === assignment.service_member_id) {
+					  riderInfo = currentRider;
+					}
+				  }
+		
+				  // 2.1 骑手接单
+				  if (assignment.assigned_at) {
+					let riderDetail = '';
+		
+					// 显示详细骑手信息
+					riderDetail = `骑手：${riderInfo ? (riderInfo.contact_person || riderInfo.real_name || '未知') : '未知'}`;
+					
+					// 添加电话信息
+					if (riderInfo && riderInfo.phone_number) {
+					  riderDetail += ` (${riderInfo.phone_number})`;
+					}
+		
+					// 添加等级信息
+					if (riderInfo && riderInfo.level) {
+					  riderDetail += ` [L${riderInfo.level}]`;
+					}
+		
+					// 添加完成任务数量
+					if (riderInfo && riderInfo.total_completed_tasks_count !== undefined) {
+					  riderDetail += ` 已完成${riderInfo.total_completed_tasks_count}单`;
+					}
+		
+					events.push({
+					  time: assignment.assigned_at,
+					  title: timelineData.assignments.length > 1 ? `骑手接单 ${index + 1}` : '骑手接单',
+					  detail: riderDetail,
+					  dotClass: 'active',
+					  iconClass: 'timeline-check',
+					  icon: '✓'
+					});
+				  }
+		
+				  // 2.2 骑手放弃订单
+				  if (assignment.abandoned_at) {
+					let abandonDetail = '';
+		
+					// 显示详细骑手信息
+					abandonDetail = `骑手：${riderInfo ? (riderInfo.contact_person || riderInfo.real_name || '未知') : '未知'}`;
+					
+					// 添加电话信息
+					if (riderInfo && riderInfo.phone_number) {
+					  abandonDetail += ` (${riderInfo.phone_number})`;
+					}
+		
+					// 添加等级信息
+					if (riderInfo && riderInfo.level) {
+					  abandonDetail += ` [L${riderInfo.level}]`;
+					}
+		
+					// 添加完成任务数量
+					if (riderInfo && riderInfo.total_completed_tasks_count !== undefined) {
+					  abandonDetail += ` 已完成${riderInfo.total_completed_tasks_count}单`;
+					}
+		
+					// 添加放弃原因
+					if (assignment.abandon_reason) {
+					  abandonDetail += `\n放弃原因：${assignment.abandon_reason}`;
+					}
+		
+					events.push({
+					  time: assignment.abandoned_at,
+					  title: timelineData.assignments.length > 1 ? `骑手放弃订单 ${index + 1}` : '骑手放弃订单',
+					  detail: abandonDetail,
+					  dotClass: 'abandon-dot',
+					  iconClass: 'timeline-abandon',
+					  icon: '!'
+					});
+				  }
+				});
+			  } else {
+				// 兼容旧的单个接单记录显示方式
+				if (timelineData.assigned_at) {
+				  let riderDetail = '';
+		
+				  // 优先使用 riderDetail 中的详细信息
+				  const riderInfo = this.orderInfo.riderDetail || this.orderInfo.service_member;
+		
+				  if (riderInfo) {
+					riderDetail = `骑手：${riderInfo.contact_person || riderInfo.real_name || '未知'}`;
+		
+					// 添加电话信息
+					if (riderInfo.phone_number) {
+					  riderDetail += ` (${riderInfo.phone_number})`;
+					}
+		
+					// 添加等级信息
+					if (riderInfo.level) {
+					  riderDetail += ` [L${riderInfo.level}]`;
+					}
+		
+					// 添加完成任务数量
+					if (riderInfo.total_completed_tasks_count !== undefined) {
+					  riderDetail += ` 已完成${riderInfo.total_completed_tasks_count}单`;
+					}
+				  }
+		
+				  events.push({
+					time: timelineData.assigned_at,
+					title: '骑手接单',
+					detail: riderDetail,
+					dotClass: 'active',
+					iconClass: 'timeline-check',
+					icon: '✓'
+				  });
+				} else if (this.orderInfo.status !== 'waiting') {
+				  events.push({
+					time: null,
+					title: '骑手接单',
+					detail: '',
+					dotClass: '',
+					iconClass: '',
+					icon: '',
+					pendingText: '待接单'
+				  });
+				}
+		
+				// 骑手放弃订单（兼容旧数据）
+				if (timelineData.abandoned_at) {
+				  const riderInfo = this.orderInfo.riderDetail || this.orderInfo.service_member;
+				  let abandonDetail = '骑手已放弃此订单，订单重新进入待接单状态';
+		
+				  if (riderInfo && riderInfo.contact_person) {
+					abandonDetail = `${riderInfo.contact_person}已放弃此订单，订单重新进入待接单状态`;
+				  }
+		
+				  events.push({
+					time: timelineData.abandoned_at,
+					title: '骑手放弃订单',
+					detail: abandonDetail,
+					dotClass: 'abandon-dot',
+					iconClass: 'timeline-abandon',
+					icon: '!'
+				  });
+				}
+			  }
+		
+			  // 3. 任务开始
+			  if (timelineData.started_at) {
+				const riderInfo = this.orderInfo.riderDetail || this.orderInfo.service_member;
+				let startDetail = '骑手已开始执行任务';
+		
+				if (riderInfo && riderInfo.contact_person) {
+				  startDetail = `${riderInfo.contact_person}已开始执行任务`;
+				}
+		
+				events.push({
+				  time: timelineData.started_at,
+				  title: '任务开始',
+				  detail: startDetail,
+				  dotClass: 'active',
+				  iconClass: 'timeline-check',
+				  icon: '✓'
+				});
+			  }
+		
+			  // 5. 任务完成反馈
+			  if (timelineData.finished_at) {
+				const riderInfo = this.orderInfo.riderDetail || this.orderInfo.service_member;
+				let finishDetail = '骑手已提交完成反馈，等待客户确认';
+		
+				// if (riderInfo && riderInfo.contact_person) {
+				//   finishDetail = `${riderInfo.contact_person}已提交完成反馈，等待客户确认`;
+				// }
+		
+				// // 如果有反馈内容，添加到详情中
+				// if (this.orderInfo.task_assignment && this.orderInfo.task_assignment.after_detail) {
+				//   finishDetail += `\n反馈内容：${this.orderInfo.task_assignment.after_detail}`;
+				// }
+		
+				events.push({
+				  time: timelineData.finished_at,
+				  title: '任务完成反馈',
+				  detail: finishDetail,
+				  dotClass: 'active',
+				  iconClass: 'timeline-check',
+				  icon: '✓'
+				});
+			  } else if (this.orderInfo.status === 'completed' || this.orderInfo.status === 'finished') {
+				events.push({
+				  time: null,
+				  title: '任务完成反馈',
+				  detail: '',
+				  dotClass: '',
+				  iconClass: '',
+				  icon: '',
+				  pendingText: '待完成'
+				});
+			  }
+		
+			  // 6. 客户确认完成
+			  if (this.orderInfo.completed_at) {
+				events.push({
+				  time: this.orderInfo.completed_at,
+				  title: '客户确认完成',
+				  detail: '客户已确认任务完成',
+				  dotClass: 'active',
+				  iconClass: 'timeline-check',
+				  icon: '✓'
+				});
+			  } else if (this.orderInfo.status === 'finished') {
+				events.push({
+				  time: null,
+				  title: '客户确认完成',
+				  detail: '',
+				  dotClass: '',
+				  iconClass: '',
+				  icon: '',
+				  pendingText: '待确认'
+				});
+			  }
+		
+			  // 7. 用户评价
+			  if (this.orderInfo.review && this.orderInfo.review.created_at) {
+				let reviewDetail = '';
+				if (this.orderInfo.review.rating) {
+				  reviewDetail = `评分：${this.orderInfo.review.rating}分`;
+				  if (this.orderInfo.review.comment) {
+					reviewDetail += `，${this.orderInfo.review.comment}`;
+				  }
+				}
+				events.push({
+				  time: this.orderInfo.review.created_at,
+				  title: '用户评价',
+				  detail: reviewDetail,
+				  dotClass: 'active',
+				  iconClass: 'timeline-check',
+				  icon: '✓'
+				});
+			  }
+		
+			  // 8. 订单取消
+			  if ((this.orderInfo.status === 'canceled' || this.orderInfo.status === 'cancel') && timelineData.canceled_at) {
+				events.push({
+				  time: timelineData.canceled_at,
+				  title: '订单取消',
+				  detail: '订单已被取消',
+				  dotClass: 'cancel-dot',
+				  iconClass: 'timeline-cancel',
+				  icon: '×'
+				});
+			  }
+		
+			  // 9. 退款处理
+			  if (this.orderInfo.payment_status === 'refunded' || timelineData.refunded_at) {
+				const refundTime = timelineData.refunded_at || this.orderInfo.refunded_at || this.orderInfo.updated_at;
+		
+				let refundDetail = `退款金额：¥${this.orderInfo.order_amount || '0.00'}`;
+		
+				// 添加退款状态
+				if (this.orderInfo.payment_status === 'refunded') {
+				  refundDetail += ' (已退款)';
+				} else {
+				  refundDetail += ' (退款处理中)';
+				}
+		
+				// 添加原订单金额对比
+				const originalAmount = this.calculateOriginalAmount();
+				if (originalAmount && originalAmount !== this.orderInfo.order_amount) {
+				  refundDetail += `\n原订单金额：¥${originalAmount}`;
+				}
+		
+				// 添加退款方式信息
+				if (this.orderInfo.transaction_id) {
+				  refundDetail += `\n交易号：${this.orderInfo.transaction_id}`;
+				}
+		
+				events.push({
+				  time: refundTime,
+				  title: '退款处理',
+				  detail: refundDetail,
+				  dotClass: 'refund-dot',
+				  iconClass: 'timeline-refund',
+				  icon: '¥'
+				});
+			  }
+		
+			  // 10. 超时提醒
+			  if (timelineData.timeout_notification) {
+				let timeoutDetail = '订单已超过预期完成时间';
+		
+				// 添加时效信息
+				if (this.orderInfo.time_limit) {
+				  timeoutDetail += `\n原定时效：${this.orderInfo.time_limit}小时`;
+				}
+		
+				// 添加截止时间
+				if (this.orderInfo.deadline) {
+				  timeoutDetail += `\n截止时间：${this.orderInfo.deadline}`;
+				}
+		
+				events.push({
+				  time: this.orderInfo.updated_at,
+				  title: '超时提醒',
+				  detail: timeoutDetail,
+				  dotClass: 'timeout-dot',
+				  iconClass: 'timeline-timeout',
+				  icon: '⚠'
+				});
+			  }
+		
+			  // 按时间排序，将没有时间的事件放到最后
+			  return events.sort((a, b) => {
+				if (!a.time && !b.time) return 0;
+				if (!a.time) return 1;
+				if (!b.time) return -1;
+				return new Date(a.time) - new Date(b.time);
+			  });
+			},
+		
 			// 骑手预估弹窗
 			predict_popup(){
 				// 只有进行中的订单且预估时间是今天或明天的时间段时才展示
@@ -5142,5 +5608,162 @@
 			width: 100%;
 			box-sizing: border-box;
 		}
+	}
+	
+	
+	// 时间轴弹窗样式
+	
+	.timeline-modal {
+	  .modal-content {
+	    max-height: 70vh;
+	    overflow-y: auto;
+	  }
+	}
+	
+	.timeline-container {
+		background: #F5FAFF;
+	  padding: 20rpx 0;
+	}
+	
+	.timeline-item {
+	  display: flex;
+	  align-items: flex-start;
+	  margin-bottom: 40rpx;
+	  position: relative;
+	
+	  &:last-child {
+	    margin-bottom: 0;
+	
+	    &::after {
+	      display: none;
+	    }
+	  }
+	
+	  &::after {
+	    content: '';
+	    position: absolute;
+	    left: 15rpx;
+	    top: 40rpx;
+	    width: 2rpx;
+	    height: 40rpx;
+	    background-color: #e8e8e8;
+	  }
+	}
+	
+	.timeline-dot {
+	  width: 30rpx;
+	  height: 30rpx;
+	  border-radius: 50%;
+	  background-color: #e8e8e8;
+	  margin-right: 20rpx;
+	  flex-shrink: 0;
+	  margin-top: 5rpx;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	
+	  &.active {
+	    background-color: #52C41A;
+	  }
+	
+	  .timeline-check {
+	    font-size: 18rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	
+	.timeline-content {
+	  flex: 1;
+	  display: flex;
+	  flex-direction: column;
+	}
+	
+	.timeline-title {
+	  font-size: 28rpx;
+	  color: #333;
+	  font-weight: 500;
+	  margin-bottom: 8rpx;
+	}
+	
+	.timeline-time {
+	  font-size: 24rpx;
+	  color: #666;
+	  line-height: 1.4;
+	
+	  &.pending {
+	    color: #999;
+	    font-style: italic;
+	  }
+	}
+	
+	.timeline-detail {
+	  font-size: 22rpx;
+	  color: #999;
+	  line-height: 1.5;
+	  margin-top: 6rpx;
+	  white-space: pre-line; // 支持换行符显示
+	  word-break: break-all; // 防止长文本溢出
+	}
+	
+	// 不同类型事件的特殊样式
+	.cancel-dot {
+	  background-color: #ff4d4f !important;
+	
+	  .timeline-cancel {
+	    font-size: 16rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	
+	.refund-dot {
+	  background-color: #fa8c16 !important;
+	
+	  .timeline-refund {
+	    font-size: 14rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	
+	.abandon-dot {
+	  background-color: #d9534f !important;
+	
+	  .timeline-abandon {
+	    font-size: 16rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	
+	.timeout-dot {
+	  background-color: #f0ad4e !important;
+	
+	  .timeline-timeout {
+	    font-size: 14rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	
+	.update-dot {
+	  background-color: #5bc0de !important;
+	
+	  .timeline-update {
+	    font-size: 14rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	.modal-content {
+		background-color: #fff;
+	  padding: 30rpx;
 	}
 </style>
