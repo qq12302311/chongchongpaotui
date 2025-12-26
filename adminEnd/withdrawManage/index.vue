@@ -29,6 +29,7 @@
 							{{ status.label }}
 						</view>
 					</view>
+					<view style="color: #2492F2; font-size: 14px; padding: 8px;">金额：{{total_fee}}</view>
 				</view>
 			</view>
 		</view>
@@ -275,6 +276,7 @@
 	export default {
 		data() {
 			return {
+				total_fee: 0,
 				navBarHeight: 0,
 				searchKeyword: '',
 				currentStatus: 'all',
@@ -392,7 +394,7 @@
 
 					const res = await this.$request('withdraw/process/batch', params, 'POST');
 
-					if (res.status === 'success') {
+					if (res.status === 'success' || res.status === 'completed') {
 						uni.showToast({
 							title: action === 'approve' ? '批量审核通过' : '批量已拒绝',
 							icon: 'success'
@@ -735,6 +737,13 @@
 					}
 
 					// 直接替换列表数据
+					let total_fee = 0;
+					if (newList.length > 0) {
+						newList.forEach(item => {
+							total_fee += item.actual_amount * 100;
+						});
+					}
+					this.total_fee = res.total_actual_amount || 0;
 					this.withdrawList = newList;
 				} else {
 					uni.showToast({
