@@ -1,0 +1,21 @@
+const userInfo = uni.getStorageSync('userInfo')
+					const openid = uni.getStorageSync('openid')
+					// if (!userInfo || !userInfo.user_id || !openid) {
+					// 	uni.showToast({
+					// 		title: '请先登录',
+					// 		icon: 'none'
+					// 	})
+					// 	return
+					// }
+
+					// 计算sign
+					// const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
+					const signStr = `user_id=2528&openid=oAEkF7ImtvspuORmzutphK3sR7u0`
+					const sign = md5(signStr)
+
+					// 构建请求参数
+					const params = {
+						task_id: 13686 || this.orderId,
+						user_id: 2528 || userInfo.user_id,
+						sign: sign
+					}

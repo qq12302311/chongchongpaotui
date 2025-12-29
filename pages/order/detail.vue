@@ -18,11 +18,65 @@
 					</view>
 		</view>
 	</view>
+	<!-- 用户确认卡片 -->
+		<view class="confirm-card" v-if="orderInfo.status === 'completed'">
+			<view class="card-title">
+				<text>我已确认</text>
+			</view>
+			<view class="confirm-content">
+				<view class="confirm-info">
+					<view class="remark" v-if="orderInfo.completed_at">
+						<text class="label">确认时间：</text>
+						<text class="content">{{ formatDateTime(orderInfo.completed_at) }}</text>
+					</view>
+					<!-- 用户评价信息 -->
+					<view class="review-section" v-if="orderInfo.review">
+						<text class="section-title">用户评价：</text>
+						<view class="review-content">
+							<view class="review-rating" v-if="orderInfo.review.rating">
+								<text class="rating-label">评分：</text>
+								<view class="stars">
+									<text
+										v-for="star in 5"
+										:key="star"
+										class="star"
+										:class="{ active: star <= orderInfo.review.rating }">
+										★
+									</text>
+								</view>
+								<text class="rating-text">{{ orderInfo.review.rating }}分</text>
+							</view>
+							<view class="review-tags" v-if="orderInfo.review.tags && orderInfo.review.tags.length > 0">
+								<text class="tags-label">评价标签：</text>
+								<view class="tags-list">
+									<text
+										v-for="(tag, index) in orderInfo.review.tags"
+										:key="index"
+										class="tag-item">
+										{{ tag }}
+									</text>
+								</view>
+							</view>
+							<view class="review-comment" v-if="orderInfo.review.comment">
+								<text class="comment-label">评价内容：</text>
+								<text class="comment-text">{{ orderInfo.review.comment }}</text>
+							</view>
+							<view class="review-time" v-if="orderInfo.review.created_at">
+								<text class="time-label">评价时间：</text>
+								<text class="time-text">{{ formatDateTime(orderInfo.review.created_at) }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+	
 
 	<!-- 骑手完成反馈卡片 - 只在状态为finished或completed时显示 -->
 	<view class="feedback-card" v-if="(orderInfo.status === 'finished' || orderInfo.status === 'completed') && orderInfo.task_assignment">
-		<view class="card-title">
-			<text>骑手完成反馈</text>
+		<view class="card-title" style="display: flex;">
+			<text style="flex: 1;">骑手完成反馈</text>
+			<text @click="handleReviewClick(orderInfo)" style="color: #fff; background: #E74C3C; padding: 0 3px; border-radius: 2px;">评价</text>
 		</view>
 		<view class="detail-list-wrapper">
 			<view class="feedback-content">
@@ -521,58 +575,6 @@
 				</view>
 		</view>
 
-		<!-- 用户确认卡片 -->
-			<view class="confirm-card" v-if="orderInfo.status === 'completed'">
-				<view class="card-title">
-					<text>我已确认</text>
-				</view>
-				<view class="confirm-content">
-					<view class="confirm-info">
-						<view class="remark" v-if="orderInfo.completed_at">
-							<text class="label">确认时间：</text>
-							<text class="content">{{ formatDateTime(orderInfo.completed_at) }}</text>
-						</view>
-						<!-- 用户评价信息 -->
-						<view class="review-section" v-if="orderInfo.review">
-							<text class="section-title">用户评价：</text>
-							<view class="review-content">
-								<view class="review-rating" v-if="orderInfo.review.rating">
-									<text class="rating-label">评分：</text>
-									<view class="stars">
-										<text
-											v-for="star in 5"
-											:key="star"
-											class="star"
-											:class="{ active: star <= orderInfo.review.rating }">
-											★
-										</text>
-									</view>
-									<text class="rating-text">{{ orderInfo.review.rating }}分</text>
-								</view>
-								<view class="review-tags" v-if="orderInfo.review.tags && orderInfo.review.tags.length > 0">
-									<text class="tags-label">评价标签：</text>
-									<view class="tags-list">
-										<text
-											v-for="(tag, index) in orderInfo.review.tags"
-											:key="index"
-											class="tag-item">
-											{{ tag }}
-										</text>
-									</view>
-								</view>
-								<view class="review-comment" v-if="orderInfo.review.comment">
-									<text class="comment-label">评价内容：</text>
-									<text class="comment-text">{{ orderInfo.review.comment }}</text>
-								</view>
-								<view class="review-time" v-if="orderInfo.review.created_at">
-									<text class="time-label">评价时间：</text>
-									<text class="time-text">{{ formatDateTime(orderInfo.review.created_at) }}</text>
-								</view>
-							</view>
-						</view>
-					</view>
-				</view>
-			</view>
 
 			<!-- 底部按钮 - 已隐藏 -->
 			<!-- <view v-if="orderInfo.task_assignment && orderInfo.task_assignment.status === 'finished'" class="bottom-button">
@@ -967,6 +969,17 @@
 		// 页面显示时的处理
 	},
 		methods: {
+			// 处理评价点击
+			handleReviewClick(order) {
+				// 如果已经评价过，不做任何操作
+				if (order.review) {
+					return
+				}
+				// 未评价时，跳转到评价页面
+				uni.navigateTo({
+					url: `/pages/order/review?task_id=${order.task_id}`
+				})
+			},
 			// 获取时间轴数据
 			getTimelineData() {
 			  if (!this.orderInfo) {
