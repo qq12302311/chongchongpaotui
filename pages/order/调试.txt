@@ -19,3 +19,14 @@ const userInfo = uni.getStorageSync('userInfo')
 						user_id: 2528 || userInfo.user_id,
 						sign: sign
 					}
+					
+					
+					
+					
+					
+					
+					
+uni.setStorageSync('userInfo',{
+					user_id: 1502,
+				})
+				uni.setStorageSync('openid','oAEkF7OLrkAYOxivcefZxmKunSXw')					

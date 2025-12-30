@@ -1455,7 +1455,7 @@
 					// 计算sign
 					const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
 					const sign = md5(signStr)
-
+					
 					// 构建请求参数
 					const params = {
 						task_id: this.orderId,
@@ -2511,15 +2511,19 @@
 				// 根据订单状态添加可用操作
 				if (this.orderInfo.status === 'waiting') {
 					// 待接单状态：打赏骑手、修改信息、取消订单（退款申请中时不显示）
-					actions.push('打赏骑手');
+					if(this.orderInfo.service_member_id){
+						actions.push('打赏骑手');
+					}
 					actions.push('修改信息');
 					if (this.orderInfo.refund_request !== 1) {
 						actions.push('取消订单');
 					}
 				} else if (this.orderInfo.status === 'assigned') {
 					// 作业中状态：联系骑手、打赏骑手、修改信息、取消订单（退款申请中时不显示）
-					actions.push('联系骑手');
-					actions.push('打赏骑手');
+					if(this.orderInfo.service_member_id){
+						actions.push('联系骑手');
+						actions.push('打赏骑手');
+					}
 					actions.push('修改信息');
 					if (this.orderInfo.refund_request !== 1) {
 						actions.push('取消订单');
