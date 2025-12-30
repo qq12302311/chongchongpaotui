@@ -26,7 +26,7 @@
 					<text class="text" :class="{ active: current === 1 }">订单</text>
 				</view>
 
-				<view
+				<!-- <view
 					class="tab-item"
 					:class="{ active: current === 2 }"
 					@tap="onChange(2)"
@@ -36,7 +36,7 @@
 						:src="current === 2 ? 'https://ccpt.qiniu.0871.cn/gwc-gwc2.svg' : 'https://ccpt.qiniu.0871.cn/gwc-gwc3.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 2 }">购物车</text>
-				</view>
+				</view> -->
 
 				<view
 					class="tab-item"

@@ -19,6 +19,9 @@
       <view @tap.stop="handleClick">
         <image class="img-2" src="https://ccpt.qiniu.0871.cn/home/ptyh.svg" mode="aspectFit"></image>
       </view>
+	  <view @tap.stop="handleClick">
+	    <image class="img-5" src="https://ccpt.qiniu.0871.cn/gwc-gwc2.svg" mode="aspectFit"></image>
+	  </view>
     </view>
 
     <!-- 底部临时消息框 -->
@@ -1036,12 +1039,12 @@ export default {
 <style lang="scss" scoped>
 // 悬浮小图样式
 .floating-image {
-	background-image: url('https://ccpt.qiniu.0871.cn/beiban.svg');
-	background-size: cover;
+	background-image: url('https://ccpt.qiniu.0871.cn/riderEnd/index/beiban.svg');
+	background-size: 100% 100%;
   position: fixed;
   // 移除固定的 right 和 bottom，改为动态设置
   width: 100rpx;
-  height: 220rpx;
+  height: 300rpx;
   z-index: 999;
   transition: none; // 移除过渡动画，提高拖拽响应性
   
@@ -1079,6 +1082,16 @@ export default {
   .img-4 {
     width: 100rpx;
     height: 80rpx;
+    pointer-events: auto; // 确保图片可点击
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  .img-5 {
+  	margin-top: -5px;
+	margin-left: 3px;
+    width: 90rpx;
+    height: 90rpx;
     pointer-events: auto; // 确保图片可点击
     &:active {
       transform: scale(0.95);
