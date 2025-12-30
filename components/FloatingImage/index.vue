@@ -19,7 +19,7 @@
       <view @tap.stop="handleClick">
         <image class="img-2" src="https://ccpt.qiniu.0871.cn/home/ptyh.svg" mode="aspectFit"></image>
       </view>
-	  <view @tap.stop="handleClick">
+	  <view @tap.stop="goToCart">
 	    <image class="img-5" src="https://ccpt.qiniu.0871.cn/gwc-gwc2.svg" mode="aspectFit"></image>
 	  </view>
     </view>
@@ -676,20 +676,22 @@ export default {
       }, 100);
     },
     
-  goToCart(){
-	  if (this.dragging) return; // 拖拽时不触发点击事件
-	  
-	  uni.navigateTo({
-		url: '/pages/cart/index',
-		fail: (err) => {
-		  console.error('跳转到购物车:', err);
-		  uni.showToast({
-			title: '跳转失败',
-			icon: 'none'
-		  });
-		}
-	  });
-  },
+	  goToCart(){
+		  if (this.dragging) return; // 拖拽时不触发点击事件
+		  uni.switchTab({
+			url: '/pages/cart/index'
+		  })
+		 //  uni.navigateTo({
+			// url: '/pages/cart/index',
+			// fail: (err) => {
+			//   console.error('跳转到购物车:', err);
+			//   uni.showToast({
+			// 	title: '跳转失败',
+			// 	icon: 'none'
+			//   });
+			// }
+		 //  });
+	  },
     // 点击聊天图标
     handleChatClick() {
       console.log('点击聊天图标, dragging:', this.dragging);
