@@ -358,7 +358,16 @@
 		<view class="info-row" v-if="orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type !== undefined">
 			<view class="dot-icon" style="opacity: 0;"></view>
 			<text class="info-label">预估完单</text>
-			<text class="info-value">{{ orderInfo.task_assignment.predict_complete_type || '无' }}</text>
+			<text class="info-value" style="flex: 1;">{{ orderInfo.task_assignment.predict_complete_type || '无' }}</text>
+			<picker
+				v-if="orderInfo.task_assignment.is_change_predict_complete_type == '' || orderInfo.task_assignment.is_change_predict_complete_type == null"
+				mode="selector" 
+				:range="estimateTimeOptions" 
+				range-key="label"
+				@change="onEstimateTimeChange"
+				class="estimate-picker">
+				<text style="color: #1890ff;">修改</text>
+			</picker>
 		</view>
 	</view>
 
@@ -1079,6 +1088,17 @@
 			const selected = this.estimateTimeOptions[index];
 			this.estimateTimeValue = selected.value;
 			this.estimateTimeDisplay = selected.label;
+			uni.showModal({
+				title: '提示',
+				content: '确定修改预估完单时间？',
+				success: (res) => {
+					if (res.confirm) {
+						this.submitEstimateTime()
+					} else if (res.cancel) {
+						console.log('用户点击取消');
+					}
+				}
+			});
 		},
 		
 		// 提交预估完单时间
@@ -1099,6 +1119,7 @@
 				task_id: this.taskId,
 				user_id: riderUserInfo.id,
 				predict_complete_type: this.estimateTimeDisplay,
+				task_assignment_id: this.orderInfo.task_assignment?.task_assignment_id || '',
 				sign: 'chongchong'
 			};
 
