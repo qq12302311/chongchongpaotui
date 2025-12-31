@@ -122,7 +122,12 @@
 					<view class="steps-container">
 						<!-- 步骤1: 骑手已接单/待接单 -->
 						<view class="step-item" :class="{ 'step-active': orderInfo.status !== 'waiting', 'step-working': orderInfo.status === 'waiting' }">
-							<view class="step-icon-wrapper">
+							<view v-if="newStatus == '骑手放弃订单'" class="step-icon-wrapper">
+								<image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.0871.cn/ytd.png" class="working-gif-2" mode="aspectFit"></image>
+								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status !== 'waiting' }"></view>
+								<view class="step-lab">抱歉：骑手{{orderInfo.task_assignment.service_member_id}}已退单</view>
+							</view>
+							<view v-else class="step-icon-wrapper">
 								<image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.0871.cn/djd-fz2.png" class="working-gif-2" mode="aspectFit"></image>
 								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status !== 'waiting' }"></view>
 							</view>
@@ -805,8 +810,8 @@
 		<view class="predict-modal-mask" v-if="showTimeline" @click="showTimeline=false"></view>
 		<view class="predict-modal-container timeline-modal" v-if="showTimeline" style="background: none;">
 			<uni-icons size="32" color="#fff" type="close" @click="showTimeline=false" style="position: absolute; right: 0px; top: 0px;"></uni-icons>
-			<image src="https://ccpt.qiniu.0871.cn/adminEnd/ddsjz.png" mode="widthFix" style="vertical-align: top;"></image>
-		  <view class="modal-content" style="padding-top: 0;">
+			<image src="https://ccpt.qiniu.0871.cn/jdjl1.png" mode="widthFix" style="vertical-align: top;"></image>
+		  <view class="modal-content" style="padding-top: 0; margin-top: -1px;">
 			<view class="timeline-container" style="padding: 8px;">
 			  <view
 				class="timeline-item"
@@ -817,13 +822,14 @@
 				  <text :class="event.iconClass" v-if="event.icon">{{ event.icon }}</text>
 				</view>
 				<view class="timeline-content">
-				  <text class="timeline-title">{{ event.title }}</text>
-				  <text class="timeline-time" :class="{ pending: !event.time }">
+				  <text class="timeline-title" :class="event.titleClass">{{ event.title }}</text>
+				  <text class="timeline-time" v-if="!event.title.includes('订单返回大厅')" :class="{ pending: !event.time }">
 					{{ event.time ? formatDateTime(event.time) : event.pendingText || '待完成' }}
 				  </text>
 				  <text class="timeline-detail" v-if="event.detail">{{ event.detail }}</text>
 				</view>
 			  </view>
+			  
 			</view>
 		  </view>
 		</view>
@@ -848,6 +854,8 @@
 		},
 		data() {
 			return {
+				newStatus: "",
+				// 放弃订单信息
 				showTimeline: false,
 				// active: 1,
 				// list1: [{
@@ -1079,10 +1087,6 @@
 				  // 获取当前assignment对应的骑手信息
 				  let riderInfo = null;
 				  
-				  // 优先从缓存中获取骑手信息
-				  if (this.ridersInfoCache[assignment.service_member_id]) {
-					riderInfo = this.ridersInfoCache[assignment.service_member_id];
-				  }
 				  
 				  // 如果缓存中没有，从多个可能的位置查找骑手信息
 				  if (!riderInfo && this.orderInfo.timelind && this.orderInfo.timelind.riders) {
@@ -1175,71 +1179,6 @@
 					});
 				  }
 				});
-			  } else {
-				// 兼容旧的单个接单记录显示方式
-				if (timelineData.assigned_at) {
-				  let riderDetail = '';
-		
-				  // 优先使用 riderDetail 中的详细信息
-				  const riderInfo = this.orderInfo.riderDetail || this.orderInfo.service_member;
-		
-				  if (riderInfo) {
-					riderDetail = `骑手：${riderInfo.contact_person || riderInfo.real_name || '未知'}`;
-		
-					// 添加电话信息
-					if (riderInfo.phone_number) {
-					  riderDetail += ` (${riderInfo.phone_number})`;
-					}
-		
-					// 添加等级信息
-					if (riderInfo.level) {
-					  riderDetail += ` [L${riderInfo.level}]`;
-					}
-		
-					// 添加完成任务数量
-					if (riderInfo.total_completed_tasks_count !== undefined) {
-					  riderDetail += ` 已完成${riderInfo.total_completed_tasks_count}单`;
-					}
-				  }
-		
-				  events.push({
-					time: timelineData.assigned_at,
-					title: '骑手接单',
-					detail: riderDetail,
-					dotClass: 'active',
-					iconClass: 'timeline-check',
-					icon: '✓'
-				  });
-				} else if (this.orderInfo.status !== 'waiting') {
-				  events.push({
-					time: null,
-					title: '骑手接单',
-					detail: '',
-					dotClass: '',
-					iconClass: '',
-					icon: '',
-					pendingText: '待接单'
-				  });
-				}
-		
-				// 骑手放弃订单（兼容旧数据）
-				if (timelineData.abandoned_at) {
-				  const riderInfo = this.orderInfo.riderDetail || this.orderInfo.service_member;
-				  let abandonDetail = '骑手已放弃此订单，订单重新进入待接单状态';
-		
-				  if (riderInfo && riderInfo.contact_person) {
-					abandonDetail = `${riderInfo.contact_person}已放弃此订单，订单重新进入待接单状态`;
-				  }
-		
-				  events.push({
-					time: timelineData.abandoned_at,
-					title: '骑手放弃订单',
-					detail: abandonDetail,
-					dotClass: 'abandon-dot',
-					iconClass: 'timeline-abandon',
-					icon: '!'
-				  });
-				}
 			  }
 		
 			  // 3. 任务开始
@@ -1407,12 +1346,24 @@
 			  }
 		
 			  // 按时间排序，将没有时间的事件放到最后
-			  return events.sort((a, b) => {
+			  let arr = events.sort((a, b) => {
 				if (!a.time && !b.time) return 0;
 				if (!a.time) return 1;
 				if (!b.time) return -1;
 				return new Date(a.time) - new Date(b.time);
 			  });
+			  
+			  this.newStatus = arr[arr.length - 1].title
+			  if(this.newStatus == '骑手放弃订单'){
+				events.push({
+				  title: '订单返回大厅，骑手重新接单',
+				  dotClass: 'timeout-back',
+				  iconClass: 'timeline-timeout',
+				  titleClass: 'back-title',
+				  icon: '✓'
+				});
+			  }
+			  return arr
 			},
 		
 			// 骑手预估弹窗
@@ -1490,6 +1441,8 @@
 						title: this.orderInfo.task_detail ? this.orderInfo.task_detail.store_name : '服务门店'
 					}]
 				}
+				
+				this.getSortedTimelineEvents();
 
 				// 显示骑手预估完单时间弹窗
 				this.predict_popup()
@@ -3296,7 +3249,17 @@
 								left: 50%;
 								transform: translateX(-50%);
 							}
-
+							.step-lab{
+								position: absolute;
+								top: -64px;
+								left: 50%;
+								width: 106px;
+								text-align: center;
+								transform: translateX(-50%);
+								font-size: 20rpx;
+								color: #fff;
+								background: #007AFF;
+							}
 							.step-dot {
 								width: 24rpx;
 								height: 24rpx;
@@ -5767,6 +5730,18 @@
 	    font-weight: bold;
 	    line-height: 1;
 	  }
+	}
+	.timeout-back {
+	  background-color: #5bc0de !important;
+	  .timeline-timeout {
+	    font-size: 14rpx;
+	    color: #fff;
+	    font-weight: bold;
+	    line-height: 1;
+	  }
+	}
+	.back-title{
+		color: #5bc0de !important;  
 	}
 	
 	.update-dot {
