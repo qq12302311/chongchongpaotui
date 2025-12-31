@@ -7,7 +7,7 @@
 	<view class="nav-placeholder"></view>
 
 	<!-- 悬浮预估完单时间卡片 - 可拖拽 -->
-	<!-- <view
+	<view
 		class="estimate-float-card"
 		v-if="showEstimateCard && orderInfo.status === 'assigned' && orderInfo.task_assignment && orderInfo.task_assignment.predict_complete_type == null"
 		:style="{
@@ -38,7 +38,7 @@
 			</view>
 			<button class="estimate-submit-btn" @click="submitEstimateTime">确认提交</button>
 		</view>
-	</view> -->
+	</view>
 
 	<!-- 订单城市平均完单时效 -->
 	<view class="city-efficiency-wrapper" v-if="orderInfo.estimated_completion_hours">
