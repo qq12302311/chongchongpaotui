@@ -181,6 +181,30 @@
         </view>
       </view>
     </view>
+	
+	<!-- 批量操作栏 -->
+	<view class="batch-actions">
+		<view class="batch-left">
+			<checkbox-group @change="toggleSelectAll">
+				<checkbox :checked="isAllSelected" color="#2492F2" />
+			</checkbox-group>
+			<text class="batch-text">全选 ({{ selectedIds.length }})</text>
+		</view>
+		<picker
+			style="flex: 1;"
+			mode="selector" 
+			:range="pickerOptions" 
+			range-key="label"
+			@change="onPickerOptionsChange"
+			class="estimate-picker">
+			<view style="margin-left: 8px;">{{pickerSelect.label || '请选择短信模版'}}</view>
+		</picker>
+		<view class="batch-right" v-if="selectedIds.length > 0">
+			<!-- <view class="batch-btn reject" @click="batchReject">批量拒绝</view> -->
+			<view class="batch-btn approve" @click="batchApprove">发送短信</view>
+		</view>
+	</view>
+	<view style="height: 56px;"></view>
 
     <!-- 列表内容区域的占位元素 -->
     <view class="search-filter-placeholder"></view>
@@ -270,6 +294,11 @@
                   <text class="main-name" v-else>{{ rider.contact_person || '未设置姓名' }}</text>
                   <text class="sub-name" v-if="rider.real_name && rider.contact_person">（{{ rider.contact_person }}）</text>
                   <view class="rider-level-tag">等级{{ rider.level || '1' }}</view>
+				  <view class="checkbox-wrapper" @click.stop="toggleSelect(rider.phone_number)">
+				  	<checkbox-group>
+				  		<checkbox :checked="selectedIds.includes(rider.phone_number)" color="#2492F2" style="transform: scale(0.8);" />
+				  	</checkbox-group>
+				  </view>
                 </view>
                 <view class="rider-balance-wrapper">
                   <text class="balance-label">余额:</text>
@@ -807,6 +836,15 @@ export default {
   },
   data() {
     return {
+		pickerOptions: [
+			{ value: 'SMS_500695083', label: '充充庆佳节' },
+			{ value: 'SMS_500460079', label: '充充大事记' },
+			{ value: 'SMS_500450106', label: '充充跑腿服务' }
+		],
+		pickerSelect: {
+			value: ''
+		},
+		
       searchKeyword: '',
       currentStatus: 'all',
       statusOptions: [
@@ -892,8 +930,16 @@ export default {
         type: 'income', // 操作类型: income增加 expense减少
         amount: '', // 调整金额
         description: '' // 操作说明
-      }
+      },
+	  // 批量操作
+	  selectedIds: []
     }
+  },
+  computed: {
+  	isAllSelected() {
+  		const pendingList = this.riderList;
+  		return pendingList.length > 0 && this.selectedIds.length === pendingList.length;
+  	}
   },
   onLoad() {
     // 获取管理员信息
@@ -906,6 +952,67 @@ export default {
     this.getRiderList();
   },
   methods: {
+	  onPickerOptionsChange(e) {
+	  	const index = e.detail.value;
+	  	this.pickerSelect = this.pickerOptions[index];
+	  },
+	  // 切换单个选择
+	  toggleSelect(id) {
+	  	const index = this.selectedIds.indexOf(id);
+	  	if (index > -1) {
+	  		this.selectedIds.splice(index, 1);
+	  	} else {
+	  		this.selectedIds.push(id);
+	  	}
+	  },
+	  // 切换全选
+	  toggleSelectAll() {
+		if (this.isAllSelected) {
+			this.selectedIds = [];
+		} else {
+			this.selectedIds = this.riderList.map(w => w.phone_number);
+		}
+	  },
+	  // 批量同意
+	  batchApprove() {
+		  console.log('批量同意', this.pickerSelect);
+		  if(this.pickerSelect.value == ''){
+			uni.showToast({
+				title: '请选择短信模版',
+				icon: 'none'
+			});
+			return
+		  }
+		  
+	  	uni.showModal({
+	  		title: '确认操作',
+	  		content: `确定要批量发送 ${this.selectedIds.length} 条短信吗？`,
+	  		success: async (res) => {
+	  			if (res.confirm) {
+					for(let i in this.selectedIds) {
+						console.log({
+								phone: this.selectedIds[i],
+								type: this.pickerSelect.value,
+							})
+						const res = await uni.request({
+							url: `https://ccpt.0871.cn/api/sms`,
+							method: 'POST',
+							data: {
+								phone: this.selectedIds[i],
+								type: this.pickerSelect.value,
+							},
+							header: {
+								'Content-Type': 'application/json'
+							}
+						})
+					}
+					
+	  				// await this.processBatchWithdraw(this.selectedIds, 'approve');
+	  			}
+	  		}
+	  	});
+	  },
+	  
     // 获取骑手列表
     async getRiderList() {
       if (this.loading) return;
@@ -3965,4 +4072,53 @@ export default {
     }
   }
 }
+
+// 批量操作栏
+.batch-actions {
+	box-sizing: border-box;
+	position: fixed;
+	top: 268px;
+	left: 0;
+	width: 100%;
+	background-color: #fff;
+	padding: 20rpx;
+	margin-bottom: 20rpx;
+	display: flex;
+	align-items: center;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+
+	.batch-left {
+		display: flex;
+		align-items: center;
+		gap: 10rpx;
+
+		.batch-text {
+			font-size: 28rpx;
+			color: #333;
+		}
+	}
+
+	.batch-right {
+		display: flex;
+		gap: 16rpx;
+
+		.batch-btn {
+			padding: 12rpx 24rpx;
+			border-radius: 20rpx;
+			font-size: 26rpx;
+
+			&.reject {
+				background-color: #fff;
+				color: #dc3545;
+				border: 1rpx solid #dc3545;
+			}
+
+			&.approve {
+				background-color: #2492F2;
+				color: #fff;
+			}
+		}
+	}
+}
+
 </style>
