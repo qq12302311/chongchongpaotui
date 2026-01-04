@@ -5,11 +5,17 @@
 
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
 			<!-- 门店图片 -->
-			<view class="image-section" v-if="storeInfo.door_images && storeInfo.door_images.length > 0">
+			<view class="image-section"v>
 				<scroll-view class="image-scroll" scroll-x="true" show-scrollbar="false">
 					<view class="image-list">
 						<view class="image-item" v-for="(img, index) in storeInfo.door_images" :key="index" @click="previewImage(index)">
 							<image :src="img" mode="aspectFill" class="store-image"></image>
+							<view class="delete-icon" @click.stop="deleteImage(index)">×</view>
+						</view>
+						<view class="upload-btn" @click="uploadImage" v-if="storeInfo.door_images.length < 3">
+							<image src="https://ccpt.qiniu.0871.cn/publish/mentou.png" mode="aspectFit"
+								class="upload-icon"></image>
+							<text class="upload-text">选择图片</text>
 						</view>
 					</view>
 				</scroll-view>
@@ -47,14 +53,22 @@
 				</view>
 
 				<!-- 设备编码 -->
-				<view class="info-item">
-					<view class="info-label">
+				<view class="info-item" v-for="(item, index) in storeInfo.sn_mac_code" :key="index">
+					<view class="info-label" v-if="index == 0">
 						<text class="label-icon">•</text>
 						<text class="label-text">设备编码：</text>
 					</view>
 					<view class="info-value-row">
-						<text class="info-value">{{ getSnMacDisplay() }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('snMac')"></image>
+						<text class="info-value" v-if="index != 0" @click="storeInfo.sn_mac_code.splice(index, 1)" style="color: red;">移除</text>
+						<!-- <text class="info-value">{{ item.value }}</text> -->
+						<input v-model="item.value" class="info-value" placeholder="请输入设备编码" />
+						<!-- <image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('snMac',index)"></image> -->
+					</view>
+				</view>
+				<view class="info-item">
+					<view class="info-label"> </view>
+					<view class="info-value-row" @click="storeInfo.sn_mac_code.push({value:''})">
+						<text class="info-value" style="color: #1890FF">添加设备编码</text>
 					</view>
 				</view>
 
@@ -147,7 +161,10 @@ export default {
 	data() {
 		return {
 			navBarHeight: 0,
-			storeInfo: {},
+			storeInfo: {
+				door_images: [],
+				sn_mac_code: []
+			},
 			storeId: '',
 			showEditModal: false,
 			editModalTitle: '',
@@ -171,6 +188,69 @@ export default {
 		}
 	},
 	methods: {
+		uploadImage() {
+			uni.chooseImage({
+				count: 1,
+				sizeType: ['compressed', 'original'],
+				sourceType: ['album', 'camera'],
+				success: (res) => {
+					if (res.tempFilePaths && res.tempFilePaths.length > 0) {
+						// 逐个上传图片
+						this.qiniuUploadFile(res.tempFilePaths[0]);
+					}
+				},
+				fail: (error) => {
+					console.error('选择图片失败:', error);
+					uni.showToast({
+						title: '选择图片失败',
+						icon: 'none'
+					});
+				}
+			});
+		},
+		// 单个图片上传到七牛云
+		qiniuUploadFile(filePath) {
+			return new Promise((resolve, reject) => {
+				uni.uploadFile({
+					url: 'https://tixian.0871.cn/upload/qiniuImageUpload',
+					filePath: filePath,
+					name: 'image',
+					formData: {
+						'spaceName': 'agan_complain'
+					},
+					timeout: 30000, // 设置30秒超时
+					success: (uploadFileRes) => {
+						try {
+							if (uploadFileRes.statusCode === 200) {
+								const res = JSON.parse(uploadFileRes.data);
+								if (res && res.path) {
+									// 添加到图片列表
+									this.storeInfo.door_images = [...this.storeInfo.door_images, res.path];
+									console.log('图片上传成功:', res.path);
+									resolve(res.path);
+								} else {
+									console.error('服务器返回数据格式错误:', res);
+									reject(new Error('服务器返回数据格式错误'));
+								}
+							} else {
+								console.error('上传失败，状态码:', uploadFileRes.statusCode);
+								reject(new Error(`上传失败，状态码: ${uploadFileRes.statusCode}`));
+							}
+						} catch (parseError) {
+							console.error('解析上传结果失败:', parseError);
+							reject(new Error('解析上传结果失败'));
+						}
+					},
+					fail: (error) => {
+						console.error('图片上传失败:', error);
+						reject(new Error('网络错误或上传超时'));
+					}
+				});
+			});
+		},
+		deleteImage(index) {
+			this.storeInfo.door_images.splice(index, 1)
+		},
 		// 获取门店详情
 		async getStoreDetail() {
 			try {
@@ -350,8 +430,8 @@ export default {
 					break
 				case 'snMac':
 					// 将逗号分隔的字符串转换为数组
-					const snMacArray = this.editValue.split(',').map(item => item.trim()).filter(item => item)
-					this.storeInfo.sn_mac_code = snMacArray.map(value => ({ value }))
+					// const snMacArray = this.editValue.split(',').map(item => item.trim()).filter(item => item)
+					// this.storeInfo.sn_mac_code = snMacArray.map(value => ({ value }))
 					break
 				case 'deviceLocation':
 					// 根据输入的文本设置 device_outside 值
@@ -455,13 +535,13 @@ export default {
 
 		// 确认修改
 		async confirmModify() {
-			if (!this.hasModified) {
-				uni.showToast({
-					title: '没有修改内容',
-					icon: 'none'
-				})
-				return
-			}
+			// if (!this.hasModified) {
+			// 	uni.showToast({
+			// 		title: '没有修改内容',
+			// 		icon: 'none'
+			// 	})
+			// 	return
+			// }
 
 			try {
 				const userInfo = uni.getStorageSync('userInfo')
@@ -582,6 +662,28 @@ export default {
 	width: 100%;
 	padding: 20rpx 0;
 	background-color: #FFFFFF;
+  .upload-btn {
+    width: 130rpx;
+    height: 130rpx;
+    background-color: #f8f8f8;
+    border: 1rpx solid #D3D4D6;
+    border-radius: 8rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .upload-icon {
+      width: 36rpx;
+      height: 36rpx;
+      margin-bottom: 8rpx;
+    }
+
+    .upload-text {
+      font-size: 20rpx;
+      color: #666;
+    }
+  }
 
 	.image-scroll {
 		width: 100%;
@@ -593,12 +695,26 @@ export default {
 			gap: 20rpx;
 
 			.image-item {
+				position: relative;
 				display: inline-block;
 				width: 200rpx;
 				height: 200rpx;
 				border-radius: 12rpx;
 				overflow: hidden;
 				flex-shrink: 0;
+				.delete-icon {
+					position: absolute;
+					top: 0;
+					right: 0;
+					width: 40rpx;
+					height: 40rpx;
+					background: rgba(0, 0, 0, 0.5);
+					color: #fff;
+					font-size: 30rpx;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				}
 
 				.store-image {
 					width: 100%;
