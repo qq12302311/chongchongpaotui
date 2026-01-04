@@ -146,7 +146,7 @@ export default {
   },
   computed: {
     isFormValid() {
-      return this.phone.length != '' && this.password.length != '';
+      return this.phone?.length != '' && this.password?.length != '';
     }
   },
   methods: {

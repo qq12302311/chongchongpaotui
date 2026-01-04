@@ -270,7 +270,8 @@
                 <view class="operation-order-btn" v-else-if="order.status === 'assigned' && order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showOperationModal(order)">操作订单</view>
                 <!-- 退款相关按钮 -->
                 <view class="refund-btn audit-btn" v-if="currentStatus === 'refundPending'" @click.stop="showAuditModal(order)">审核</view>
-                <view class="refund-btn" v-else-if="order.status !== 'assigned' && order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showRefundModal(order)">申请退款</view>
+                <!-- <view class="refund-btn" v-else-if="order.status !== 'assigned' && order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showRefundModal(order)">申请退款</view> -->
+				<view class="operation-order-btn" v-else-if="order.status !== 'assigned' && order.status !== 'canceled' && order.payment_status !== 'refunded'" @click.stop="showOperationModal(order)">操作订单</view>
               </view>
             </view>
             <!-- 骑手信息 -->
@@ -2215,7 +2216,7 @@ export default {
 
   // 不同状态的样式
   &.waiting {
-    background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
+    background: linear-gradient(135deg, #21B724 0%, #21B724 100%);
     color: #fff;
   }
 
@@ -2450,7 +2451,7 @@ export default {
     }
 
     .operation-order-btn {
-      background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+      background: linear-gradient(135deg, #2AA5EB 0%, #2AA5EB 100%);
       color: #fff;
 
       &:active {
