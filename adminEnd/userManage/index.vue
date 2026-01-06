@@ -41,6 +41,30 @@
     <!-- 列表内容区域的占位元素 -->
     <view style="height: 360rpx; width: 100%; flex-shrink: 0;"></view>
 
+    <!-- 批量操作栏 -->
+    <view class="batch-actions">
+      <view class="batch-left">
+        <checkbox-group @change="toggleSelectAll">
+          <checkbox :checked="isAllSelected" color="#2492F2" />
+        </checkbox-group>
+        <text class="batch-text">全选 ({{ selectedIds.length }})</text>
+      </view>
+      <picker
+        style="flex: 1;"
+        mode="selector" 
+        :range="pickerOptions" 
+        range-key="label"
+        @change="onPickerOptionsChange"
+        class="estimate-picker">
+        <view style="margin-left: 8px;">{{pickerSelect.label || '请选择短信模版'}}</view>
+      </picker>
+      <view class="batch-right" v-if="selectedIds.length > 0">
+        <!-- <view class="batch-btn reject" @click="batchReject">批量拒绝</view> -->
+        <view class="batch-btn approve" @click="batchApprove">发送短信</view>
+      </view>
+    </view>
+    <view style="height: 56px;"></view>
+
     <!-- 用户列表 -->
     <scroll-view
       style="flex: 1; padding: 0 20rpx; width: 100%; box-sizing: border-box; background-color: transparent;"
@@ -91,6 +115,11 @@
               <view style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12rpx;">
                 <view>
                   <text style="font-size: 30rpx; font-weight: 600; color: #333;">{{ user.username || '未设置姓名' }}</text>
+                </view>
+                <view class="checkbox-wrapper" @click.stop="toggleSelect(user.phone_number)">
+                  <checkbox-group>
+                    <checkbox :checked="selectedIds.includes(user.phone_number)" color="#2492F2" style="transform: scale(0.8);" />
+                  </checkbox-group>
                 </view>
                 <view style="display: flex; align-items: center;">
                   <text style="font-size: 22rpx; color: #666; margin-right: 6rpx;">余额:</text>
@@ -167,6 +196,16 @@ export default {
   },
   data() {
     return {
+      // 批量操作
+      selectedIds: [],
+      pickerOptions: [
+        { value: 'SMS_500695083', label: '充充庆佳节' },
+        { value: 'SMS_500460079', label: '充充大事记' },
+        { value: 'SMS_500450106', label: '充充跑腿服务' }
+      ],
+      pickerSelect: {
+        value: ''
+      },
       navBarHeight: 0,
       searchKeyword: '',
       userList: [],
@@ -179,6 +218,12 @@ export default {
       loadingMore: false,
       totalUsers: 0
     }
+  },
+   computed: {
+    isAllSelected() {
+  		const pendingList = this.userList;
+  		return pendingList.length > 0 && this.selectedIds.length === pendingList.length;
+  	}
   },
   onShow() {
     // 页面显示时自动加载用户列表
@@ -207,6 +252,66 @@ export default {
     });
   },
   methods: {
+    onPickerOptionsChange(e) {
+	  	const index = e.detail.value;
+	  	this.pickerSelect = this.pickerOptions[index];
+	  },
+	  // 切换单个选择
+	  toggleSelect(id) {
+	  	const index = this.selectedIds.indexOf(id);
+	  	if (index > -1) {
+	  		this.selectedIds.splice(index, 1);
+	  	} else {
+	  		this.selectedIds.push(id);
+	  	}
+	  },
+	  // 切换全选
+	  toggleSelectAll() {
+		if (this.isAllSelected) {
+			this.selectedIds = [];
+		} else {
+			this.selectedIds = this.userList.map(w => w.phone_number);
+		}
+	  },
+	  // 批量同意
+	  batchApprove() {
+		  console.log('批量同意', this.pickerSelect);
+		  if(this.pickerSelect.value == ''){
+			uni.showToast({
+				title: '请选择短信模版',
+				icon: 'none'
+			});
+			return
+		  }
+		  
+	  	uni.showModal({
+	  		title: '确认操作',
+	  		content: `确定要批量发送 ${this.selectedIds.length} 条短信吗？`,
+	  		success: async (res) => {
+	  			if (res.confirm) {
+					for(let i in this.selectedIds) {
+						console.log({
+								phone: this.selectedIds[i],
+								type: this.pickerSelect.value,
+							})
+						const res = await uni.request({
+							url: `https://ccpt.0871.cn/api/sms`,
+							method: 'POST',
+							data: {
+								phone: this.selectedIds[i],
+								type: this.pickerSelect.value,
+							},
+							header: {
+								'Content-Type': 'application/json'
+							}
+						})
+					}
+					
+	  				// await this.processBatchWithdraw(this.selectedIds, 'approve');
+	  			}
+	  		}
+	  	});
+	  },
     // 初始化加载数据
     loadInitialData() {
       // 重置搜索状态
@@ -465,5 +570,53 @@ export default {
 .safe-area-bottom {
   height: env(safe-area-inset-bottom, 0px);
   background-color: #f8f9fa;
+}
+
+// 批量操作栏
+.batch-actions {
+	box-sizing: border-box;
+	position: fixed;
+	top: 268px;
+	left: 0;
+	width: 100%;
+	background-color: #fff;
+	padding: 20rpx;
+	margin-bottom: 20rpx;
+	display: flex;
+	align-items: center;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+
+	.batch-left {
+		display: flex;
+		align-items: center;
+		gap: 10rpx;
+
+		.batch-text {
+			font-size: 28rpx;
+			color: #333;
+		}
+	}
+
+	.batch-right {
+		display: flex;
+		gap: 16rpx;
+
+		.batch-btn {
+			padding: 12rpx 24rpx;
+			border-radius: 20rpx;
+			font-size: 26rpx;
+
+			&.reject {
+				background-color: #fff;
+				color: #dc3545;
+				border: 1rpx solid #dc3545;
+			}
+
+			&.approve {
+				background-color: #2492F2;
+				color: #fff;
+			}
+		}
+	}
 }
 </style>
