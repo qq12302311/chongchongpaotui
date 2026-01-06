@@ -402,13 +402,13 @@
         </view>
       </view>
       <view class="modal-footer">
-        <view class="modal-btn confirm" v-if="showRejectReason" :class="{disabled: rejectLoading}" @click="!rejectLoading && confirmReject()">
-          <text v-if="rejectLoading">处理中...</text>
-          <text v-else>确认驳回</text>
-        </view>
         <view class="modal-btn reject" :class="{disabled: auditLoading}" @click="!auditLoading && confirmAudit()">
           <text v-if="auditLoading">处理中...</text>
           <text v-else>确认退款</text>
+        </view>
+        <view class="modal-btn confirm" v-if="showRejectReason" :class="{disabled: rejectLoading}" @click="!rejectLoading && confirmReject()">
+          <text v-if="rejectLoading">处理中...</text>
+          <text v-else>确认驳回</text>
         </view>
 		<view class="modal-btn confirm" v-if="!showRejectReason" :class="{disabled: auditLoading}" @click="!auditLoading && showRejectInput()">
 		  <text v-if="rejectLoading">处理中...</text>
