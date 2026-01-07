@@ -36,31 +36,59 @@
 				</view>
 			</view>
 
-			<!-- 加载中提示 -->
-			<view v-if="loading" class="loading-container">
-				<view class="loading-spinner"></view>
-				<text class="loading-text">加载中...</text>
+			<view class="orderbox">
+				<view :class="'filter-tabs '">
+					<view class="leftbg" :style="tabsStyle.leftbg"></view>
+					<view class="rightbg" :style="tabsStyle.rightbg"></view>
+					<view class="tab-item" :class="{ active: activeTab === 0 }" @click="setActiveTab(0)">
+						<text>下单</text>
+					</view>
+					<view class="tab-item" :class="{ active: activeTab === 1 }" @click="setActiveTab(1)">
+						<text>新任务</text>
+						<view class="tab-badge" v-if="inProgressTasksCount > 0">{{ inProgressTasksCount }}</view>
+					</view>
+					<view class="tab-item" :class="{ active: activeTab === 2 }" @click="setActiveTab(2)">
+						<text>进行中</text>
+					</view>
+					<view class="tab-item" :class="{ active: activeTab === 3 }" @click="setActiveTab(3)">
+						<text>完成待确认</text>
+					</view>
+					<view class="tab-item" :class="{ active: activeTab === 4 }" @click="setActiveTab(4)">
+						<text>已完结</text>
+					</view>
+				</view>	
 			</view>
 
-			<!-- 服务网格 -->
-			<view v-else class="grid">
-				<view
-					v-for="(item, index) in taskTypes"
-					:key="index"
-					class="grid-item"
-					:class="[item.type ? classMap[item.type] || 'yellow' : 'yellow']"
-					:data-upcoming="item.type !== '1' && item.type !== '2' && item.type !== '5'"
-					@click="navigateTo(item.url, item.task_type_id)"
-				>
-					<view class="grid-content">
-						<view class="text-wrap">
-							<view class="title">{{item.task_name}}</view>
-							<view class="subtitle" :class="{ 'gray-subtitle': item.type !== '1' }">{{item.detail}}</view>
+			<view class="listbox" v-if="activeTab === 0">
+				<!-- 加载中提示 -->
+				<view v-if="loading" class="loading-container">
+					<view class="loading-spinner"></view>
+					<text class="loading-text">加载中...</text>
+				</view>
+				<!-- 服务网格 -->
+				<view v-else class="grid">
+					<view
+						v-for="(item, index) in taskTypes"
+						:key="index"
+						class="grid-item"
+						:class="[item.type ? classMap[item.type] || 'yellow' : 'yellow']"
+						:data-upcoming="item.type !== '1' && item.type !== '2' && item.type !== '5'"
+						@click="navigateTo(item.url, item.task_type_id)"
+					>
+						<view class="grid-content">
+							<view class="text-wrap">
+								<view class="title">{{item.task_name}}</view>
+								<view class="subtitle" :class="{ 'gray-subtitle': item.type !== '1' }">{{item.detail}}</view>
+							</view>
+							<image class="grid-icon" :src="item.icon" mode="aspectFit"></image>
 						</view>
-						<image class="grid-icon" :src="item.icon" mode="aspectFit"></image>
 					</view>
 				</view>
 			</view>
+			<view class="listbox" v-else>
+				<order :currentTab="activeTab - 1"></order>
+			</view>
+			
 		</view>
 
 		<!-- 底部导航栏 -->
@@ -104,6 +132,8 @@ import PosterModal from '@/components/PosterModal/index.vue'
 import FloatingImage from '@/components/FloatingImage/index.vue'
 import FloatingIcons from '@/components/FloatingIcons/index.vue'
 // import FloatingChatIconUser from '@/components/FloatingChatIconUser/index.vue'
+import order from './components/order.vue'
+
 import userMixin from '@/mixins/userMixin.js'
 
 export default {
@@ -114,11 +144,14 @@ export default {
 		PosterModal,
 		FloatingImage,
 		FloatingIcons,
+		order
 		// FloatingChatIconUser
 	},
 	mixins: [userMixin],
 	data() {
 		return {
+			activeTab: 0,
+
 			bgColor: '#fff',
 			navBarHeight: 0,
 			taskTypes: [],
@@ -180,7 +213,7 @@ export default {
 			bannerList: [ // banner轮播图列表
 				{
 					id: 1,
-					image: 'https://ccpt.qiniu.0871.cn/222.png',
+					image: 'https://ccpt.qiniu.0871.cn/banner.png',
 					title: 'Banner 1',
 					url: ''
 				},
@@ -193,6 +226,18 @@ export default {
 			]
 		}
 	},
+	computed: {
+		tabsStyle() {
+			const activeTab = this.activeTab;
+			let leftbg = "width: " + (activeTab * 20) + "%;";
+			let rightbg = "width: " + ((4 - activeTab) * 20) + "%;";
+			return {
+				leftbg,
+				rightbg
+			}
+		},
+	},
+
 	created() {
 		// 获取导航栏高度
 		const menuButtonInfo = uni.getMenuButtonBoundingClientRect();
@@ -239,6 +284,21 @@ export default {
 		uni.$emit('pageHide');
 	},
 	methods: {
+		setActiveTab(tab) {
+			this.activeTab = tab
+	
+			// // 如果切换到非接单大厅的标签，加载对应状态的订单
+			// if (tab !== 'comprehensive') {
+			// this.page = 1
+			// this.orderList = []
+			// this.getOrdersByStatus(tab)
+			// } else {
+			// // 切换回接单大厅，重新加载待接单列表
+			// this.page = 1
+			// this.orderList = []
+			// this.getWaitingTasks()
+			// }
+		},
 		// 注释掉强制城市选择检查
 		// checkCitySelected() {
 		// 	const selectedCity = uni.getStorageSync('selectedCity');
@@ -942,4 +1002,114 @@ export default {
 	.subtitle.gray-subtitle {
 		color: #464646 !important;
 	}
+
+
+.orderbox{
+	padding: 0rpx 20rpx;
+}
+.listbox{
+	margin: 0 20rpx;
+	background-color: #fff;
+	padding: 20rpx 20rpx;
+	border-radius: 0 0 12px 12px;
+}
+.filter-tabs {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+// 底部10px背景白色
+  background: linear-gradient(to bottom, transparent 0%, transparent calc(100% - 10px), #ffffff calc(100% - 10px), #ffffff 100%);
+
+  .leftbg {
+	position: absolute;
+    left: 0;
+	bottom: 0;
+	background-color: #fff;
+	height: 32px;
+	width: 0px;
+	border-radius: 12px 0 12px 0;
+    box-shadow: -1px -1px 0px rgba(0, 0, 0, 0.1) inset;
+  }
+  .rightbg {
+	position: absolute;
+    right: 0;
+	bottom: 0;
+	background-color: #fff;
+	height: 32px;
+	width: 0px;
+	border-radius: 0 12px 0 12px;
+    box-shadow: 1px -1px 0px rgba(0, 0, 0, 0.1) inset; 
+  }
+
+  .tab-item {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex: 1;
+    line-height: 32px;
+
+    text {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .arrow-icon {
+      width: 24rpx;
+      height: 24rpx;
+      margin-left: 6rpx;
+    }
+
+    .tab-badge {
+      position: absolute;
+      top: 0rpx;
+      right: 0rpx;
+      min-width: 32rpx;
+      height: 32rpx;
+      line-height: 32rpx;
+      background-color: #FF4D4F;
+      color: #fff;
+      font-size: 20rpx;
+      font-weight: 500;
+      text-align: center;
+      border-radius: 16rpx;
+      padding: 0 8rpx;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+
+    .active-line {
+      display: none;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40rpx;
+      height: 4rpx;
+      background-color: #2492F2;
+    }
+
+    &.active {
+      line-height: 40px;
+	  background-color: #fff;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -2rpx 4rpx rgba(0, 0, 0, 0.05);
+      text {
+        font-weight: 500;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .tab-item-left{
+    border-left: 1rpx solid #eee;
+    border-radius: 12px 0 0 0;
+  }
+  .tab-item-right{
+    border-right: 1rpx solid #eee;
+    border-radius: 0 12px 0 0;
+  }
+}
 </style>
