@@ -14,7 +14,7 @@
 					<text class="text" :class="{ active: current === 0 }">首页</text>
 				</view>
 
-				<view
+				<!-- <view
 					class="tab-item"
 					:class="{ active: current === 1 }"
 					@tap="onChange(1)"
@@ -24,7 +24,7 @@
 						:src="current === 1 ? 'https://ccpt.qiniu.0871.cn/order2-active.svg' : 'https://ccpt.qiniu.0871.cn/order2.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 1 }">订单</text>
-				</view>
+				</view> -->
 
 				<!-- <view
 					class="tab-item"
@@ -37,6 +37,11 @@
 					></image>
 					<text class="text" :class="{ active: current === 2 }">购物车</text>
 				</view> -->
+
+				<view class="tab-item" :class="{ active: activeTab === 1 }" @click="goToChat()">
+					<image :src="activeTab === 1 ? 'https://ccpt.qiniu.0871.cn/duihua2-active.svg' : 'https://ccpt.qiniu.0871.cn/duihua2.svg'" mode="aspectFit" class="icon"></image>
+					<text class="text">对话</text>
+				</view>
 
 				<view
 					class="tab-item"
@@ -74,6 +79,22 @@ export default {
 		}
 	},
 	methods: {
+		goToChat() {
+			// 跳转到用户端聊天列表（tab页面）
+			uni.navigateTo({
+				url: '/pages/chat/chat-list',
+				success: () => {
+				console.log('跳转到聊天列表成功');
+				},
+				fail: (err) => {
+				console.error('跳转到聊天列表失败:', err);
+				uni.showToast({
+					title: '跳转失败',
+					icon: 'none'
+				});
+				}
+			});
+		},
 		onChange(index) {
 			const routes = [
 				'/pages/index/index',
