@@ -56,9 +56,9 @@
       </view> -->
     </view>
 
-    <!-- 筛选选项卡 -->
-    <view class="filter-tabs">
-      <view class="tab-item" :class="{ active: activeTab === 'comprehensive' }" @click="setActiveTab('comprehensive')">
+    <view class="orderbox">
+      <view :class="'filter-tabs ' + activeTab">
+        <view class="tab-item" :class="{ active: activeTab === 'comprehensive' }" @click="setActiveTab('comprehensive')">
         <text>抢单大厅</text>
         <view class="active-line" v-if="activeTab === 'comprehensive'"></view>
       </view>
@@ -77,214 +77,214 @@
       </view>
     </view>
 
-    <!-- 订单列表 -->
-    <view class="order-list">
+      <view class="order-list">
 
-      <!-- 订单列表 -->
-      <view>
-        <!-- 接单大厅的订单样式 -->
-        <template v-if="activeTab === 'comprehensive'">
-          <view
-            class="order-item pos-rel"
-            :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }"
-            v-for="(order, index) in orderList"
-            :key="`hall-${index}`"
-            :data-index="index"
-            @click="handleOrderClick">
-            <!-- 完结订单盖章图片 - 只对recent_tasks显示 -->
-          <image
-            v-if="order.isCompleted && order.isRecentTask"
-            class="completed-stamp-image-gray"
-            src="https://ccpt.qiniu.0871.cn/rider/yiwanjie.svg"
-            mode="aspectFit">
-          </image>
+        <!-- 订单列表 -->
+        <view>
+          <!-- 接单大厅的订单样式 -->
+          <template v-if="activeTab === 'comprehensive'">
+            <view
+              class="order-item pos-rel"
+              :class="{ 'completed-order': order.isCompleted && order.isRecentTask, 'assigned-order': order.isAssigned && order.isRecentTask }"
+              v-for="(order, index) in orderList"
+              :key="`hall-${index}`"
+              :data-index="index"
+              @click="handleOrderClick">
+              <!-- 完结订单盖章图片 - 只对recent_tasks显示 -->
+            <image
+              v-if="order.isCompleted && order.isRecentTask"
+              class="completed-stamp-image-gray"
+              src="https://ccpt.qiniu.0871.cn/rider/yiwanjie.svg"
+              mode="aspectFit">
+            </image>
 
-          <!-- 进行中订单盖章图片 - 只对recent_tasks显示 -->
-          <image
-            v-if="order.isAssigned && order.isRecentTask"
-            class="assigned-stamp-image"
-            src="https://ccpt.qiniu.0871.cn/rider/assigned.svg"
-            mode="aspectFit">
-          </image>
+            <!-- 进行中订单盖章图片 - 只对recent_tasks显示 -->
+            <image
+              v-if="order.isAssigned && order.isRecentTask"
+              class="assigned-stamp-image"
+              src="https://ccpt.qiniu.0871.cn/rider/assigned.svg"
+              mode="aspectFit">
+            </image>
 
-          <!-- <view class="order-header">
-            <view class="order-info">
-              <text class="order-number">订单编号：{{ order.orderNumber }}</text>
-              <view class="copy-btn" v-if="order.isSpecial" @click.stop="copyOrderNumber(order.orderNumber)">复制</view>
-            </view>
-            <view class="order-price">{{ getDisplayAmount(order) }}</view>
-          </view> -->
-
-          <!-- 广告横幅 -->
-          <!-- <view class="ad-banner" v-if="!order.reward">
-            <view class="ad-content">
-              <view class="ad-text">
-                <text class="ad-promotion-text" style="margin-right: 5px;">推广 </text>
-                <text class="ad-main-text">不管您是哪家"充"，我们都在用</text>
-                <text class="ad-brand-text">充充</text>
-                <text class="ad-sub-text">！推荐骑手有奖金！</text>
+            <!-- <view class="order-header">
+              <view class="order-info">
+                <text class="order-number">订单编号：{{ order.orderNumber }}</text>
+                <view class="copy-btn" v-if="order.isSpecial" @click.stop="copyOrderNumber(order.orderNumber)">复制</view>
               </view>
-            </view>
-            <view class="ad-gradient-overlay"></view>
-          </view> -->
-          
-          <!-- 打赏信息横幅 -->
-		 <!-- <view class="reward-badge" v-if="order.reward">
-			<image src="https://ccpt.qiniu.0871.cn/dstb.png" class="reward-badge-image" mode="aspectFit"></image>
-			<text class="reward-badge-amount">{{ parseInt(getRewardAmount(order)) }}</text>
-		  </view> -->
-          <!-- <view class="reward-banner" v-if="order.reward">
-            <view class="reward-banner-content">
-              <view class="reward-banner-text">
-                <text class="reward-promotion-text">推广 </text>
-                <text class="reward-main-text">不管您是哪家"充"，我们都在用 </text>
-                <text class="reward-brand-text">充充</text>
-                <text class="reward-sub-text">！推荐骑手有奖金！</text>
-              </view>
-            </view>
-          </view> -->
+              <view class="order-price">{{ getDisplayAmount(order) }}</view>
+            </view> -->
 
-          <!-- <view class="order-time"></view> -->
-          <!-- <view class="order-time">发单时间：{{ order.orderTime }}</view> -->
-
-          <view class="order-content">
-            <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand)]">
-              <view class="icon-content">
-                <text class="brand-text">{{ getServiceTypeFirstChar(order.serviceTypeText) }}</text>
-                <!-- <text class="brand-text">{{ order.brandText || '充充' }}</text> -->
-                <text class="service-text">{{ getBrandText(order.brand) }}{{ order.serviceTypeText }}</text>
-              </view>
-            </view>
-
-            <view class="order-details">
-              <view class="address">{{ formatAddress(order) }}</view>
-              <view class="distance-info">
-                <image src="https://ccpt.qiniu.0871.cn/riderend/logo11.png" mode="aspectFit" class="location-icon"></image>
-                <text class="distance-text"><text class="highlight">{{ order.distance || 0 }}km</text></text>
-              </view>
-              <view class="service-item" :data-content="order.serviceItem">任务：</view>
-              <view class="service-item" v-if="getAdditionalServices(order)" :data-content="getAdditionalServices(order)">附加：</view>
-            </view>
-
-            <view class="price-info-wrapper">
-              <view class="service-time" :data-content="getTotalAmountWithReward(order)"></view>
-              <!-- 订单金额+打赏金额 -->
-              <view class="order-total-amount" v-if="order.reward">
-                <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
-              </view>
-            </view>
-            <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons">
-				<image class="button-class" src="https://ccpt.qiniu.0871.cn/riderend/qujiedan.png"></image>
-              <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="handleOrderClick(order)">去接单</button>
-              <button v-if="!isTransferredOrder(order)" class="transfer-order-btn" open-type="share" @click.stop="transferOrder(order)">转单</button> -->
-            </view>
-            <view v-else-if="!order.isCompleted && !order.isAssigned && order.refundRequest" class="refund-label">订单退款中</view>
-            <view v-else-if="order.isAssigned" class="assigned-label">
-              <template v-if="order.isRecentTask">
-                <text>{{ order.assigned_at }}</text>
-                <br>
-                <text>已被骑手接单</text>
-              </template>
-              <template v-else>进行中</template>
-            </view>
-            <view v-else class="completed-label">已完结</view>
-          </view>
-          </view>
-        </template>
-
-        <!-- 进行中、完成待确认、已完成的订单样式（与订单导航页面一致） -->
-        <template v-if="activeTab !== 'comprehensive'">
-          <view
-            class="order-item-standard"
-            v-for="(order, index) in orderList"
-            :key="`order-${index}`"
-            :data-index="index"
-            @click="navigateToOrderInfo">
-          <view class="status-tag" :class="order.status">
-            <text v-if="order.status === 'waiting'">等待接单</text>
-            <text v-else-if="order.status === 'assigned'">已接单</text>
-            <text v-else-if="order.status === 'finished'">待确认</text>
-            <text v-else-if="order.status === 'completed'">已完成</text>
-          </view>
-          <view class="order-header">
-            <view class="order-info">
-              <text class="order-number">订单编号：{{ order.orderNumber }}</text>
-              <view class="copy-btn" @click.stop="copyOrderNumber(order.orderNumber)">复制</view>
-            </view>
-            <view class="order-time-row">
-              <text class="countdown" v-if="order.status === 'assigned' && order.countdown && order.countdown !== '未知时间'">倒计时：{{ order.countdown }}</text>
-              <text class="countdown" v-else-if="order.status === 'finished' || order.status === 'completed'">任务用时：{{ order.taskDuration }}</text>
-            </view>
-          </view>
-
-          <view class="order-content">
-            <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand), !order.doorImage ? 'no-image' : '']">
-              <image v-if="order.doorImage" :src="order.doorImage" mode="aspectFill" class="door-image" />
-              <view v-else class="icon-content">
-                <text class="brand-text">{{ getServiceTypeFirstChar(order.serviceTypeText) }}</text>
-                <text class="service-text">{{ getBrandText(order.brand) }}{{ order.serviceTypeText }}</text>
-              </view>
-            </view>
-
-            <view class="order-details">
-              <view class="store-name-row">
-                <text class="store-name">{{ formatStoreName(order.storeName) }}</text>
-                <view class="price-container">
-                  <text class="price">{{ order.reward ? getTotalAmountWithReward(order) : getDisplayAmount(order) }}</text>
-                  <text v-if="order.reward" class="reward-badge">赏{{ parseInt(getRewardAmount(order)) }}</text>
+            <!-- 广告横幅 -->
+            <!-- <view class="ad-banner" v-if="!order.reward">
+              <view class="ad-content">
+                <view class="ad-text">
+                  <text class="ad-promotion-text" style="margin-right: 5px;">推广 </text>
+                  <text class="ad-main-text">不管您是哪家"充"，我们都在用</text>
+                  <text class="ad-brand-text">充充</text>
+                  <text class="ad-sub-text">！推荐骑手有奖金！</text>
                 </view>
               </view>
-              <view class="service-time">服务时间：<text class="highlight" style="white-space: pre-line;">{{ order.serviceTime }}</text></view>
-              <view class="service-item">服务项目：<text class="highlight">{{ order.serviceItem }}</text></view>
-              <view class="service-item" v-if="order.extraServices">附加服务：<text class="highlight">{{ order.extraServices }}</text></view>
-              <view class="service-item" v-if="order.reward">
-                <text style="color: #FF6B00;">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
+              <view class="ad-gradient-overlay"></view>
+            </view> -->
+            
+            <!-- 打赏信息横幅 -->
+      <!-- <view class="reward-badge" v-if="order.reward">
+        <image src="https://ccpt.qiniu.0871.cn/dstb.png" class="reward-badge-image" mode="aspectFit"></image>
+        <text class="reward-badge-amount">{{ parseInt(getRewardAmount(order)) }}</text>
+        </view> -->
+            <!-- <view class="reward-banner" v-if="order.reward">
+              <view class="reward-banner-content">
+                <view class="reward-banner-text">
+                  <text class="reward-promotion-text">推广 </text>
+                  <text class="reward-main-text">不管您是哪家"充"，我们都在用 </text>
+                  <text class="reward-brand-text">充充</text>
+                  <text class="reward-sub-text">！推荐骑手有奖金！</text>
+                </view>
+              </view>
+            </view> -->
+
+            <!-- <view class="order-time"></view> -->
+            <!-- <view class="order-time">发单时间：{{ order.orderTime }}</view> -->
+
+            <view class="order-content">
+              <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand)]">
+                <view class="icon-content">
+                  <text class="brand-text">{{ getServiceTypeFirstChar(order.serviceTypeText) }}</text>
+                  <!-- <text class="brand-text">{{ order.brandText || '充充' }}</text> -->
+                  <text class="service-text">{{ getBrandText(order.brand) }}{{ order.serviceTypeText }}</text>
+                </view>
+              </view>
+
+              <view class="order-details">
+                <view class="address">{{ formatAddress(order) }}</view>
+                <view class="distance-info">
+                  <image src="https://ccpt.qiniu.0871.cn/riderend/logo11.png" mode="aspectFit" class="location-icon"></image>
+                  <text class="distance-text"><text class="highlight">{{ order.distance || 0 }}km</text></text>
+                </view>
+                <view class="service-item" :data-content="order.serviceItem">任务：</view>
+                <view class="service-item" v-if="getAdditionalServices(order)" :data-content="getAdditionalServices(order)">附加：</view>
+              </view>
+
+              <view class="price-info-wrapper">
+                <view class="service-time" :data-content="getTotalAmountWithReward(order)"></view>
+                <!-- 订单金额+打赏金额 -->
+                <view class="order-total-amount" v-if="order.reward">
+                  <text class="total-amount-text">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
+                </view>
+              </view>
+              <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons">
+          <image class="button-class" src="https://ccpt.qiniu.0871.cn/riderend/qujiedan.png"></image>
+                <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="handleOrderClick(order)">去接单</button>
+                <button v-if="!isTransferredOrder(order)" class="transfer-order-btn" open-type="share" @click.stop="transferOrder(order)">转单</button> -->
+              </view>
+              <view v-else-if="!order.isCompleted && !order.isAssigned && order.refundRequest" class="refund-label">订单退款中</view>
+              <view v-else-if="order.isAssigned" class="assigned-label">
+                <template v-if="order.isRecentTask">
+                  <text>{{ order.assigned_at }}</text>
+                  <br>
+                  <text>已被骑手接单</text>
+                </template>
+                <template v-else>进行中</template>
+              </view>
+              <view v-else class="completed-label">已完结</view>
+            </view>
+            </view>
+          </template>
+
+          <!-- 进行中、完成待确认、已完成的订单样式（与订单导航页面一致） -->
+          <template v-if="activeTab !== 'comprehensive'">
+            <view
+              class="order-item-standard"
+              v-for="(order, index) in orderList"
+              :key="`order-${index}`"
+              :data-index="index"
+              @click="navigateToOrderInfo">
+            <view class="status-tag" :class="order.status">
+              <text v-if="order.status === 'waiting'">等待接单</text>
+              <text v-else-if="order.status === 'assigned'">已接单</text>
+              <text v-else-if="order.status === 'finished'">待确认</text>
+              <text v-else-if="order.status === 'completed'">已完成</text>
+            </view>
+            <view class="order-header">
+              <view class="order-info">
+                <text class="order-number">订单编号：{{ order.orderNumber }}</text>
+                <view class="copy-btn" @click.stop="copyOrderNumber(order.orderNumber)">复制</view>
+              </view>
+              <view class="order-time-row">
+                <text class="countdown" v-if="order.status === 'assigned' && order.countdown && order.countdown !== '未知时间'">倒计时：{{ order.countdown }}</text>
+                <text class="countdown" v-else-if="order.status === 'finished' || order.status === 'completed'">任务用时：{{ order.taskDuration }}</text>
               </view>
             </view>
 
-            <view class="arrow-right">
-              <view class="arrow"></view>
+            <view class="order-content">
+              <view class="order-icon" :class="[order.serviceType, getBrandClass(order.brand), !order.doorImage ? 'no-image' : '']">
+                <image v-if="order.doorImage" :src="order.doorImage" mode="aspectFill" class="door-image" />
+                <view v-else class="icon-content">
+                  <text class="brand-text">{{ getServiceTypeFirstChar(order.serviceTypeText) }}</text>
+                  <text class="service-text">{{ getBrandText(order.brand) }}{{ order.serviceTypeText }}</text>
+                </view>
+              </view>
+
+              <view class="order-details">
+                <view class="store-name-row">
+                  <text class="store-name">{{ formatStoreName(order.storeName) }}</text>
+                  <view class="price-container">
+                    <text class="price">{{ order.reward ? getTotalAmountWithReward(order) : getDisplayAmount(order) }}</text>
+                    <text v-if="order.reward" class="reward-badge">赏{{ parseInt(getRewardAmount(order)) }}</text>
+                  </view>
+                </view>
+                <view class="service-time">服务时间：<text class="highlight" style="white-space: pre-line;">{{ order.serviceTime }}</text></view>
+                <view class="service-item">服务项目：<text class="highlight">{{ order.serviceItem }}</text></view>
+                <view class="service-item" v-if="order.extraServices">附加服务：<text class="highlight">{{ order.extraServices }}</text></view>
+                <view class="service-item" v-if="order.reward">
+                  <text style="color: #FF6B00;">（订单{{ getDisplayAmount(order) }}+打赏{{ getRewardAmount(order) }}）</text>
+                </view>
+              </view>
+
+              <view class="arrow-right">
+                <view class="arrow"></view>
+              </view>
+            </view>
+
+            <view class="order-footer">
+              <view class="distance-info">
+                <image src="https://ccpt.qiniu.0871.cn/riderend/logo11.png" mode="aspectFit" class="location-icon"></image>
+                <text class="distance-text">距离订单地址<text class="highlight">{{ order.distance }}km</text></text>
+                <text class="location-detail" @click.stop="showLocationDetail(order)">点击导航</text>
+              </view>
             </view>
           </view>
+          </template>
 
-          <view class="order-footer">
-            <view class="distance-info">
-              <image src="https://ccpt.qiniu.0871.cn/riderend/logo11.png" mode="aspectFit" class="location-icon"></image>
-              <text class="distance-text">距离订单地址<text class="highlight">{{ order.distance }}km</text></text>
-              <text class="location-detail" @click.stop="showLocationDetail(order)">点击导航</text>
+          <!-- 加载中提示 -->
+          <view v-if="loading" class="loading-container">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+
+          <!-- 无更多数据提示 -->
+          <view v-if="!loading && !hasMore && orderList.length > 0" class="no-more-tip">
+            <text v-if="activeTab === 'comprehensive'">仅展示近期10条历史订单...</text>
+            <text v-else>没有更多订单了</text>
+          </view>
+
+          <!-- 无数据提示 -->
+          <view v-if="!loading && orderList.length === 0" class="empty-tip">
+            <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
+            <text class="empty-text" v-if="activeTab === 'comprehensive'">本区域暂无待接新订单</text>
+            <text class="empty-text" v-else>暂无订单</text>
+            <text class="empty-subtitle" v-if="activeTab === 'comprehensive'">请持续关注</text>
+
+            <!-- 推广期提示 - 仅在接单大厅显示 -->
+            <view class="promotion-tip" v-if="activeTab === 'comprehensive'">
+              <text class="promotion-text">当前为平台推广期</text>
             </view>
-          </view>
-        </view>
-        </template>
 
-        <!-- 加载中提示 -->
-        <view v-if="loading" class="loading-container">
-          <view class="loading-spinner"></view>
-          <text class="loading-text">加载中...</text>
-        </view>
-
-        <!-- 无更多数据提示 -->
-        <view v-if="!loading && !hasMore && orderList.length > 0" class="no-more-tip">
-          <text v-if="activeTab === 'comprehensive'">仅展示近期10条历史订单...</text>
-          <text v-else>没有更多订单了</text>
-        </view>
-
-        <!-- 无数据提示 -->
-        <view v-if="!loading && orderList.length === 0" class="empty-tip">
-          <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
-          <text class="empty-text" v-if="activeTab === 'comprehensive'">本区域暂无待接新订单</text>
-          <text class="empty-text" v-else>暂无订单</text>
-          <text class="empty-subtitle" v-if="activeTab === 'comprehensive'">请持续关注</text>
-
-          <!-- 推广期提示 - 仅在接单大厅显示 -->
-          <view class="promotion-tip" v-if="activeTab === 'comprehensive'">
-            <text class="promotion-text">当前为平台推广期</text>
-          </view>
-
-          <!-- 推荐骑手 - 仅在接单大厅显示 -->
-          <view class="recommend-item" v-if="activeTab === 'comprehensive'" @click="goToRiderRecommend">
-            <text class="recommend-text">推荐骑手，得订单2.5%奖金 连拿100天！</text>
-            <text class="recommend-btn">去推荐</text>
+            <!-- 推荐骑手 - 仅在接单大厅显示 -->
+            <view class="recommend-item" v-if="activeTab === 'comprehensive'" @click="goToRiderRecommend">
+              <text class="recommend-text">推荐骑手，得订单2.5%奖金 连拿100天！</text>
+              <text class="recommend-btn">去推荐</text>
+            </view>
           </view>
         </view>
       </view>
@@ -3328,20 +3328,19 @@ export default {
 }
 
 .filter-tabs {
-  height: 80rpx;
-  background-color: #F5F5F5;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-around;
-  border-bottom: 1rpx solid #eee;
 
   .tab-item {
+    background-color: #fff;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 0 20rpx;
+    flex: 1;
+    line-height: 32px;
 
     text {
       font-size: 28rpx;
@@ -3373,6 +3372,7 @@ export default {
     }
 
     .active-line {
+      display: none;
       position: absolute;
       bottom: 0;
       left: 50%;
@@ -3383,16 +3383,77 @@ export default {
     }
 
     &.active {
+      line-height: 40px;
+      background: #EFF7FF;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -2rpx 4rpx rgba(0, 0, 0, 0.05);
       text {
         color: #2492F2;
         font-weight: 500;
+        font-size: 17px;
       }
     }
   }
+
+  .tab-item-left{
+    border-left: 1rpx solid #eee;
+    border-radius: 12px 0 0 0;
+  }
+  .tab-item-right{
+    border-right: 1rpx solid #eee;
+    border-radius: 0 12px 0 0;
+  }
+}
+.comprehensive {
+  .tab-item:nth-child(2) {
+    border-radius: 0 0 0 12px;
+    box-shadow: 1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  }
+  .tab-item:nth-child(4) {
+    border-radius: 0 12px 0 0;
+  }
+}
+.assigned {
+  .tab-item:nth-child(1) {
+    border-radius: 12px 0 12px 0;
+    box-shadow: -1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  }
+  .tab-item:nth-child(3) {
+    border-radius: 0 0 0 12px;
+    box-shadow: 1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  }
+}
+.finished {
+  .tab-item:nth-child(1) {
+    border-radius: 12px 0 0 0;
+  }
+  .tab-item:nth-child(2) {
+    border-radius: 0 0 12px 0;
+    box-shadow: -1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  }
+  .tab-item:nth-child(4) {
+    border-radius: 0 12px 0 12px;
+    box-shadow: 1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  }
+}
+.completed {
+  .tab-item:nth-child(1) {
+    border-radius: 12px 0 0 0;
+  }
+  .tab-item:nth-child(3) {
+    border-radius: 0 0 12px 0;
+    box-shadow: -1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  }
 }
 
+.orderbox{
+  margin: 0 10px;
+  // background: #EFF7FF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 .order-list {
-  padding: 10rpx;
+  margin-top: -8px;
+  padding-top: 24px;
   box-sizing: border-box;
   padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
   /* iOS < 11.2 */
@@ -3400,6 +3461,9 @@ export default {
   /* iOS >= 11.2 */
   width: 100%;
   box-sizing: border-box;
+  background: #EFF7FF;
+  border-radius: 12px;
+
 
   // 推广条样式
   .promotion-bar {
@@ -3420,18 +3484,21 @@ export default {
   }
 
   .order-item {
+    border: 1rpx solid #8AC6F8;
     background-color: #fff;
-    margin: 10rpx 10rpx;
+    margin: 0px 20rpx;
+    margin-bottom: 20rpx;
     border-radius: 12rpx;
     padding: 20rpx;
-    width: calc(100% - 20rpx);
+    width: calc(100% - 40rpx);
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
 
     // 第一个订单项的特殊样式
     &:first-child {
-      margin: 0rpx 10rpx 10rpx 10rpx;
+      // margin: 0rpx 10rpx 10rpx 10rpx;
+      margin-bottom: 20rpx;
     }
 
     .order-header {
@@ -4068,13 +4135,15 @@ export default {
 
   // 标准订单列表样式（与order.vue保持一致）
   .order-item-standard {
-    margin: 30rpx 20rpx;
+    margin: 0px 20rpx;
+    margin-bottom: 16px;
     border-radius: 12rpx;
     padding: 20rpx;
     width: calc(100% - 40rpx);
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
+    border: 1rpx solid #8AC6F8;
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
     background-color: #fff;
     cursor: pointer;
