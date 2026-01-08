@@ -1039,7 +1039,7 @@ export default {
           sign: sign,
           status: requestStatus,
           page: this.page,
-          per_page: this.per_page  
+          per_page: this.per_page   
         }
 
         const res = await this.$request('task/list', params, 'POST')
