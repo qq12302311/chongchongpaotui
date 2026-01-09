@@ -46,7 +46,7 @@
 			<view class="efficiency-content">
 				<view class="city-area">
 					<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
-					<text class="city-name">{{ orderInfo.city_name }} · {{ orderInfo.district_name }}</text>
+					<text class="city-name">{{ orderInfo.city_name }} · {{ areaName() }}</text>
 				</view>
 				<text class="efficiency-label">近100单平均完单时效：</text>
 				<text class="efficiency-value">{{ displayEstimatedHours }}h</text>
@@ -1052,6 +1052,16 @@
 			}
 		},
 	methods: {
+		areaName() {
+			// 区统一门店地址
+			if(this.orderInfo.shop_address.includes('区') && this.orderInfo.shop_address.includes('市')) {
+				// 截取区名称
+				let str = this.orderInfo.shop_address.split('市')[1];
+				return str.split('区')[0] + '区';
+			}
+			return this.orderInfo.district_name
+		},
+
 		// 获取品牌对应的样式类
 		getBrandClass() {
 			const brand = this.orderInfo.brand || '';
