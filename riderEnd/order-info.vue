@@ -380,7 +380,7 @@
 			<view class="dot-icon"></view>
 			<text class="info-label">约定时效</text>
 			<text class="info-value">{{ formatNewServiceTime() }}</text>
-			<text class="deadline-value" v-if="orderInfo.deadline"> {{ orderInfo.deadline }}前完成</text>
+			<!-- <text class="deadline-value" v-if="orderInfo.deadline"> {{ orderInfo.deadline }}前完成</text> -->
 		</view>
 		
 	<!-- 上门时段 -->
@@ -1335,34 +1335,43 @@
 		formatNewServiceTime() {
 			if (!this.orderInfo) return '未知时间';
 
-			const timeLimit = this.orderInfo.time_limit || '未知';
-			const deadline = this.orderInfo.deadline;
+			// item.task_date, item.deadline, item.time_limit
+			const timeLimit = this.orderInfo.time_limit;
+			const startTime = this.orderInfo.task_date;
+			const endTime = this.orderInfo.deadline;
+			let timeInfo = '';
 
-			if (!deadline) return `${timeLimit}小时内`;
+			if (timeLimit) {
+				timeInfo += `${timeLimit}小时内`
+			}
 
-			// 根据订单时长决定提前时间：24小时单提前6小时，48小时以上提前12小时
-			const deadlineDate = new Date(deadline.replace(/-/g, '/'));
+			if (endTime) {
+				const deadlineDate = new Date(endTime)
 
-			let advanceHours = 6; // 默认提前6小时
-			if (this.orderInfo.start_date) {
-				const startDate = new Date(this.orderInfo.start_date.replace(/-/g, '/'));
-				const durationHours = (deadlineDate - startDate) / (1000 * 60 * 60); // 计算时长（小时）
+				// 根据订单时长决定提前时间：24小时单提前6小时，48小时以上提前12小时
+				let advanceHours = 6; // 默认提前6小时
+				if (startTime) {
+				const startDate = new Date(startTime);
+				const endDate = new Date(endTime);
+				const durationHours = (endDate - startDate) / (1000 * 60 * 60); // 计算时长（小时）
 
 				if (durationHours >= 48) {
 					advanceHours = 12; // 48小时以上提前12小时
 				} else if (durationHours >= 24) {
 					advanceHours = 6;  // 24小时单提前6小时
 				}
+				}
+
+				deadlineDate.setHours(deadlineDate.getHours() - advanceHours)
+				const deadlineFormatted = `${String(deadlineDate.getMonth() + 1).padStart(2, '0')}-${String(deadlineDate.getDate()).padStart(2, '0')} ${String(deadlineDate.getHours()).padStart(2, '0')}:${String(deadlineDate.getMinutes()).padStart(2, '0')}`
+				if (timeLimit) {
+				timeInfo += ` ${deadlineFormatted}前完成`
+				} else {
+				timeInfo += `${deadlineFormatted}前完成`
+				}
 			}
 
-			// 应用提前时间
-			deadlineDate.setHours(deadlineDate.getHours() - advanceHours);
-
-			// 格式化调整后的 deadline
-			const formattedDeadline = `${deadlineDate.getFullYear()}-${String(deadlineDate.getMonth() + 1).padStart(2, '0')}-${String(deadlineDate.getDate()).padStart(2, '0')} ${String(deadlineDate.getHours()).padStart(2, '0')}:${String(deadlineDate.getMinutes()).padStart(2, '0')}`;
-
-			// return `${timeLimit}小时内 ${formattedDeadline}`;
-			return `${timeLimit}小时内`;
+			return timeInfo || '未设置时效'; // 如果都没有设置，显示未设置时效
 		},
 
 			// 获取建议上门时间显示

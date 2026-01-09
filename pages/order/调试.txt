@@ -27,6 +27,7 @@ const userInfo = uni.getStorageSync('userInfo')
 					
 					
 uni.setStorageSync('userInfo',{
-					user_id: 1833,
-				})
-				uni.setStorageSync('openid','oAEkF7Meabk6GCmmdy_BA4_noPDc')					
+	user_id: 1833,
+	openid: 'oAEkF7Meabk6GCmmdy_BA4_noPDc'
+})
+uni.setStorageSync('openid','oAEkF7Meabk6GCmmdy_BA4_noPDc')					
