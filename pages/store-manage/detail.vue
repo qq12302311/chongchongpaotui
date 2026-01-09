@@ -273,7 +273,11 @@ export default {
 				uni.hideLoading()
 
 				if (res.status === 'success' && res.data) {
-					this.storeInfo = res.data
+					this.storeInfo = {
+						...res.data,
+						door_images: res.data?.door_images || [],
+						sn_mac_code: res.data?.sn_mac_code || []
+					}
 				} else {
 					uni.showToast({
 						title: res.msg || '获取门店信息失败',
