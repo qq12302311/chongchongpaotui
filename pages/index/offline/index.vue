@@ -95,6 +95,21 @@
 								<text :style="{'color': selectedService === '补加电源线' ? '#2492F2' : '#333333'}">补加电源线</text>
 								<text class="service-desc">补/接电源线</text>
 							</view>
+							<!-- 数量选择器 -->
+							<view class="quantity-selector">
+								<view class="quantity-controls">
+									<view class="quantity-btn minus" @click.stop="formData.bjdyx_num > 1 ? formData.bjdyx_num-- : formData.bjdyx_num = 1; calculatePrice()" :class="{ 'disabled': formData.bjdyx_num <= 1 }">-</view>
+									<input
+										type="number"
+										v-model="formData.bjdyx_num"
+										class="quantity-input"
+										@input="calculatePrice()"
+										@click.stop
+									/>
+									<view class="quantity-btn plus" @click.stop="formData.bjdyx_num++; calculatePrice()">+</view>
+								</view>
+								<text class="unit-text">台</text>
+							</view>
 						</view>
 
 						<!-- 收益异常选项 -->
@@ -610,6 +625,9 @@
 					distance: 0, // 选中地址后与服务点位测算的距离
 					shop_poi: '', // 新增POI字段
 					device_outside: false, // 设备是否外摆，默认为否
+
+					bjdyx_num: 1, // 补加电源线数量
+
 				},
 				showTimePicker: false,
 				currentTimeType: 'before_deadline',
@@ -1031,13 +1049,12 @@
 				} 
 				
 				else if (this.selectedService === '补加电源线') {
-					baseServiceFee = 25.8;
+					baseServiceFee = parseFloat(info.bjdyx_base_fee) || 0;
 
-					// 其他异常没有数量选择，使用基础设备数量
-					const baseDeviceCount = info.other_exception_base_device || 1;
-					if (baseDeviceCount > (info.other_exception_base_device || 1)) {
-						const extraDevices = Math.ceil((baseDeviceCount - (info.other_exception_base_device || 1)) / (info.other_exception_extre_device || 1));
-						extraDeviceFee = extraDevices * (parseFloat(info.other_exception_extre_device_fee) || 0);
+					// 如果设备数量超过基础数量，计算额外费用
+					if (this.formData.bjdyx_num > 1) {
+						const extraDevices = (this.formData.bjdyx_num - 1);
+						extraDeviceFee = extraDevices * (parseFloat(info.bjdyx_fee) || 0);
 					}
 				}
 				
