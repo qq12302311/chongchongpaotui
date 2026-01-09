@@ -87,6 +87,15 @@
 								<text class="unit-text">台</text>
 							</view>
 						</view>
+						<view class="service-option" :class="{'service-option-active': selectedService === '补加电源线'}" @click="selectService('补加电源线')">
+							<view class="option-circle" :style="{'border-color': '#2492F2', 'border-radius': '50%'}">
+								<view v-if="selectedService === '补加电源线'" class="inner-circle" :style="{'background-color': '#2492F2', 'border-radius': '50%'}"></view>
+							</view>
+							<view class="service-text">
+								<text :style="{'color': selectedService === '补加电源线' ? '#2492F2' : '#333333'}">补加电源线</text>
+								<text class="service-desc">补/接电源线</text>
+							</view>
+						</view>
 
 						<!-- 收益异常选项 -->
 						<view class="service-option" :class="{'service-option-active': selectedService === 'income_abnormal'}" @click="selectService('income_abnormal')">
@@ -1019,7 +1028,20 @@
 						const extraDevices = Math.ceil((baseDeviceCount - (info.income_exception_base_device || 1)) / (info.income_exception_extra_device || 1));
 						extraDeviceFee = extraDevices * (parseFloat(info.income_exception_extra_device_fee) || 0);
 					}
-				} else if (this.selectedService === 'other_abnormal') {
+				} 
+				
+				else if (this.selectedService === '补加电源线') {
+					baseServiceFee = 25.8;
+
+					// 其他异常没有数量选择，使用基础设备数量
+					const baseDeviceCount = info.other_exception_base_device || 1;
+					if (baseDeviceCount > (info.other_exception_base_device || 1)) {
+						const extraDevices = Math.ceil((baseDeviceCount - (info.other_exception_base_device || 1)) / (info.other_exception_extre_device || 1));
+						extraDeviceFee = extraDevices * (parseFloat(info.other_exception_extre_device_fee) || 0);
+					}
+				}
+				
+				else if (this.selectedService === 'other_abnormal') {
 					// 其他异常服务
 					baseServiceFee = parseFloat(info.other_exception_base_device_fee) || 0;
 
