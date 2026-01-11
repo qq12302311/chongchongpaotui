@@ -432,7 +432,7 @@ export default {
           console.log('页面切回，检测到未读消息，准备弹出');
           // 重置标记，允许弹出
           this.hasAutoShown = false;
-          this.autoShowMessageBox();
+          // this.autoShowMessageBox();
         }
       }, 300);
     },
