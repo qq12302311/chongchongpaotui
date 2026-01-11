@@ -53,8 +53,9 @@
 						</view>
 						<view class="record-footer">
 							<view class="action-buttons">
-								<view class="delete-btn" @click.stop="deleteRecord(record)">删除</view>
-								<view class="import-btn" @click.stop="showImportConfirm(record)">导入</view>
+								<!-- <view class="delete-btn" @click.stop="deleteRecord(record)">删除</view>
+								<view class="import-btn" @click.stop="showImportConfirm(record)">导入</view> -->
+								<view class="import-btn" @click.stop="handleEdit(record)">操作</view>
 							</view>
 						</view>
 					</view>
@@ -211,6 +212,13 @@ export default {
 		this.loadHistoryRecords()
 	},
 	methods: {
+		// 处理操作按钮点击
+		handleEdit(store) {
+			// 跳转到门店信息详情页面
+			uni.navigateTo({
+				url: `/pages/store-manage/detail?id=${store.id}`
+			})
+		},
 		// 【新增方法】根据城市和区县名称查找并更新 district_id
 		async updateDistrictIdByAddress(cityName, districtName, publishPage) {
 			try {
@@ -422,7 +430,7 @@ export default {
 		// 选择记录
 		selectRecord(record) {
 			// 将选中的记录传递给发布订单页面
-			this.showImportConfirm(record)
+			// this.showImportConfirm(record)
 		},
 
 		// 显示导入确认弹窗
