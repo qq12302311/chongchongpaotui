@@ -98,6 +98,14 @@
               mode="aspectFit">
             </image>
 
+            <image
+              v-if="order.reward && order.reward.length > 0"
+              style="position: absolute; top: 0; right: 0; z-index: 1; height: 72px;"
+              src="https://ccpt.qiniu.0871.cn/已打赏.svg"
+              mode="heightFix">
+            </image>
+
+
             <!-- 进行中订单盖章图片 - 只对recent_tasks显示 -->
             <image
               v-if="order.isAssigned && order.isRecentTask"
@@ -3965,14 +3973,12 @@ export default {
       .price-info-wrapper {
         position: absolute;
         right: 10rpx;
-        top: 0rpx;
+        top: 40rpx;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
         gap: 4rpx;
         z-index: 10;
-        min-height: 100rpx;
-        max-height: calc(100% - 80rpx);
         justify-content: flex-start;
         padding-bottom: 10rpx;
       }
