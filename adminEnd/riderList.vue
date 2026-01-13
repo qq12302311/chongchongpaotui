@@ -989,23 +989,28 @@ export default {
 	  		content: `确定要批量发送 ${this.selectedIds.length} 条短信吗？`,
 	  		success: async (res) => {
 	  			if (res.confirm) {
-					for(let i in this.selectedIds) {
-						console.log({
-								phone: this.selectedIds[i],
-								type: this.pickerSelect.value,
-							})
-						const res = await uni.request({
-							url: `https://ccpt.0871.cn/api/sms`,
-							method: 'POST',
-							data: {
-								phone: this.selectedIds[i],
-								type: this.pickerSelect.value,
-							},
-							header: {
-								'Content-Type': 'application/json'
-							}
-						})
-					}
+            for(let i in this.selectedIds) {
+              console.log({
+                  phone: this.selectedIds[i],
+                  type: this.pickerSelect.value,
+                })
+              const res = await uni.request({
+                url: `https://ccpt.0871.cn/api/sms`,
+                method: 'POST',
+                data: {
+                  phone: this.selectedIds[i],
+                  type: this.pickerSelect.value,
+                },
+                header: {
+                  'Content-Type': 'application/json'
+                }
+              })
+            }
+
+            uni.showToast({
+              title: '发送成功',
+              icon: 'success'
+            });
 					
 	  				// await this.processBatchWithdraw(this.selectedIds, 'approve');
 	  			}
