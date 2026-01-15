@@ -719,6 +719,9 @@ export default {
     // this.checkAutoCanceledTasks()
   },
   onPullDownRefresh() {
+    const savedCity = uni.getStorageSync('rider_selectedCity')
+    uni.setStorageSync('rider_selectedCity', {"name":"","fullCityName":"全部"})
+    this.currentCity = '全部'
     this.refreshList()
   },
   onReachBottom() {
