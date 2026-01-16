@@ -85,8 +85,8 @@
 					</view>
 				</view>
 			</view>
-			<view class="listbox" v-else>
-				<order :currentTab="activeTab - 1"></order>
+			<view class="listbox">
+				<order :current-tab="activeTab"></order>
 			</view>
 			
 		</view>
@@ -285,6 +285,7 @@ export default {
 	},
 	methods: {
 		setActiveTab(tab) {
+			console.log('setActiveTab', tab)
 			this.activeTab = tab
 	
 			// // 如果切换到非接单大厅的标签，加载对应状态的订单
@@ -1009,9 +1010,11 @@ export default {
 }
 .listbox{
 	margin: 0 20rpx;
-	background-color: #fff;
+	margin-bottom: 80px;
+	background-color: #EFF7FF;
 	padding: 20rpx 20rpx;
 	border-radius: 0 0 12px 12px;
+	box-shadow: 0 0 10rpx rgba(0, 0, 0, 0.1);
 }
 .filter-tabs {
   position: relative;
@@ -1019,13 +1022,14 @@ export default {
   align-items: flex-end;
   justify-content: space-around;
 // 底部10px背景白色
-  background: linear-gradient(to bottom, transparent 0%, transparent calc(100% - 10px), #ffffff calc(100% - 10px), #ffffff 100%);
+  background: linear-gradient(to bottom, transparent 0%, transparent calc(100% - 10px), #EFF7FF calc(100% - 10px), #EFF7FF 100%);
 
   .leftbg {
 	position: absolute;
     left: 0;
 	bottom: 0;
-	background-color: #fff;
+	background-color: #EFF7FF;
+
 	height: 32px;
 	width: 0px;
 	border-radius: 12px 0 12px 0;
@@ -1035,7 +1039,8 @@ export default {
 	position: absolute;
     right: 0;
 	bottom: 0;
-	background-color: #fff;
+	background-color: #EFF7FF;
+
 	height: 32px;
 	width: 0px;
 	border-radius: 0 12px 0 12px;
@@ -1092,13 +1097,18 @@ export default {
     }
 
     &.active {
+		overflow: hidden;
+		height: 40px;
       line-height: 40px;
-	  background-color: #fff;
+	background-color: #EFF7FF;
+
+
       border-radius: 12px 12px 0 0;
       box-shadow: 0 -2rpx 4rpx rgba(0, 0, 0, 0.05);
       text {
+        color: #2492F2;
         font-weight: 500;
-        font-size: 14px;
+        font-size: 12px;
       }
     }
   }

@@ -1,91 +1,94 @@
 <template>
-	<view class="container">
-		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
-			<view class="order-content">
-				<!-- 首次加载中提示 -->
-				<view v-if="loading && orderList.length === 0" class="loading-container">
-					<view class="loading-spinner"></view>
-					<text class="loading-text">加载中...</text>
-				</view>
-				<!-- 空状态 -->
-				<view v-else-if="!loading && orderList.length === 0" class="empty-state">
-					<image class="empty-image" src="https://ccpt.qiniu.0871.cn/order/notorder.png" mode="aspectFit"></image>
-					<text class="empty-text">暂无相关订单</text>
-				</view>
-				<!-- 订单列表 -->
-				<view v-else class="order-list">
-					<view v-for="(order, index) in orderList" :key="index"
-						class="order-item"
-						:class="{ 'order-item-gray': order.status === 'canceled' || ((order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded') }"
-						@click="goToOrderDetail(order)">
-					<view class="order-header">
-						<text class="order-type">{{getBrandText(order.brand)}} {{getDetailText(order.task_detail)}} x{{getItemNumber(order.task_detail)}}</text>
-						<!-- 已完成订单显示评价信息 -->
-						<view v-if="order.status === 'completed'" class="review-status" @click.stop="handleReviewClick(order)">
-							<view class="stars">
-								<text v-for="star in 5" :key="star" class="star" :class="{ 'star-filled': star <= getReviewRating(order) }">★</text>
-							</view>
-							<text class="review-text" :class="order.review ? 'reviewed' : 'not-reviewed'">
-								{{ order.review ? '已评价' : '未评价' }}
-							</text>
+	<scroll-view
+		v-show="currentTab!=0"
+      class="container"
+      scroll-y
+      @scrolltolower="onScrollToLower()"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="handleSearch()"
+      :refresher-threshold="100"
+      :refresher-background="'#EFF7FF'"
+      :bounces="false"
+    >
+		<view class="order-content">
+			<!-- 空状态  -->
+			<view v-if="!loading && orderList.length === 0" class="empty-state">
+				<image class="empty-image" src="https://ccpt.qiniu.0871.cn/order/notorder.png" mode="aspectFit"></image>
+				<text class="empty-text">暂无相关订单</text>
+			</view>
+			<!-- 订单列表 -->
+			<view v-else class="order-list">
+				<view v-for="(order, index) in orderList" :key="index"
+					class="order-item"
+					:class="{ 'order-item-gray': order.status === 'canceled' || ((order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded') }"
+					@click="goToOrderDetail(order)">
+				<view class="order-header">
+					<text class="order-type">{{getBrandText(order.brand)}} {{getDetailText(order.task_detail)}} x{{getItemNumber(order.task_detail)}}</text>
+					<!-- 已完成订单显示评价信息 -->
+					<view v-if="order.status === 'completed'" class="review-status" @click.stop="handleReviewClick(order)">
+						<view class="stars">
+							<text v-for="star in 5" :key="star" class="star" :class="{ 'star-filled': star <= getReviewRating(order) }">★</text>
 						</view>
-						<!-- 其他状态显示原有状态文本 -->
-						<text v-else class="order-status" :class="[(order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded' ? 'refunded' : order.status]">{{getStatusText(order)}}</text>
+						<text class="review-text" :class="order.review ? 'reviewed' : 'not-reviewed'">
+							{{ order.review ? '已评价' : '未评价' }}
+						</text>
 					</view>
-						<view class="order-info">
-							<view class="info-item">
-								<text class="label">门店名称：</text>
-								<text class="value">{{getStoreName(order.task_detail)}}</text>
-							</view>
-							<view class="info-item">
-								<text class="label">门店地址：</text>
-								<text class="value">{{order.province_name}}{{order.city_name}}{{order.district_name}}{{order.shop_address}}{{order.address}}</text>
-							</view>
-							<view class="info-item">
-								<text class="label">服务项目：</text>
-								<text class="value">{{formatServiceItems(order.task_detail)}}</text>
-							</view>
-							<view class="info-item" v-if="formatExtraServices(order.task_detail)">
-								<text class="label">附加服务：</text>
-								<text class="value">{{formatExtraServices(order.task_detail)}}</text>
-							</view>
-							<view class="info-item" v-if="order.reward && order.reward.length > 0">
-								<text class="label">打赏金额：</text>
-								<text class="value reward">¥{{getTotalRewardAmount(order.reward)}}</text>
-							</view>
-							<view class="info-item">
-								<text class="label">下单时间：</text>
-								<text class="value">{{order.task_date}}</text>
-							</view>
-							<view class="info-item price-item">
-								<text class="label">订单金额：</text>
-								<view class="price-wrapper" @click.stop="togglePrice(order.task_id, $event)">
-									<text class="value price" v-if="showPriceMap[order.task_id]">¥{{order.order_amount}}</text>
-									<image v-else class="arrow-icon" src="https://ccpt.qiniu.0871.cn/home/my/byj.svg" mode="aspectFit"></image>
-								</view>
-								<!-- 再来一单按钮 - 绝对定位 -->
-								<view class="reorder-btn-float" @click.stop="handleReorderFromOrder(order)">
-									<image class="reorder-emoji" src="https://ccpt.qiniu.0871.cn/zlyd.svg" mode="aspectFit"></image>
-									<text class="reorder-text">再来一单</text>
-								</view>
-							</view>
-					</view>
+					<!-- 其他状态显示原有状态文本 -->
+					<text v-else class="order-status" :class="[(order.status === 'finished' || order.status === 'completed') && order.payment_status === 'refunded' ? 'refunded' : order.status]">{{getStatusText(order)}}</text>
 				</view>
-					<!-- 底部加载更多指示器 -->
-					<view class="load-more-container">
-						<view v-if="loading && orderList.length > 0" class="loading-more">
-							<view class="loading-spinner-small"></view>
-							<text class="loading-more-text">加载中...</text>
+					<view class="order-info">
+						<view class="info-item">
+							<text class="label">门店名称：</text>
+							<text class="value">{{getStoreName(order.task_detail)}}</text>
 						</view>
-						<view v-else-if="!hasMore && orderList.length > 0" class="no-more">
-							<text class="no-more-text">没有更多订单了</text>
+						<view class="info-item">
+							<text class="label">门店地址：</text>
+							<text class="value">{{order.province_name}}{{order.city_name}}{{order.district_name}}{{order.shop_address}}{{order.address}}</text>
 						</view>
+						<view class="info-item">
+							<text class="label">服务项目：</text>
+							<text class="value">{{formatServiceItems(order.task_detail)}}</text>
+						</view>
+						<view class="info-item" v-if="formatExtraServices(order.task_detail)">
+							<text class="label">附加服务：</text>
+							<text class="value">{{formatExtraServices(order.task_detail)}}</text>
+						</view>
+						<view class="info-item" v-if="order.reward && order.reward.length > 0">
+							<text class="label">打赏金额：</text>
+							<text class="value reward">¥{{getTotalRewardAmount(order.reward)}}</text>
+						</view>
+						<view class="info-item">
+							<text class="label">下单时间：</text>
+							<text class="value">{{order.task_date}}</text>
+						</view>
+						<view class="info-item price-item">
+							<text class="label">订单金额：</text>
+							<view class="price-wrapper" @click.stop="togglePrice(order.task_id, $event)">
+								<text class="value price" v-if="showPriceMap[order.task_id]">¥{{order.order_amount}}</text>
+								<image v-else class="arrow-icon" src="https://ccpt.qiniu.0871.cn/home/my/byj.svg" mode="aspectFit"></image>
+							</view>
+							<!-- 再来一单按钮 - 绝对定位 -->
+							<view class="reorder-btn-float" @click.stop="handleReorderFromOrder(order)">
+								<image class="reorder-emoji" src="https://ccpt.qiniu.0871.cn/zlyd.svg" mode="aspectFit"></image>
+								<text class="reorder-text">再来一单</text>
+							</view>
+						</view>
+				</view>
+			</view>
+				<!-- 底部加载更多指示器 -->
+				<view class="load-more-container">
+					<view v-if="loading && orderList.length > 0" class="loading-more">
+						<view class="loading-spinner-small"></view>
+						<text class="loading-more-text">加载中...</text>
+					</view>
+					<view v-else-if="!hasMore && orderList.length > 0" class="no-more">
+						<text class="no-more-text">没有更多订单了</text>
 					</view>
 				</view>
 			</view>
 		</view>
-
-	</view>
+	</scroll-view>
 </template>
 
 <script>
@@ -107,10 +110,10 @@
 		mixins: [floatingImageMixin],
 		data() {
 			return {
+				refreshing: false,
 				navBarHeight: 0,
 				showSearchConditions: false,
 				tabs: ['新任务', '进行中', '完成待确认', '已结束'],
-				// currentTab: 0,
 				tabLineLeft: '10%',
 				tabLineTransform: 'translateX(-15px)',
 				orderList: [], // 订单列表
@@ -125,7 +128,8 @@
 
 	watch: {
 		currentTab(newVal) {
-			this.switchTab(newVal)
+			console.error('>>>', newVal)
+			this.switchTab(newVal - 1)
 		}
 	},	
 	onShow() {
@@ -140,26 +144,26 @@
 		// 页面卸载时清理可能残留的临时数据
 		uni.removeStorageSync('reorderFormData')
 	},
-	// 上拉加载更多
-	onReachBottom() {
-		console.log('触发上拉加载更多')
-		if (this.hasMore && !this.loading) {
-			console.log('开始加载更多订单，当前页码:', this.page)
-			this.loadOrderList(true) // 加载更多
-		} else if (!this.hasMore) {
-			console.log('没有更多数据了')
-			uni.showToast({
-				title: '没有更多订单了',
-				icon: 'none',
-				duration: 1500
-			})
-		}
+	
+	mounted() {
+		// 初始化标签下划线位置
 	},
-		mounted() {
-			// 初始化标签下划线位置
-			this.updateTabLinePosition(this.currentTab)
-		},
 	methods: {
+		// 上拉加载更多
+		onScrollToLower() {
+			console.error('触发上拉加载更多')
+			if (this.hasMore && !this.loading) {
+				console.log('开始加载更多订单，当前页码:', this.page)
+				this.loadOrderList(true) // 加载更多
+			} else if (!this.hasMore) {
+				console.log('没有更多数据了')
+				uni.showToast({
+					title: '没有更多订单了',
+					icon: 'none',
+					duration: 1500
+				})
+			}
+		},
 		// 【新增方法】根据城市和区县名称查找并更新 district_id
 		async updateDistrictIdByAddress(cityName, districtName) {
 			try {
@@ -233,6 +237,7 @@
 		},
 		// 处理搜索
 		handleSearch() {
+			console.error('触发搜索handleSearchhandleSearch')
 			// 重置页码和列表
 			this.page = 1
 			this.hasMore = true
@@ -245,14 +250,14 @@
 			event.stopPropagation()
 			this.$set(this.showPriceMap, taskId, !this.showPriceMap[taskId])
 		},
-			switchTab(index) {
-				this.currentTab = index
-				this.updateTabLinePosition(index)
-				this.page = 1
-				this.hasMore = true
-				this.orderList = []
-				this.loadOrderList(false) // 切换标签时重新加载，不是加载更多
-			},
+		switchTab(index) {
+			console.error('切换标签到:', index)
+			this.updateTabLinePosition(index)
+			this.page = 1
+			this.hasMore = true
+			this.orderList = []
+			this.loadOrderList(false) // 切换标签时重新加载，不是加载更多
+		},
 			updateTabLinePosition(index) {
 				// 计算每个标签的宽度百分比
 				const tabWidth = 100 / this.tabs.length
@@ -260,120 +265,115 @@
 				const left = (index * tabWidth) + (tabWidth / 2)
 				this.tabLineLeft = `${left}%`
 			},
-		// 加载订单列表
-		async loadOrderList(isLoadMore = false) {
-			// 如果是加载更多但没有更多数据，直接返回
-			if (isLoadMore && !this.hasMore) {
-				console.log('没有更多数据，停止加载')
-				return
-			}
-			
-			// 如果正在加载中，避免重复请求
-			if (this.loading) {
-				console.log('正在加载中，跳过本次请求')
-				return
-			}
-
-			this.loading = true // 开始加载，显示加载中状态
-			console.log('开始加载订单列表，isLoadMore:', isLoadMore, '当前页码:', this.page)
-			try {
-				const statusMap = {
-					0: 'waiting', // 新订单
-					1: ['assigned'], // 进行中（需要查询多个状态）
-					2: ['finished'], // 完成待确认
-					3: ['completed', 'canceled'] // 已结束（合并已完成和已取消）
+			// 加载订单列表
+			async loadOrderList(isLoadMore = false) {
+				// 如果是加载更多但没有更多数据，直接返回
+				if (isLoadMore && !this.hasMore) {
+					console.log('没有更多数据，停止加载')
+					return
 				}
-
-				// 获取用户信息
-				const userInfo = uni.getStorageSync('userInfo')
-				const openid = uni.getStorageSync('openid')
-
-				if (!userInfo || !userInfo.user_id || !openid) {
-					uni.showToast({
-						title: '请先登录',
-						icon: 'none'
-					})
+				
+				// 如果正在加载中，避免重复请求
+				if (this.loading) {
+					console.log('正在加载中，跳过本次请求')
 					return
 				}
 
-				// 计算sign
-				const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
-				const sign = md5(signStr)
+				this.loading = true // 开始加载，显示加载中状态
+				console.log('开始加载订单列表，isLoadMore:', isLoadMore, '当前页码:', this.page)
+				try {
+					const statusMap = {
+						0: 'waiting', // 新订单
+						1: ['assigned'], // 进行中（需要查询多个状态）
+						2: ['finished'], // 完成待确认
+						3: ['completed', 'canceled'] // 已结束（合并已完成和已取消）
+					}
 
-				let list = []
-				
-				// 获取状态值（可能是字符串或数组）
-				const statusValue = statusMap[this.currentTab]
-				// 构建请求参数，status 直接传递（字符串或数组）
-				const params = {
-					status: statusValue,
-					user_id: userInfo.user_id,
-					sign: sign,
-					per_page: 5,
-					page: this.page
-				}
+					// 获取用户信息
+					const userInfo = uni.getStorageSync('userInfo')
+					const openid = uni.getStorageSync('openid')
 
-				// 如果有搜索关键字，添加到参数中
-				if (this.searchKeyword && this.searchKeyword.trim()) {
-					params.search_term = this.searchKeyword.trim()
-				}
+					if (!userInfo || !userInfo.user_id || !openid) {
+						uni.showToast({
+							title: '请先登录',
+							icon: 'none'
+						})
+						return
+					}
 
-				console.log('请求订单列表参数:', params)
-				console.log('当前标签:', this.tabs[this.currentTab], 'status值:', statusValue)
+					// 计算sign
+					const signStr = `user_id=${userInfo.user_id}&openid=${openid}`
+					const sign = md5(signStr)
 
-				const res = await this.$request('task/list', params, 'POST')
+					let list = []
+					
+					// 获取状态值（可能是字符串或数组）
+					const statusValue = statusMap[this.currentTab]
+					// 构建请求参数，status 直接传递（字符串或数组）
+					const params = {
+						status: statusValue,
+						user_id: userInfo.user_id,
+						sign: sign,
+						per_page: 5,
+						page: this.page
+					}
 
-				console.log('订单列表返回结果:', res)
-				console.log('返回的订单数量:', res.data ? res.data.length : 0)
-				
-				if (res.code === 200) {
-					list = res.data || []
-				} else {
-					console.error('加载订单失败:', res.msg || '未知错误')
+					// 如果有搜索关键字，添加到参数中
+					if (this.searchKeyword && this.searchKeyword.trim()) {
+						params.search_term = this.searchKeyword.trim()
+					}
+
+
+					const res = await this.$request('task/list', params, 'POST')
+
+					
+					if (res.code === 200) {
+						list = res.data || []
+					} else {
+						console.error('加载订单失败:', res.msg || '未知错误')
+						uni.showToast({
+							title: res.msg || '加载失败',
+							icon: 'none'
+						})
+						this.loading = false
+						return
+					}
+
+					if (isLoadMore) {
+						// 加载更多时，追加到现有列表
+						this.orderList = [...this.orderList, ...list]
+						console.log('追加订单后总数:', this.orderList.length)
+					} else {
+						// 首次加载或刷新时，替换列表
+						this.orderList = list
+						console.log('刷新订单列表，总数:', this.orderList.length)
+					}
+					
+					this.hasMore = list.length >= 5
+					console.log('是否还有更多数据:', this.hasMore, '本次返回数量:', list.length)
+					
+					// 如果还有更多数据，页码+1，为下次加载做准备
+					if (this.hasMore) {
+						this.page++
+						console.log('页码+1，下次将加载第', this.page, '页')
+					}
+				} catch (error) {
+					console.error('加载订单列表失败:', error)
 					uni.showToast({
-						title: res.msg || '加载失败',
+						title: '加载失败，请重试',
 						icon: 'none'
 					})
+				} finally {
 					this.loading = false
-					return
+					if(!isLoadMore){
+						console.error('数据加载完毕，停止下拉刷新')
+						this.refreshing = true;
+						setTimeout(() => {
+							this.refreshing = false;
+						}, 1000);
+					}
 				}
-
-				// 更新订单列表
-				if (list.length > 0) {
-					console.log('订单详情示例:', list[0])
-				}
-				
-				console.log('当前标签:', this.tabs[this.currentTab], '订单列表:', list)
-				if (isLoadMore) {
-					// 加载更多时，追加到现有列表
-					this.orderList = [...this.orderList, ...list]
-					console.log('追加订单后总数:', this.orderList.length)
-				} else {
-					// 首次加载或刷新时，替换列表
-					this.orderList = list
-					console.log('刷新订单列表，总数:', this.orderList.length)
-				}
-				
-				// 判断是否还有更多数据
-				// 如果返回的数据量小于每页数量，说明没有更多数据了
-				this.hasMore = list.length >= 5
-				console.log('是否还有更多数据:', this.hasMore, '本次返回数量:', list.length)
-				
-				// 如果还有更多数据，页码+1，为下次加载做准备
-				if (this.hasMore) {
-					this.page++
-					console.log('页码+1，下次将加载第', this.page, '页')
-				}
-			} catch (error) {
-				console.error('加载订单列表失败:', error)
-				uni.showToast({
-					title: '加载失败，请重试',
-					icon: 'none'
-				})
-			} finally {
-				this.loading = false
-			}
-		},
+			},
 			// 处理接单
 			async handleAccept(order) {
 				try {
@@ -903,8 +903,8 @@
 
 <style lang="scss" scoped>
 	.container {
-		min-height: 100vh;
-		background-color: #f5f5f5;
+		height: calc(100vh - 240px);
+		background-color: #EFF7FF;
 		font-family: "HarmonyOS Sans SC", sans-serif;
 		padding-bottom: calc(100rpx + constant(safe-area-inset-bottom));
 		/* iOS < 11.2 */
@@ -913,12 +913,13 @@
 		box-sizing: border-box;
 		overflow-x: hidden;
 		width: 100%;
+		margin-bottom: 120px;
 	}
 
 	.content {
 		padding: 0;
 		position: relative;
-		background-color: #f5f5f5;
+		background-color: #EFF7FF;
 		overflow-x: hidden;
 		width: 100%;
 	}
@@ -991,7 +992,7 @@
 
 				.condition-option {
 					padding: 8rpx 20rpx;
-					background-color: #f5f5f5;
+					background-color: #EFF7FF;
 					border-radius: 30rpx;
 					margin-right: 15rpx;
 					margin-bottom: 10rpx;
@@ -1022,7 +1023,7 @@
 			}
 
 			.reset-btn {
-				background-color: #f5f5f5;
+				background-color: #EFF7FF;
 				color: #666666;
 			}
 
@@ -1116,7 +1117,6 @@
 	}
 
 	.order-content {
-		padding: 30rpx 20rpx;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -1210,7 +1210,7 @@
 
 	.order-list {
 		padding: 0 10rpx;
-		background-color: #f5f5f5;
+		background-color: #EFF7FF;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -1476,7 +1476,7 @@
 
 	.order-page {
 		min-height: 100vh;
-		background-color: #F5F5F5;
+		background-color: #EFF7FF;
 		padding-bottom: calc(100rpx + constant(safe-area-inset-bottom));
 		/* iOS < 11.2 */
 		padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
