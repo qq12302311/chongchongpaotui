@@ -37,12 +37,8 @@
         </view>
       </view>
     </view>
-
-    <!-- 列表内容区域的占位元素 -->
-    <view style="height: 360rpx; width: 100%; flex-shrink: 0;"></view>
-
     <!-- 批量操作栏 -->
-    <view class="batch-actions">
+    <view class="batch-actions" :style="{ top: (navBarHeight + 128) + 'px' }">
       <view class="batch-left">
         <checkbox-group @change="toggleSelectAll">
           <checkbox :checked="isAllSelected" color="#2492F2" />
@@ -63,7 +59,12 @@
         <view class="batch-btn approve" @click="batchApprove">发送短信</view>
       </view>
     </view>
-    <view style="height: 56px;"></view>
+    <view style="height: 16px;"></view>
+
+    <!-- 列表内容区域的占位元素 -->
+    <view style="height: 360rpx; width: 100%; flex-shrink: 0;"></view>
+
+    
 
     <!-- 用户列表 -->
     <scroll-view
@@ -581,7 +582,8 @@ export default {
 .batch-actions {
 	box-sizing: border-box;
 	position: fixed;
-	top: 268px;
+	top: 240px;
+  z-index: 999;
 	left: 0;
 	width: 100%;
 	background-color: #fff;

@@ -2709,7 +2709,7 @@ export default {
 
 // 骑手列表
 .rider-list {
-  height: calc(100vh - 90px - 360rpx - 34px); /* 减去导航栏高度、搜索区域高度和底部安全区域高度 */
+  height: calc(100vh - 90px - 360rpx - 34px - 46px); /* 减去导航栏高度、搜索区域高度和底部安全区域高度 */
   padding: 0 20rpx;
   width: 100%;
   box-sizing: border-box;
