@@ -53,9 +53,9 @@
 						</view>
 						<view class="record-footer">
 							<view class="action-buttons">
-								<!-- <view class="delete-btn" @click.stop="deleteRecord(record)">删除</view>
-								<view class="import-btn" @click.stop="showImportConfirm(record)">导入</view> -->
-								<view class="import-btn" @click.stop="handleEdit(record)">操作</view>
+								<view class="delete-btn" @click.stop="deleteRecord(record)">删除门店</view>
+								<view class="import-btn" @click.stop="handleEdit(record)">修改信息</view>
+								<view class="import-btn" style="background-color: #4CAF50;" @click.stop="showImportConfirm(record)">导入下单</view>
 							</view>
 						</view>
 					</view>
