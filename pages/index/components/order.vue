@@ -110,6 +110,7 @@
 		mixins: [floatingImageMixin],
 		data() {
 			return {
+				statusValue: 0,
 				refreshing: false,
 				navBarHeight: 0,
 				showSearchConditions: false,
@@ -129,6 +130,7 @@
 	watch: {
 		currentTab(newVal) {
 			console.error('>>>', newVal)
+			this.statusValue = (newVal - 1)
 			this.switchTab(newVal - 1)
 		}
 	},	
@@ -308,10 +310,9 @@
 					let list = []
 					
 					// 获取状态值（可能是字符串或数组）
-					const statusValue = statusMap[this.currentTab]
 					// 构建请求参数，status 直接传递（字符串或数组）
 					const params = {
-						status: statusValue,
+						status: statusMap[this.statusValue],
 						user_id: userInfo.user_id,
 						sign: sign,
 						per_page: 5,
