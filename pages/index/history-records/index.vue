@@ -18,7 +18,7 @@
 					<text class="empty-text">暂无历史门店记录</text>
 				</view>
 				<view v-else class="record-items">
-					<view v-for="(record, index) in filteredRecords" :key="index" class="record-item" @click="selectRecord(record)">
+					<view v-for="(record, index) in filteredRecords" :key="index" class="record-item" @click="handleEdit(record)">
 						<view class="record-header">
 							<text class="store-name">{{ record.store_name || '未命名门店' }}</text>
 							<text class="record-time">{{ formatTime(record.created_at) }}</text>
