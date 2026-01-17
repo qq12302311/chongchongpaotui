@@ -18,7 +18,7 @@
 					<text class="empty-text">暂无历史门店记录</text>
 				</view>
 				<view v-else class="record-items">
-					<view v-for="(record, index) in filteredRecords" :key="index" class="record-item" @click="handleEdit(record)">
+					<view v-for="(record, index) in filteredRecords" :key="index" class="record-item" @click="selectRecord(record)">
 						<view class="record-header">
 							<text class="store-name">{{ record.store_name || '未命名门店' }}</text>
 							<text class="record-time">{{ formatTime(record.created_at) }}</text>
@@ -430,7 +430,7 @@ export default {
 		// 选择记录
 		selectRecord(record) {
 			// 将选中的记录传递给发布订单页面
-			// this.showImportConfirm(record)
+			this.showImportConfirm(record)
 		},
 
 		// 显示导入确认弹窗
