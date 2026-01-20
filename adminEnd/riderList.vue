@@ -77,6 +77,40 @@
             </view>
           </view>
 
+          <view class="filter-section">
+            <view class="filter-row">
+              <view class="filter-title">
+                <view class="title-icon sort-icon"></view>
+                <text>接单情况</text>
+              </view>
+              <view class="filter-items">
+                <view class="sort-options">
+                  <view
+                    class="sort-item"
+                    :class="{ active: currentJdStatus === '实名未接单' }"
+                    @click="toggleJdStatus('实名未接单')"
+                  >
+                    实名未接单
+                  </view>
+                  <view
+                    class="sort-item"
+                    :class="{ active: currentJdStatus === '近3月未接单' }"
+                    @click="toggleJdStatus('近3月未接单')"
+                  >
+                    近3月未接单
+                  </view>
+                  <view
+                    class="sort-item"
+                    :class="{ active: currentJdStatus === '近1月未接单' }"
+                    @click="toggleJdStatus('近1月未接单')"
+                  >
+                    近1月未接单
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+
           <!-- 服务区域筛选 -->
           <view class="filter-section">
             <view class="filter-row">
@@ -421,6 +455,12 @@
                 <view v-else class="service-brands-tags">
                   <text v-for="(brand, bIndex) in rider.service_brands" :key="bIndex" class="brand-tag">{{ formatBrandName(brand) }}</text>
                 </view>
+              </view>
+            </view>
+            <view class="detail-item service-brands-item" style="width: 100%;">
+              <text class="detail-label">接单状态:</text>
+              <view class="service-brands-wrapper">
+                <text class="detail-value cert-none">{{ rider.jd_status }}</text>
               </view>
             </view>
             <!-- 拒绝理由显示 -->
@@ -845,6 +885,7 @@ export default {
 			value: ''
 		},
 		
+      currentJdStatus: '',
       searchKeyword: '',
       currentStatus: 'all',
       statusOptions: [
@@ -1079,6 +1120,10 @@ export default {
           params.sort_order = this.currentSortOrder;
         }
 
+        if (this.currentJdStatus) {
+          params.jd_status = this.currentJdStatus;
+        }
+
         // 发送请求
         const res = await this.$request('service/member/list', params, 'POST');
 
@@ -1202,6 +1247,14 @@ export default {
         this.currentSortOrder = 'desc';
       }
 
+      this.page = 1;
+      this.riderList = [];
+      this.hasMore = true;
+      this.getRiderList();
+    },
+
+    toggleJdStatus(status) {
+      this.currentJdStatus = status;
       this.page = 1;
       this.riderList = [];
       this.hasMore = true;
