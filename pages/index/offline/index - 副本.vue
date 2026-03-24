@@ -17,16 +17,16 @@
 			<view class="form-item">
 			<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }" style="background: rgba(247, 247, 247, 1);">
 				<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
-					<image src="https://ccpt.qiniu.0871.cn/publish/meituan.png" mode="aspectFit"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/publish/meituan.png" mode="aspectFit"></image>
 				</view>
 				<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
-					<image src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" mode="aspectFit"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/publish/guaishou.png" mode="aspectFit"></image>
 				</view>
 				<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-					<image src="https://ccpt.qiniu.0871.cn/zhumang.png" mode="aspectFit"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/zhumang.png" mode="aspectFit"></image>
 				</view>
 				<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
-					<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/publish/xiaodian.png" mode="aspectFit"></image>
 				</view>
 			</view>
 			<view class="form-label section-title main-service-title">
@@ -224,7 +224,7 @@
 								</view>
 								<view class="time-table-cell time-value" @click="showAppointmentTimePicker">
 									<text>{{ beforeDeadlineTextShow || '请选择时间范围' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 								</view>
 							</view>
 
@@ -241,7 +241,7 @@
 								</view>
 								<view class="time-table-cell time-value" @click="showTimeIntervalPicker">
 									<text>{{ timePickerTextShow || '请选择指定时间' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 								</view>
 							</view> -->
 						</view>
@@ -271,7 +271,7 @@
 							<view class="time-table-cell time-value">
 								<view class="time-picker-wrapper" @click="showTimeRangePicker">
 									<text class="time-display">{{ getTimeRangeDisplay() }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-arrow"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-arrow"></image>
 								</view>
 							</view>
 						</view>
@@ -316,7 +316,7 @@
 							</view>
 							<view class="time-table-cell time-value" @click="showCouponPicker">
 								<text>{{ formData.coupon || '请选择优惠券' }}</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 							</view>
 						</view>
 					</view>
@@ -431,7 +431,7 @@
 						</view>
 					</view>
 					<view v-if="priceDetails.couponAmount > 0 && priceDetails.total <= 1" class="price-tip">
-						<text class="tip-icon">💡</text>
+						<text class="tip-icon">��</text>
 						<text class="tip-text">支付金额低于1元时，实际需支付 <text style='color:#2492F2;font-weight:bold;'>1元</text></text>
 					</view>
 					<!-- 底部安全区域 -->
@@ -685,7 +685,7 @@
 		},
 		// 页面显示时检查登录状态
 		onShow() {
-			console.log('📱 离线异常页面-onShow 触发');
+			console.log('�� 离线异常页面-onShow 触发');
 
 			// 更新用户信息
 			this.currentUserInfo = uni.getStorageSync('userInfo') || {};
@@ -752,7 +752,7 @@
 			initAreaData() {
 				this.selectedCity = uni.getStorageSync('selectedCity') || '';
 				this.selectedDistrictId = uni.getStorageSync('selectedDistrictId') || '';
-				console.log('🏙️ 离线异常页面-初始化区域数据:', {
+				console.log('��️ 离线异常页面-初始化区域数据:', {
 					selectedCity: this.selectedCity,
 					selectedDistrictId: this.selectedDistrictId,
 					hasSelectedArea: this.hasSelectedArea
@@ -761,7 +761,7 @@
 
 			// 显示区域选择模态框（透明蒙版点击时）
 			showAreaSelectionModal() {
-				console.log('🎭 离线异常页面-透明蒙版被点击，显示区域选择提示');
+				console.log('�� 离线异常页面-透明蒙版被点击，显示区域选择提示');
 
 				uni.showModal({
 					title: '选择服务区域',
@@ -773,7 +773,7 @@
 						if (res.confirm) {
 							// 监听区域选择完成事件
 							uni.$on('areaSelected', (data) => {
-								console.log('🎯 离线异常页面-监听到区域选择完成，重新获取服务商信息', data);
+								console.log('�� 离线异常页面-监听到区域选择完成，重新获取服务商信息', data);
 								// 更新 Vue 响应式数据
 								this.selectedCity = data.city;
 								this.selectedDistrictId = data.districtId;
@@ -808,7 +808,7 @@
 				const selectedCity = uni.getStorageSync('selectedCity');
 				const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
 
-				console.log('🏙️ 离线异常页面-初始区域检查:', { selectedCity, selectedDistrictId });
+				console.log('��️ 离线异常页面-初始区域检查:', { selectedCity, selectedDistrictId });
 
 				// 如果没有选择城市或区域，立即弹出区域选择页面
 				if (!selectedCity || !selectedDistrictId) {
@@ -845,7 +845,7 @@
 				const selectedCity = uni.getStorageSync('selectedCity');
 				const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
 
-				console.log('🏙️ 离线异常页面-检查区域选择:', { selectedCity, selectedDistrictId });
+				console.log('��️ 离线异常页面-检查区域选择:', { selectedCity, selectedDistrictId });
 
 				// 如果没有选择城市或区域，弹出区域选择页面
 				if (!selectedCity || !selectedDistrictId) {
@@ -904,9 +904,9 @@
 						return;
 					}
 
-					console.log('🔄 正在获取服务商信息，区域ID:', selectedDistrictId);
+					console.log('�� 正在获取服务商信息，区域ID:', selectedDistrictId);
 					const res = await this.$request('task/provider/info', { district_id: selectedDistrictId }, 'POST');
-					console.log('📦 服务商信息返回:', res);
+					console.log('�� 服务商信息返回:', res);
 
 					if (res.code === 200) {
 						this.providerInfo = res.data;
@@ -923,7 +923,7 @@
 						this.updateAvailableBrands();
 
 						// 重新计算价格
-						console.log('🔢 准备重新计算价格...');
+						console.log('�� 准备重新计算价格...');
 						this.calculatePrice();
 
 						console.log('✅ 离线异常页面-服务商信息获取成功，价格已重新计算');
@@ -942,7 +942,7 @@
 			},
 			// 添加价格计算方法
 			calculatePrice() {
-				console.log('🔢 开始计算价格:', {
+				console.log('�� 开始计算价格:', {
 					selectedService: this.selectedService,
 					selectedBrand: this.selectedBrand,
 					offlineQuantity: this.formData.offlineQuantity
@@ -1462,7 +1462,7 @@
 			// 开始上传
 			uploadFile(tempFilePaths) {
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: tempFilePaths[0],
 					name: 'image', // 必须填写，后台用来接收文件
 					formData: {
@@ -1510,7 +1510,7 @@
 					fileName: url,
 				}
 				uni.request({
-					url: 'https://tixian.0871.cn/upload/qiniuDelete',
+					url: 'https://tixian.cc111.cn/upload/qiniuDelete',
 					data: data,
 					header: {
 						'Accept': 'application/json',

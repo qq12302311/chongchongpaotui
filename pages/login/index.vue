@@ -8,14 +8,14 @@
 			<!-- 登录区域 -->
 			<view class="login-container">
 				<!-- Logo -->
-				<image class="logo" src="https://ccpt.qiniu.0871.cn/publish/banner6.png" mode="aspectFit"></image>
+				<image class="logo" src="https://ccpt.qiniu.cc111.cn/publish/banner6.png" mode="aspectFit"></image>
 
 				<!-- 标题 -->
 				<view class="title">欢迎使用充充跑腿</view>
 
 				<!-- 登录按钮 -->
 				<button class="login-btn" open-type="getPhoneNumber" @getphonenumber="handleGetPhoneNumber">
-					<image class="wechat-icon" src="https://ccpt.qiniu.0871.cn/login/login.png" mode="aspectFit"></image>
+					<image class="wechat-icon" src="https://ccpt.qiniu.cc111.cn/login/login.png" mode="aspectFit"></image>
 					<text>手机号快捷登录</text>
 				</button>
 
@@ -256,10 +256,22 @@
 					} else {
 						// 隐藏加载提示
 						uni.hideLoading()
-						uni.showToast({
-							title: res.msg || '登录失败',
-							icon: 'none'
-						})
+						const errMsg = res.msg || '登录失败'
+						if (errMsg.includes('验证') || errMsg.includes('verify')) {
+							uni.showModal({
+								title: '获取手机号失败',
+								content: '您的微信绑定手机号需要先完成验证。\n请前往微信「设置」→「账号与安全」→「手机号」完成验证后重试。',
+								showCancel: false,
+								confirmText: '我知道了'
+							})
+						} else {
+							uni.showModal({
+								title: '登录失败',
+								content: errMsg,
+								showCancel: false,
+								confirmText: '确定'
+							})
+						}
 					}
 				} catch (err) {
 					// 隐藏加载提示

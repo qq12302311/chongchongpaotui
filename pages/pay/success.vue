@@ -6,7 +6,7 @@
 		<!-- 支付成功提示 -->
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
 			<view class="success-tip">
-				<image class="success-icon" src="https://ccpt.qiniu.0871.cn/publish/pay_success.png" mode="aspectFit">
+				<image class="success-icon" src="https://ccpt.qiniu.cc111.cn/publish/pay_success.png" mode="aspectFit">
 				</image>
 				<text class="tip-text">支付成功</text>
 			</view>
@@ -25,7 +25,7 @@
 						<text class="status-text">待接单</text>
 					</view>
 					<view class="right" @click="shareOrder">
-						<image src="https://ccpt.qiniu.0871.cn/publish/fenxiang.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/fenxiang.png" mode="aspectFit"></image>
 						<text>分享订单</text>
 					</view>
 				</view>
@@ -35,19 +35,19 @@
 				<!-- 操作按钮组 -->
 				<view class="action-group">
 					<view class="action-item" @click="urgeOrder">
-						<image src="https://ccpt.qiniu.0871.cn/publish/cuidan.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/cuidan.png" mode="aspectFit"></image>
 						<text>催单</text>
 					</view>
 					<view class="action-item" @click="editOrder">
-						<image src="https://ccpt.qiniu.0871.cn/publish/gaidanxinxi.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/gaidanxinxi.png" mode="aspectFit"></image>
 						<text>改单信息</text>
 					</view>
 					<view class="action-item" @click="orderAgain">
-						<image src="https://ccpt.qiniu.0871.cn/publish/zailaiyidan.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/zailaiyidan.png" mode="aspectFit"></image>
 						<text>再来一单</text>
 					</view>
 					<view class="action-item" @click="cancelOrder">
-						<image src="https://ccpt.qiniu.0871.cn/publish/quxiaodingdan.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/quxiaodingdan.png" mode="aspectFit"></image>
 						<text>取消订单</text>
 					</view>
 				</view>
@@ -62,7 +62,7 @@
 				<!-- 地址信息 -->
 				<view class="address-info">
 					<view class="location-icon">
-						<image src="https://ccpt.qiniu.0871.cn/publish/daohang.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/daohang.png" mode="aspectFit"></image>
 					</view>
 					<view class="address-detail">
 						<view class="area">{{orderInfo.province_name}} {{orderInfo.city_name}} {{orderInfo.district_name}}</view>
@@ -71,20 +71,20 @@
 					</view>
 					<view class="check-status" @click="checkOrderStatus">
 						查看订单状态
-						<image src="https://ccpt.qiniu.0871.cn/publish/you.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/you.png" mode="aspectFit"></image>
 					</view>
 				</view>
 
 				<!-- 订单信息 -->
 				<view class="order-info">
 					<view class="order-main">
-						<image class="order-icon" src="https://ccpt.qiniu.0871.cn/publish/banner6.png" mode="aspectFit">
+						<image class="order-icon" src="https://ccpt.qiniu.cc111.cn/publish/banner6.png" mode="aspectFit">
 						</image>
 						<view class="order-content">
 							<view class="order-title">充充跑腿【{{orderInfo.task_name || '离线&异常'}}】订单</view>
 							<view class="order-number">订单编号：{{orderInfo.task_no || ''}}</view>
 						</view>
-						<image class="arrow-icon" src="https://ccpt.qiniu.0871.cn/publish/you.png" mode="aspectFit">
+						<image class="arrow-icon" src="https://ccpt.qiniu.cc111.cn/publish/you.png" mode="aspectFit">
 						</image>
 					</view>
 					<!-- <view class="divider"></view>
@@ -115,7 +115,7 @@
 						id: 1,
 						latitude: 20.044412,
 						longitude: 110.198667,
-						iconPath: 'https://ccpt.qiniu.0871.cn/order/dingwei2.png',
+						iconPath: 'https://ccpt.qiniu.cc111.cn/order/dingwei2.png',
 						width: 32,
 						height: 32,
 						anchor: {x: 0.5, y: 1},

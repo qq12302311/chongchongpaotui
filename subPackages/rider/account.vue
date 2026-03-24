@@ -256,8 +256,8 @@ export default {
                 id: item.id,
                 type: 'withdraw',
                 icon: item.payment_method === 'alipay'
-                  ? 'https://ccpt.qiniu.0871.cn/rider/alipay.svg'
-                  : 'https://ccpt.qiniu.0871.cn/rider/bank.svg',
+                  ? 'https://ccpt.qiniu.cc111.cn/rider/alipay.svg'
+                  : 'https://ccpt.qiniu.cc111.cn/rider/bank.svg',
                 title: `提现-到${item.payment_method === 'alipay' ? '支付宝' : '银行卡'}`,
                 time: this.formatDateTime(item.created_at),
                 amount: `-${item.amount}`,
@@ -372,7 +372,7 @@ export default {
 }
 
 .account-info-card {
-  background-image: url('https://ccpt.qiniu.0871.cn/rider/my/account_back.svg');
+  background-image: url('https://ccpt.qiniu.cc111.cn/rider/my/account_back.svg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

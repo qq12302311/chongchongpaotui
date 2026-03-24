@@ -8,7 +8,7 @@
 			<!-- 搜索框 -->
 			<view class="search-section">
 				<view class="search-box">
-					<text class="search-icon">🔍</text>
+					<text class="search-icon">��</text>
 					<input 
 						type="text" 
 						v-model="searchKeyword" 
@@ -53,7 +53,7 @@
 
 				<!-- 空状态 -->
 				<view v-if="filteredChatList.length === 0" class="empty-state">
-					<text class="empty-icon">💬</text>
+					<text class="empty-icon">��</text>
 					<text class="empty-text">{{ searchKeyword ? '没有找到相关聊天记录' : '暂无聊天记录' }}</text>
 				</view>
 			</view>
@@ -79,7 +79,7 @@
 				navBarHeight: 88,
 				searchKeyword: '',
 				chatList: [],
-				defaultAvatar: 'https://ccpt.qiniu.0871.cn/duihua2-active.svg'
+				defaultAvatar: 'https://ccpt.qiniu.cc111.cn/duihua2-active.svg'
 			}
 		},
 		computed: {
@@ -127,7 +127,7 @@
 					};
 
 					const res = await uni.request({
-						url: 'https://ccpt.0871.cn/api/service/member/info',
+						url: 'https://ccpt.cc111.cn/api/service/member/info',
 						method: 'POST',
 						data: params,
 						header: {

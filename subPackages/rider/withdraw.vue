@@ -15,7 +15,7 @@
           <text v-if="userInfo.account_type === 'provider'" class="user-type-badge">服务商</text>
         </view>
         <view class="arrow-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit"></image>
         </view>
       </view>
     </view>

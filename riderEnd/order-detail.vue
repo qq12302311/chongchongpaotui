@@ -91,7 +91,7 @@
 									<text class="region-text">分区运营</text>
 								</view>
 								<view class="copy-btn" @click="copyRegionWechat">
-									<text class="copy-icon">📋</text>
+									<text class="copy-icon">��</text>
 								</view> -->
 								<!-- <view class="order-total">
 									<text class="price">{{ getDisplayAmount(orderInfo) }}</text>
@@ -194,7 +194,7 @@
 							备注：{{ orderInfo.task_detail && orderInfo.task_detail.description || '无' }}</view>
 						<!-- 新版导航按钮，绝对定位到右上角 -->
 						<button class="nav-btn-mini" @click="openShopLocation" type="default">
-							<image src="https://ccpt.qiniu.0871.cn/rider/dingwei4.svg" class="nav-icon" mode="aspectFit" />
+							<image src="https://ccpt.qiniu.cc111.cn/rider/dingwei4.svg" class="nav-icon" mode="aspectFit" />
 							<text class="nav-text">点击导航</text>
 						</button>
 					</view>
@@ -263,7 +263,7 @@
 		<!-- 底部按钮 -->
 		<view class="bottom-bar">
 			<view class="home-btn" @click="goToHome">
-				<image src="https://ccpt.qiniu.0871.cn/rider/home.png" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/rider/home.png" mode="aspectFit"></image>
 				<text>接单大厅</text>
 			</view>
 			<template v-if="!isTransferred">
@@ -284,7 +284,7 @@
 		<view class="bubao-modal" v-if="showBubaoModal">
 			<view class="modal-mask"></view>
 			<view class="modal-content">
-				<image class="bubao-image" src="https://ccpt.qiniu.0871.cn/pztx11.png" mode="widthFix"></image>
+				<image class="bubao-image" src="https://ccpt.qiniu.cc111.cn/pztx11.png" mode="widthFix"></image>
 				<view class="countdown-text">{{ bubaoCountdownDisplay }}</view>
 			</view>
 		</view>
@@ -1017,7 +1017,7 @@
 						title: `${order.task_detail?.task_name || '充充跑腿'} | ${getTransferDisplayAmount(order)} | ${formatAddress(order)}`,
 						desc: `【订单转派】距离: ${order.distance || 0}km | 转单奖励: ${getTransferReward(order)}`,
 						path: `/riderEnd/index?task_referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
-						imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+						imageUrl: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png'
 					};
 
 					console.log('分享数据:', shareData);

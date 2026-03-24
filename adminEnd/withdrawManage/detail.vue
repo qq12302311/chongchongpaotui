@@ -357,7 +357,12 @@ export default {
         if (typeof dateTime === 'number') {
           return new Date(dateTime * 1000).toLocaleString('zh-CN');
         }
-        const date = new Date(dateTime);
+        // 将 "2026-03-20 12:30:55" 转为 "2026-03-20T12:30:55+08:00"
+        // 避免 iOS/Safari 将无时区字符串误解析为 UTC 导致多8小时
+        const normalized = typeof dateTime === 'string'
+          ? dateTime.replace(' ', 'T') + '+08:00'
+          : dateTime;
+        const date = new Date(normalized);
         if (isNaN(date.getTime())) {
           return dateTime;
         }

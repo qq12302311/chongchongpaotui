@@ -7,7 +7,7 @@
     <!-- 标题区域 -->
     <view class="header">
       <view class="logo-container">
-        <image class="logo" src="https://ccpt.qiniu.0871.cn/rider/login2.png" mode="aspectFit"></image>
+        <image class="logo" src="https://ccpt.qiniu.cc111.cn/rider/login2.png" mode="aspectFit"></image>
       </view>
       <text class="title">充充跑腿</text>
       <text class="subtitle">为充电宝运维跑腿</text>
@@ -36,7 +36,7 @@
         <button class="nav-button rider-button" @click="goToRider">
           <view class="button-content">
             <view class="icon-container">
-              <image class="rider-img-icon" src="https://ccpt.qiniu.0871.cn/dianche2.png" mode="aspectFit" style="width:80rpx;height:80rpx;" />
+              <image class="rider-img-icon" src="https://ccpt.qiniu.cc111.cn/dianche2.png" mode="aspectFit" style="width:80rpx;height:80rpx;" />
             </view>
             <view class="button-text">
               <text class="button-title">骑手端</text>

@@ -192,7 +192,7 @@
           <view class="rider-header">
             <view class="rider-avatar-section">
               <view class="rider-avatar">
-                <image src="https://ccpt.qiniu.0871.cn/rider/verify/touxiang.png" mode="aspectFill"></image>
+                <image src="https://ccpt.qiniu.cc111.cn/rider/verify/touxiang.png" mode="aspectFill"></image>
               </view>
 
               <!-- 骑手认证状态 - 放在头像下面 -->
@@ -250,7 +250,7 @@
                   <text class="phone-text">{{ rider.phone_number }}</text>
                   <view class="copy-btn" @click.stop="copyText(rider.phone_number, '手机号')">
                     <!-- 复制 -->
-                    <image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+                    <image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
                   </view>
                 </view>
                 <view class="rider-rate-wrapper">
@@ -264,7 +264,7 @@
                   <text class="weixin-text">{{ rider.weixin }}</text>
                   <view class="copy-btn" @click.stop="copyText(rider.weixin, '微信号')">
                     <!-- 复制 -->
-                    <image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+                    <image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
                   </view>
                 </view>
                 <view class="rider-deposit-wrapper">

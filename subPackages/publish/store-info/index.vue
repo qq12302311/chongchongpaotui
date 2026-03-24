@@ -35,7 +35,7 @@
 								@input="updateField('storeName', $event.detail.value)" class="custom-input"
 								placeholder=" " />
 							<view class="placeholder-box" v-if="!formData.storeName">
-								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">点击填写门店名称</text>
 							</view>
 						</view>
@@ -55,7 +55,7 @@
 								disabled auto-height />
 							<view class="placeholder-box" v-if="!formData.address">
 								<text class="placeholder-text">选择地址定位</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/address.png" class="location-icon">
+								<image src="https://ccpt.qiniu.cc111.cn/publish/address.png" class="location-icon">
 								</image>
 							</view>
 						</view>
@@ -96,7 +96,7 @@
 								@input="updateField('phone', $event.detail.value)" class="custom-input"
 								placeholder=" " />
 							<view class="placeholder-box" v-if="!formData.phone">
-								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">点击填写联系电话</text>
 							</view>
 						</view>
@@ -137,7 +137,7 @@
 								@input="updateSnMacValue(0, $event.detail.value)" class="custom-input"
 								:id="'input-' + formData.snMacList[0].id" placeholder=" " />
 							<view class="placeholder-box" v-if="!formData.snMacList[0].value">
-								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">点击填写设备编码</text>
 							</view>
 						</view>
@@ -155,7 +155,7 @@
 										@input="updateSnMacValue(index + 1, $event.detail.value)" class="custom-input"
 										:id="'input-' + snMac.id" placeholder=" " />
 									<view class="placeholder-box" v-if="!snMac.value">
-										<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon">
+										<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon">
 										</image>
 										<text class="placeholder-text">点击填写设备编码</text>
 									</view>
@@ -226,7 +226,7 @@
 						<text class="optional-tag">（选填）</text>
 					</view>
 					<view class="upload-tip">
-						<image src="https://ccpt.qiniu.0871.cn/publish/Tips.png" mode="aspectFit" class="tip-icon">
+						<image src="https://ccpt.qiniu.cc111.cn/publish/Tips.png" mode="aspectFit" class="tip-icon">
 						</image>
 						<text class="tip-text">帮助充充骑手快速准确找到门店，系统内或美团、导航地图内门店照片上传</text>
 					</view>
@@ -241,7 +241,7 @@
 
 						<!-- 上传按钮 -->
 						<view class="upload-btn" @click="uploadImage" v-if="formData.doorImages.length < 5">
-							<image src="https://ccpt.qiniu.0871.cn/publish/mentou.png" mode="aspectFit"
+							<image src="https://ccpt.qiniu.cc111.cn/publish/mentou.png" mode="aspectFit"
 								class="upload-icon"></image>
 							<text class="upload-text">选择图片</text>
 						</view>
@@ -418,7 +418,7 @@
 			},
 			handleAddressSelect() {
 				uni.navigateTo({
-					url: '/pages/index/publish/map/index'
+					url: '/subPackages/publish/map/index'
 				})
 			},
 			removeSnMacInput(index) {
@@ -466,7 +466,7 @@
 			// 开始上传七牛云
 			qiniuUploadFile(tempFilePaths) {
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: tempFilePaths[0],
 					name: 'image', // 必须填写，后台用来接收文件
 					formData: {
@@ -664,7 +664,7 @@
 			},
 			goToHistoryRecords() {
 				uni.navigateTo({
-					url: '/pages/index/history-records/index'
+					url: '/subPackages/publish/history-records/index'
 				})
 			},
 			handleAuthCancel() {

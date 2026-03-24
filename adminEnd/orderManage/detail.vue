@@ -516,7 +516,7 @@
     <view class="modal-mask" v-if="showTimeline" @click="closeTimelineModal"></view>
     <view class="modal-container timeline-modal" v-if="showTimeline" style="background: none;">
 		<uni-icons size="32" color="#fff" type="close" @click="closeTimelineModal" style="position: absolute; right: 0px; top: 0px;"></uni-icons>
-		<image src="https://ccpt.qiniu.0871.cn/adminEnd/ddsjz.png" mode="widthFix" style="vertical-align: top;"></image>
+		<image src="https://ccpt.qiniu.cc111.cn/adminEnd/ddsjz.png" mode="widthFix" style="vertical-align: top;"></image>
       <view class="modal-content" style="padding-top: 0;">
         <view class="timeline-container" style="padding: 8px;">
           <view
@@ -1190,7 +1190,7 @@ export default {
           return;
         }
 
-        // 参考 https://ccpt.0871.cn/api/service/reward/list 接口
+        // 参考 https://ccpt.cc111.cn/api/service/reward/list 接口
         // 对每个打赏调用退款接口
         const refundPromises = paidRewards.map(reward => {
           const params = {

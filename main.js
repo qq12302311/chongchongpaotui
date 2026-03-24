@@ -1,6 +1,6 @@
 // 定义请求函数
 const request = (urlSuffix, params = {}, method = 'GET') => {
-  const baseUrl = 'https://ccpt.0871.cn/api/';
+  const baseUrl = 'https://ccpt.cc111.cn/api/';
   const url = baseUrl + urlSuffix;
   return new Promise((resolve, reject) => {
     uni.request({
@@ -44,11 +44,11 @@ import { createSSRApp } from 'vue'
 import uviewPlus from 'uview-plus'
 
 export function createApp() {
-    const app = createSSRApp(App)
-    app.use(uviewPlus)
-    return {
-        app
-    }
+  const app = createSSRApp(App)
+  app.use(uviewPlus)
+  return {
+    app
+  }
 }
 
 // #endif

@@ -22,7 +22,7 @@
 						</view>
 						<view class="time-table-cell time-value" @click="showAppointmentTimePicker">
 							<text>{{ appointmentTime || '请选择时间范围' }}</text>
-							<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 						</view>
 					</view>
 					
@@ -39,7 +39,7 @@
 						</view>
 						<view class="time-table-cell time-value" @click="showTimeIntervalPicker">
 							<text>{{ timeInterval || '请选择指定时间' }}</text>
-							<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 						</view>
 					</view>
 				</view>
@@ -62,7 +62,7 @@
 					</view>
 					<view class="time-table-cell time-value" @click="showCouponPicker">
 						<text>{{ coupon || '请选择优惠券' }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 					</view>
 				</view>
 			</view>

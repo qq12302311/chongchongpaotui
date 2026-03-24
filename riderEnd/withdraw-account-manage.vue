@@ -14,7 +14,7 @@
       <view class="account-card" :class="{ 'selected': selectedAccountType === 'alipay' }" @click="selectAccount('alipay')">
         <view class="account-header">
           <view class="account-type">
-            <image src="https://ccpt.qiniu.0871.cn/rider/alipay.svg" mode="aspectFit" class="account-icon"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/rider/alipay.svg" mode="aspectFit" class="account-icon"></image>
             <text class="account-type-text">Alipay</text>
           </view>
           <view class="account-status">
@@ -48,7 +48,7 @@
       <view class="account-card" :class="{ 'selected': selectedAccountType === 'bank' }" @click="selectAccount('bank')">
         <view class="account-header">
           <view class="account-type">
-            <image src="https://ccpt.qiniu.0871.cn/rider/bank.svg" mode="aspectFit" class="account-icon"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/rider/bank.svg" mode="aspectFit" class="account-icon"></image>
             <text class="account-type-text">银行卡</text>
           </view>
           <view class="account-status">

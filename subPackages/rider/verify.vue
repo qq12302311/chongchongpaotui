@@ -69,7 +69,7 @@
 					<view class="upload-area" @click="chooseImage('idCardFront')">
 						<image v-if="formData.idCardFront" :src="formData.idCardFront" mode="aspectFill"
 							class="preview-image"></image>
-						<image v-else src="https://ccpt.qiniu.0871.cn/rider/verify/zhengmian.png" mode="aspectFill"
+						<image v-else src="https://ccpt.qiniu.cc111.cn/rider/verify/zhengmian.png" mode="aspectFill"
 							class="id-card-image"></image>
 					</view>
 				</view>
@@ -85,7 +85,7 @@
 					<view class="upload-area" @click="chooseImage('idCardBack')">
 						<image v-if="formData.idCardBack" :src="formData.idCardBack" mode="aspectFill"
 							class="preview-image"></image>
-						<image v-else src="https://ccpt.qiniu.0871.cn/rider/verify/fanmian.png" mode="aspectFill"
+						<image v-else src="https://ccpt.qiniu.cc111.cn/rider/verify/fanmian.png" mode="aspectFill"
 							class="id-card-image"></image>
 					</view>
 				</view>
@@ -115,7 +115,7 @@
 		<!-- 审核中状态 -->
 		<view class="status-container" v-else-if="verifyStatus === 'pending'">
 			<view class="status-icon-container2">
-				<image src="https://ccpt.qiniu.0871.cn/rider/verify/chenggong.png" class="status-icon" mode="aspectFit"
+				<image src="https://ccpt.qiniu.cc111.cn/rider/verify/chenggong.png" class="status-icon" mode="aspectFit"
 					style="width: 100rpx; height: 100rpx;"></image>
 			</view>
 			<view class="status-title">认证提交成功！</view>
@@ -125,7 +125,7 @@
 		<!-- 审核通过状态 -->
 		<view class="status-container" v-else-if="verifyStatus === 'approved'">
 			<view class="status-icon-container">
-				<image src="https://ccpt.qiniu.0871.cn/rider/verify/renzhenggaizhang.png" class="status-icon"
+				<image src="https://ccpt.qiniu.cc111.cn/rider/verify/renzhenggaizhang.png" class="status-icon"
 					mode="aspectFit"></image>
 			</view>
 			<view class="status-title blue-text">恭喜您：认证成功！可以接单啦！</view>
@@ -137,7 +137,7 @@
 			</view>
 
 			<view class="deposit-image-wrapper">
-				<image src="https://ccpt.qiniu.0871.cn/rider/verify/baozhengjin2.png" class="deposit-image"
+				<image src="https://ccpt.qiniu.cc111.cn/rider/verify/baozhengjin2.png" class="deposit-image"
 					mode="widthFix"></image>
 				<view class="deposit-status">
 					<text class="status-text">未缴纳</text>
@@ -251,7 +251,7 @@
 			// 上传文件
 			uploadFile(filePath, fileType, callback) {
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: filePath,
 					name: 'image',
 					formData: {

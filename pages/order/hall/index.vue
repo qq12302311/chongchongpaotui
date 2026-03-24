@@ -4,8 +4,8 @@
     <view class="nav-bar">
       <view class="title">充充跑腿骑手端</view>
       <view class="right-icons">
-        <image src="https://ccpt.qiniu.0871.cn/publish/more.png" mode="aspectFit" class="icon"></image>
-        <image src="https://ccpt.qiniu.0871.cn/publish/message.png" mode="aspectFit" class="icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/more.png" mode="aspectFit" class="icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/message.png" mode="aspectFit" class="icon"></image>
       </view>
     </view>
     
@@ -17,14 +17,14 @@
     
     <!-- 广告横幅 -->
     <view class="banner">
-      <image src="https://ccpt.qiniu.0871.cn/publish/banner_rider.png" mode="aspectFill"></image>
+      <image src="https://ccpt.qiniu.cc111.cn/publish/banner_rider.png" mode="aspectFill"></image>
     </view>
     
     <!-- 接单大厅标题和搜索 -->
     <view class="hall-header">
       <view class="hall-title">接单大厅</view>
       <view class="search-box">
-        <image src="https://ccpt.qiniu.0871.cn/publish/search.png" mode="aspectFit" class="search-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/search.png" mode="aspectFit" class="search-icon"></image>
         <input type="text" placeholder="请输入搜索关键字" class="search-input" />
       </view>
     </view>
@@ -45,7 +45,7 @@
       </view>
       <view class="tab-item" :class="{ active: activeTab === 'area' }" @click="setActiveTab('area')">
         <text>地区</text>
-        <image src="https://ccpt.qiniu.0871.cn/publish/arrow_down.png" mode="aspectFit" class="arrow-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/arrow_down.png" mode="aspectFit" class="arrow-icon"></image>
         <view class="active-line" v-if="activeTab === 'area'"></view>
       </view>
     </view>
@@ -75,7 +75,7 @@
           </view>
           
           <view class="distance-info">
-            <image src="https://ccpt.qiniu.0871.cn/publish/location.png" mode="aspectFit" class="location-icon"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/publish/location.png" mode="aspectFit" class="location-icon"></image>
             <text>距离{{ order.distance }}km</text>
           </view>
         </view>
@@ -89,15 +89,15 @@
     <!-- 底部导航栏 -->
     <view class="tab-bar">
       <view class="tab-item active">
-        <image src="https://ccpt.qiniu.0871.cn/publish/home_active.png" mode="aspectFit" class="tab-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/home_active.png" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">接单大厅</text>
       </view>
       <view class="tab-item" @click="navigateTo('/pages/order/order')">
-        <image src="https://ccpt.qiniu.0871.cn/publish/order.png" mode="aspectFit" class="tab-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/order.png" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">订单</text>
       </view>
       <view class="tab-item" @click="navigateTo('/pages/my/my')">
-        <image src="https://ccpt.qiniu.0871.cn/publish/my.png" mode="aspectFit" class="tab-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/my.png" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">我的</text>
       </view>
     </view>

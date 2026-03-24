@@ -10,7 +10,7 @@
     <view class="contract-card">
       <view class="contract-header">
         <view class="contract-icon">
-          <text class="emoji-icon">📄</text>
+          <text class="emoji-icon">��</text>
         </view>
         <view class="contract-title">
           <text class="title">服务商合作协议</text>
@@ -367,7 +367,7 @@ export default {
       isDrawing: false,
       lastPoint: null,
       signatureImagePath: '', // 签名图片路径
-      contractTemplateUrl: 'https://ccpt.qiniu.0871.cn/contract/template.png', // 合同模板图片
+      contractTemplateUrl: 'https://ccpt.qiniu.cc111.cn/contract/template.png', // 合同模板图片
       contractImagePath: '', // 完整合同图片路径
       paths: [] // 存储所有绘制路径
     }

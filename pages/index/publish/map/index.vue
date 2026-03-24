@@ -50,7 +50,7 @@
 				</view>
 				<view class="city-search">
 					<view class="search-input-wrap">
-						<text class="search-icon">🔍</text>
+						<text class="search-icon">��</text>
 						<input type="text" v-model="citySearchKeyword" placeholder="搜索城市"
 							placeholder-class="placeholder-style" class="city-search-input" @input="filterCities" />
 						<text v-if="citySearchKeyword" class="clear-icon" @click="clearCitySearch">✕</text>
@@ -341,7 +341,7 @@
 				}
 
 				uni.request({
-					url: 'https://ccpt.0871.cn/api/task/geocode',
+					url: 'https://ccpt.cc111.cn/api/task/geocode',
 					method: 'POST',
 					data: {
 						key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -580,12 +580,12 @@
 					return;
 				}
 
-				console.log('🔍 ========== 开始搜索 ==========');
-				console.log('🔍 搜索关键词:', this.searchKeyword);
-				console.log('🔍 当前选择的城市:', this.currentCity);
-				console.log('🔍 地图中心位置 (latitude/longitude):', this.latitude, this.longitude);
-				console.log('🔍 当前位置 (currentLocation):', this.currentLocation.latitude, this.currentLocation.longitude);
-				console.log('🔍 ================================');
+				console.log('�� ========== 开始搜索 ==========');
+				console.log('�� 搜索关键词:', this.searchKeyword);
+				console.log('�� 当前选择的城市:', this.currentCity);
+				console.log('�� 地图中心位置 (latitude/longitude):', this.latitude, this.longitude);
+				console.log('�� 当前位置 (currentLocation):', this.currentLocation.latitude, this.currentLocation.longitude);
+				console.log('�� ================================');
 
 				// 显示加载提示
 				uni.showLoading({
@@ -624,7 +624,7 @@
 				const originalCityName = cityName;
 				const originalDistrictName = districtName;
 				
-				// 🔥 新增：从cityListData获取省份信息，避免城市重名
+				// �� 新增：从cityListData获取省份信息，避免城市重名
 				let provinceName = '';
 				if (this.cityListData && this.cityListData.length > 0) {
 					for (const province of this.cityListData) {
@@ -643,11 +643,11 @@
 			
 				// 处理城市名称，去除后缀（用于API搜索）
 				let searchCity = cityName.replace('市', '').replace('特别行政区', '').replace('自治州', '').replace('地区', '').replace('盟', '');
-				// 🔥 如果找到省份，将省份+城市组合作为搜索条件，避免重名
+				// �� 如果找到省份，将省份+城市组合作为搜索条件，避免重名
 				if (provinceName) {
 					// 只去除"省"后缀，保留"自治区"等完整名称，避免像"新疆维吾尔自治区"被错误处理
 					searchCity = provinceName.replace('省', '') + searchCity;
-					console.log('🔥 使用省份+城市组合:', searchCity);
+					console.log('�� 使用省份+城市组合:', searchCity);
 				}
 				if (districtName) {
 					districtName = districtName.replace('区', '').replace('县', '').replace('市', '');
@@ -755,22 +755,22 @@
 				// 	}
 				// })
 
-				// 🔥 修复：先获取行政区域编码，使用adcode进行精确搜索
-				// 🔥 关键修复：如果有区县，使用"城市名 区县名"作为关键词，避免重名问题
+				// �� 修复：先获取行政区域编码，使用adcode进行精确搜索
+				// �� 关键修复：如果有区县，使用"城市名 区县名"作为关键词，避免重名问题
 				const districtKeywords = districtName ? `${cityName} ${districtName}` : cityName;
-				console.log('🔍 查询行政区域编码，关键词:', districtKeywords);
+				console.log('�� 查询行政区域编码，关键词:', districtKeywords);
 			
 				uni.request({
-					url: 'https://ccpt.0871.cn/api/task/district',
+					url: 'https://ccpt.cc111.cn/api/task/district',
 					method: 'POST',
 					data: {
 						key: 'e3a5024683cf405c94c5f158b05729b6',
-						keywords: districtKeywords,  // 🔥 使用"城市名 区县名"避免重名
-						subdistrict: 1,  // 🔥 查询下一级，以便精确匹配区县
+						keywords: districtKeywords,  // �� 使用"城市名 区县名"避免重名
+						subdistrict: 1,  // �� 查询下一级，以便精确匹配区县
 						extensions: 'base'
 					},
 					success: (districtRes) => {
-						console.log('📍 行政区域查询返回:', districtRes.data.data);
+						console.log('�� 行政区域查询返回:', districtRes.data.data);
 						
 						let adcode = '';
 						let useAdcode = false;
@@ -778,11 +778,11 @@
 						// 获取adcode
 						if (districtRes.data.data.status === '1' && districtRes.data.data.districts && districtRes.data.data.districts.length > 0) {
 							const mainDistrict = districtRes.data.data.districts[0];
-							console.log('📍 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
+							console.log('�� 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
 							
 							// 如果有区县，尝试在下级中精确匹配
 							if (districtName && mainDistrict.districts && mainDistrict.districts.length > 0) {
-								console.log('📍 开始在下级区域中查找:', districtName);
+								console.log('�� 开始在下级区域中查找:', districtName);
 								for (const subDistrict of mainDistrict.districts) {
 									console.log('   - 检查:', subDistrict.name, 'adcode:', subDistrict.adcode);
 									// 精确匹配区县名（去除"区"、"县"等后缀）
@@ -799,7 +799,7 @@
 							// 如果没找到区县adcode，使用城市级别的adcode
 							if (!adcode) {
 								adcode = mainDistrict.adcode;
-								console.log('📍 未找到精确区县，使用上级区域 adcode:', adcode, mainDistrict.name);
+								console.log('�� 未找到精确区县，使用上级区域 adcode:', adcode, mainDistrict.name);
 							}
 							
 							useAdcode = true;
@@ -808,12 +808,12 @@
 							console.warn('⚠️ 未获取到行政区域编码，使用城市名称搜索');
 						}
 						
-						// 🔥 优先使用adcode进行POI搜索，如果无结果再降级使用城市名称
+						// �� 优先使用adcode进行POI搜索，如果无结果再降级使用城市名称
 						const searchCityParam = useAdcode ? adcode : originalCityName;
-						console.log('🔍 POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
+						console.log('�� POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
 						
 						uni.request({
-							url: `https://ccpt.0871.cn/api/task/place/search`,
+							url: `https://ccpt.cc111.cn/api/task/place/search`,
 							method: 'POST',
 							data: {
 								key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -829,10 +829,10 @@
 								// 隐藏加载提示
 								uni.hideLoading();
 
-								console.log('📍 高德地址搜索返回数据:', res.data.data);
-								console.log('📍 返回POI数量:', res.data.data.pois ? res.data.data.pois.length : 0);
+								console.log('�� 高德地址搜索返回数据:', res.data.data);
+								console.log('�� 返回POI数量:', res.data.data.pois ? res.data.data.pois.length : 0);
 								
-								// 🔥 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
+								// �� 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
 								if (useAdcode && (!res.data.data.pois || res.data.data.pois.length === 0) && (res.data.data.status === '1' || res.data.data.status === 'OK')) {
 									console.log('⚠️ adcode搜索无结果，降级使用城市级别重新搜索（去掉区县限制）');
 									uni.showLoading({
@@ -840,9 +840,9 @@
 										mask: true
 									});
 									
-									// 🔥 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
+									// �� 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
 									uni.request({
-										url: `https://ccpt.0871.cn/api/task/place/search`,
+										url: `https://ccpt.cc111.cn/api/task/place/search`,
 										method: 'POST',
 										data: {
 											key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -856,8 +856,8 @@
 										},
 										success: (retryRes) => {
 											uni.hideLoading();
-											console.log('🔄 降级搜索返回数据:', retryRes.data.data);
-											console.log('🔄 降级搜索返回POI数量:', retryRes.data.pois ? retryRes.data.data.pois.length : 0);
+											console.log('�� 降级搜索返回数据:', retryRes.data.data);
+											console.log('�� 降级搜索返回POI数量:', retryRes.data.pois ? retryRes.data.data.pois.length : 0);
 											// 降级搜索时进行过滤，优先显示原区县的结果
 											this.handleSearchResults(retryRes.data.data, originalCityName, originalDistrictName, false);
 										},
@@ -875,8 +875,8 @@
 								}
 								
 								// 正常处理搜索结果
-								// 🔥 如果使用adcode搜索，不需要二次过滤；否则需要过滤
-								console.log('📍 使用', useAdcode ? 'adcode' : '城市名', '搜索，skipFilter:', useAdcode);
+								// �� 如果使用adcode搜索，不需要二次过滤；否则需要过滤
+								console.log('�� 使用', useAdcode ? 'adcode' : '城市名', '搜索，skipFilter:', useAdcode);
 								this.handleSearchResults(res.data.data, originalCityName, originalDistrictName, useAdcode);
 							},
 							fail: (err) => {
@@ -895,7 +895,7 @@
 						console.error('获取行政区域编码失败，使用原始城市名称搜索:', err);
 						// 降级方案：直接使用原始城市名称搜索
 						uni.request({
-							url: `https://ccpt.0871.cn/api/task/place/search`,
+							url: `https://ccpt.cc111.cn/api/task/place/search`,
 							method: 'POST',
 							data: {
 								key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -1570,7 +1570,7 @@
 			// 选择城市
 			selectCity(city) {
 				const cityList = uni.getStorageSync('cityList') || [];
-				console.log('🏙️ 选择的城市:', city);
+				console.log('��️ 选择的城市:', city);
 				console.log('已入驻城市列表:', cityList);
 				let districtName = city;
 				let cityName = '';
@@ -1667,14 +1667,14 @@
 					city: city,
 					districtId: null
 				});
-				console.log('🎯 触发区域选择完成事件');
+				console.log('�� 触发区域选择完成事件');
 
 				if (useDistrictLatLng) {
 					// 验证从cityList获取的经纬度是否有效
 					if (this.isValidLatLng(districtLat, districtLng)) {
 						this.latitude = districtLat;
 						this.longitude = districtLng;
-						// 🔥 关键修复：同时更新 currentLocation，确保后续距离计算使用新的区县中心点
+						// �� 关键修复：同时更新 currentLocation，确保后续距离计算使用新的区县中心点
 						this.currentLocation.latitude = districtLat;
 						this.currentLocation.longitude = districtLng;
 						console.log('✅ 已更新地图中心点和当前位置:', { lat: districtLat, lng: districtLng });
@@ -1704,7 +1704,7 @@
 			},
 			// 根据城市更新地图中心点
 			async updateMapByCity(city) {
-				console.log('🗺️ 开始更新地图中心点，输入城市:', city);
+				console.log('��️ 开始更新地图中心点，输入城市:', city);
 
 				// 处理可能包含城市信息的区县名称（如"海口市 · 龙华区"）
 				let districtName = city;
@@ -1719,7 +1719,7 @@
 					console.log('提取的区县名:', districtName);
 				}
 
-				// 🔥 优先从 cityListData 获取区县经纬度
+				// �� 优先从 cityListData 获取区县经纬度
 				if (this.cityListData && this.cityListData.length > 0 && extractedCityName && districtName) {
 					for (const province of this.cityListData) {
 						for (const cityItem of (province.children || [])) {
@@ -1747,9 +1747,9 @@
 					console.log('⚠️ 在cityListData中未找到匹配的区县经纬度，尝试使用高德地图API');
 				}
 
-				// 🔥 使用高德地图API获取准确位置
+				// �� 使用高德地图API获取准确位置
 				try {
-					console.log('📍 使用高德地图API获取城市:', city);
+					console.log('�� 使用高德地图API获取城市:', city);
 					const res = await uni.request({
 						url: 'https://restapi.amap.com/v3/geocode/geo',
 						data: {
@@ -1798,7 +1798,7 @@
 							if (this.isValidLatLng(latitude, longitude)) {
 								this.latitude = latitude;
 								this.longitude = longitude;
-								// 🔥 修复：同时更新 currentLocation
+								// �� 修复：同时更新 currentLocation
 								this.currentLocation.latitude = latitude;
 								this.currentLocation.longitude = longitude;
 								console.log('✅ [areaData] 已更新地图中心点和当前位置');
@@ -1822,7 +1822,7 @@
 									if (this.isValidLatLng(latitude, longitude)) {
 										this.latitude = latitude;
 										this.longitude = longitude;
-										// 🔥 修复：同时更新 currentLocation
+										// �� 修复：同时更新 currentLocation
 										this.currentLocation.latitude = latitude;
 										this.currentLocation.longitude = longitude;
 										console.log('✅ [areaData-区县] 已更新地图中心点和当前位置');
@@ -1842,7 +1842,7 @@
 									if (this.isValidLatLng(latitude, longitude)) {
 										this.latitude = latitude;
 										this.longitude = longitude;
-										// 🔥 修复：同时更新 currentLocation
+										// �� 修复：同时更新 currentLocation
 										this.currentLocation.latitude = latitude;
 										this.currentLocation.longitude = longitude;
 										console.log('✅ [areaData-仅区县] 已更新地图中心点和当前位置');
@@ -1861,7 +1861,7 @@
 				console.error('未找到城市:', city);
 				this.latitude = 30.0488;
 				this.longitude = 103.8485;
-				// 🔥 修复：默认位置也要更新 currentLocation
+				// �� 修复：默认位置也要更新 currentLocation
 				this.currentLocation.latitude = 30.0488;
 				this.currentLocation.longitude = 103.8485;
 				console.log('⚠️ 使用默认位置（成都市）');
@@ -1878,7 +1878,7 @@
 
 				console.log('开始获取城市信息，经纬度:', longitude, latitude);
 				uni.request({
-					url: 'https://ccpt.0871.cn/api/task/geocode',
+					url: 'https://ccpt.cc111.cn/api/task/geocode',
 					method: 'POST',
 					data: {
 						key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -1995,15 +1995,15 @@
 			// 根据城市名称获取经纬度
 			async getCityLocation(cityName) {
 				try {
-					console.log('🌍 getCityLocation - 开始获取城市位置，城市名:', cityName);
-					console.log('🌍 cityListData长度:', this.cityListData ? this.cityListData.length : 0);
+					console.log('�� getCityLocation - 开始获取城市位置，城市名:', cityName);
+					console.log('�� cityListData长度:', this.cityListData ? this.cityListData.length : 0);
 					
-					// 🔥 优先尝试从 cityListData 获取区县的精确经纬度
+					// �� 优先尝试从 cityListData 获取区县的精确经纬度
 					if (this.cityListData && this.cityListData.length > 0 && cityName.includes(' · ')) {
 						const parts = cityName.split(' · ');
 						const extractedCityName = parts[0];
 						const districtName = parts[1];
-						console.log('🔍 查找区县经纬度 - 城市:', extractedCityName, '区县:', districtName);
+						console.log('�� 查找区县经纬度 - 城市:', extractedCityName, '区县:', districtName);
 						
 						for (const province of this.cityListData) {
 							for (const cityItem of (province.children || [])) {
@@ -2034,8 +2034,8 @@
 						console.log('⚠️ 在cityListData中未找到匹配的区县，尝试使用高德地图API');
 					}
 					
-					// 🔥 修改：不再使用providerInfo，直接使用高德地图API获取准确位置
-					console.log('📍 使用高德地图API获取城市:', cityName);
+					// �� 修改：不再使用providerInfo，直接使用高德地图API获取准确位置
+					console.log('�� 使用高德地图API获取城市:', cityName);
 					const res = await uni.request({
 						url: 'https://restapi.amap.com/v3/geocode/geo',
 						data: {
@@ -2227,11 +2227,11 @@
 		// 【新增方法】根据城市和区县名称查找并更新 district_id
 		async updateDistrictIdByAddress(cityName, districtName) {
 			try {
-				console.log('🔍 开始查找 district_id，城市:', cityName, '区县:', districtName);
+				console.log('�� 开始查找 district_id，城市:', cityName, '区县:', districtName);
 				
 				// 如果没有城市列表数据，先获取
 				if (!this.cityListData || this.cityListData.length === 0) {
-					console.log('📥 城市列表数据为空，正在获取...');
+					console.log('�� 城市列表数据为空，正在获取...');
 					const res = await this.$request('service/zone', {}, 'POST');
 					if (res.code === 200 && res.data) {
 						this.cityListData = res.data;
@@ -2290,7 +2290,7 @@
 						publishPage.$vm.selectedDistrictId = foundDistrictId;
 						
 						// 触发重新获取服务商信息
-						console.log('🔄 触发重新获取服务商信息');
+						console.log('�� 触发重新获取服务商信息');
 						if (typeof publishPage.$vm.getProviderInfo === 'function') {
 							await publishPage.$vm.getProviderInfo();
 							console.log('✅ 服务商信息已更新');
@@ -2452,7 +2452,7 @@
 
 		// 【新增方法】统一处理搜索结果
 		handleSearchResults(responseData, originalCityName, originalDistrictName, skipFilter = false) {
-			console.log('📍 处理搜索结果 - 不进行POI过滤');
+			console.log('�� 处理搜索结果 - 不进行POI过滤');
 			
 			// 检查返回状态
 			if ((responseData.status === '1' || responseData.status === 'OK') && responseData.pois && responseData.pois.length > 0) {
@@ -2474,7 +2474,7 @@
 					// 计算与当前位置的距离
 					let distance = '0.0';
 					if (this.currentLocation.latitude && this.currentLocation.longitude) {
-						console.log('📏 计算距离 - 当前位置:', {
+						console.log('�� 计算距离 - 当前位置:', {
 							lat: this.currentLocation.latitude,
 							lng: this.currentLocation.longitude
 						}, '目标位置:', {
@@ -2487,7 +2487,7 @@
 							lat2,
 							lon2
 						);
-						console.log('📏 计算结果:', distance, 'km');
+						console.log('�� 计算结果:', distance, 'km');
 					} else {
 						console.warn('⚠️ 当前位置信息缺失，无法计算距离');
 					}

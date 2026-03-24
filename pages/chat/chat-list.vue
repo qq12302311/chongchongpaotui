@@ -8,7 +8,7 @@
 			<!-- 搜索框 -->
 			<view class="search-section">
 				<view class="search-box">
-					<text class="search-icon">🔍</text>
+					<text class="search-icon">��</text>
 					<input
 						type="text"
 						v-model="searchKeyword"
@@ -53,7 +53,7 @@
 
 				<!-- 空状态 -->
 				<view v-if="filteredChatList.length === 0" class="empty-state">
-					<text class="empty-icon">💬</text>
+					<text class="empty-icon">��</text>
 					<text class="empty-text">{{ searchKeyword ? '没有找到相关聊天记录' : '暂无聊天记录' }}</text>
 				</view>
 			</view>
@@ -84,7 +84,7 @@
 				navBarHeight: 88,
 				searchKeyword: '',
 				chatList: [],
-				defaultAvatar: 'https://ccpt.qiniu.0871.cn/duihua2-active.svg'
+				defaultAvatar: 'https://ccpt.qiniu.cc111.cn/duihua2-active.svg'
 			}
 		},
 		computed: {
@@ -129,7 +129,7 @@
 					}
 
 					const res = await uni.request({
-						url: 'https://ccpt.0871.cn/api/user/create',
+						url: 'https://ccpt.cc111.cn/api/user/create',
 						method: 'POST',
 						data: params,
 						header: {
@@ -175,7 +175,7 @@
 						last_message: '订单已完成，感谢您的服务！',
 						last_message_time: Date.now() - 1000 * 60 * 30, // 30分钟前
 						unread_count: 2,
-						avatar: 'https://ccpt.qiniu.0871.cn/avatar1.png'
+						avatar: 'https://ccpt.qiniu.cc111.cn/avatar1.png'
 					},
 					{
 						room_id: '1039',
@@ -183,7 +183,7 @@
 						last_message: '骑手正在路上，请稍等',
 						last_message_time: Date.now() - 1000 * 60 * 60 * 2, // 2小时前
 						unread_count: 0,
-						avatar: 'https://ccpt.qiniu.0871.cn/avatar2.png'
+						avatar: 'https://ccpt.qiniu.cc111.cn/avatar2.png'
 					},
 					{
 						room_id: '1038',
@@ -191,7 +191,7 @@
 						last_message: '已到达门店，正在处理',
 						last_message_time: Date.now() - 1000 * 60 * 60 * 24, // 1天前
 						unread_count: 1,
-						avatar: 'https://ccpt.qiniu.0871.cn/avatar3.png'
+						avatar: 'https://ccpt.qiniu.cc111.cn/avatar3.png'
 					}
 				]
 			},

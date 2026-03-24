@@ -11,28 +11,28 @@
       <!-- 服务区域设置 -->
       <view class="settings-item" @click="editServiceAreas">
         <view class="settings-icon">
-          <text class="emoji-icon">📍</text>
+          <text class="emoji-icon">��</text>
         </view>
         <view class="settings-content">
           <text class="settings-title">服务区域</text>
           <text class="settings-desc">{{ serviceAreasText }}</text>
         </view>
         <view class="settings-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <!-- 修改密码 -->
       <view class="settings-item" @click="changePassword">
         <view class="settings-icon">
-          <text class="emoji-icon">🔒</text>
+          <text class="emoji-icon">��</text>
         </view>
         <view class="settings-content">
           <text class="settings-title">修改密码</text>
           <text class="settings-desc">修改登录密码</text>
         </view>
         <view class="settings-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
     </view>

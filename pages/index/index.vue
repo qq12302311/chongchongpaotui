@@ -56,7 +56,21 @@
 					<view class="tab-item" :class="{ active: activeTab === 4 }" @click="setActiveTab(4)">
 						<text>已完结</text>
 					</view>
-				</view>	
+				</view>
+				<!-- 搜索框 - 仅在非下单tab显示 -->
+				<view class="search-box" v-if="activeTab !== 0">
+					<view class="search-input">
+						<text class="search-icon">��</text>
+						<input
+							type="text"
+							v-model="searchKeyword"
+							placeholder="搜索门店名称/地址"
+							placeholder-class="placeholder-style"
+							@confirm="handleSearchConfirm"
+						/>
+						<view class="search-btn" @click="handleSearchConfirm">搜索</view>
+					</view>
+				</view>
 			</view>
 
 			<view class="listbox" v-if="activeTab === 0">
@@ -86,7 +100,7 @@
 				</view>
 			</view>
 			<view class="listbox">
-				<order :current-tab="activeTab"></order>
+				<order ref="orderRef" :current-tab="activeTab" :search-keyword="searchKeyword"></order>
 			</view>
 			
 		</view>
@@ -151,6 +165,7 @@ export default {
 	data() {
 		return {
 			activeTab: 0,
+			searchKeyword: '', // 搜索关键字
 
 			bgColor: '#fff',
 			navBarHeight: 0,
@@ -174,38 +189,38 @@ export default {
 			posterList: [ // 海报列表
 				{
 				  id: 1,
-				  image: 'https://ccpt.qiniu.0871.cn/banner123.png',
+				  image: 'https://ccpt.qiniu.cc111.cn/banner123.png',
 				  title: '海报1',
 				  url: ''
 				},
 				{
 				  id: 2,
-				  image: 'https://ccpt.qiniu.0871.cn/banner20.png',
+				  image: 'https://ccpt.qiniu.cc111.cn/banner20.png',
 				  title: '海报2',
 				  url: ''
 				}
 				// {
 				// 	id: 2,
-				// 	image: 'https://ccpt.qiniu.0871.cn/p13.png',
+				// 	image: 'https://ccpt.qiniu.cc111.cn/p13.png',
 				// 	title: '海报2',
 				// 	url: ''
 				// },
 				// {
 				// 	id: 3,
-				// 	image: 'https://ccpt.qiniu.0871.cn/p1.png',
+				// 	image: 'https://ccpt.qiniu.cc111.cn/p1.png',
 				// 	title: '海报3',
 				// 	url: ''
 				// }
 				// ,
 				// {
 				// 	id: 4,
-				// 	image: 'https://ccpt.qiniu.0871.cn/p2.png',
+				// 	image: 'https://ccpt.qiniu.cc111.cn/p2.png',
 				// 	title: '海报4',
 				// 	url: ''
 				// },
 				// {
 				// 	id: 5,
-				// 	image: 'https://ccpt.qiniu.0871.cn/p3.png',
+				// 	image: 'https://ccpt.qiniu.cc111.cn/p3.png',
 				// 	title: '海报5',
 				// 	url: ''
 				// }
@@ -213,13 +228,13 @@ export default {
 			bannerList: [ // banner轮播图列表
 				{
 					id: 1,
-					image: 'https://ccpt.qiniu.0871.cn/banner.png',
+					image: 'https://ccpt.qiniu.cc111.cn/banner.png',
 					title: 'Banner 1',
 					url: ''
 				},
 				{
 					id: 2,
-					image: 'https://ccpt.qiniu.0871.cn/home/banner2.png',
+					image: 'https://ccpt.qiniu.cc111.cn/home/banner2.png',
 					title: 'Banner 2',
 					url: ''
 				}
@@ -283,22 +298,38 @@ export default {
 		// 触发页面隐藏事件（通知FloatingImage组件）
 		uni.$emit('pageHide');
 	},
+	// 页面触底加载更多
+	onReachBottom() {
+		// 只有在非下单tab时才触发加载更多
+		if (this.activeTab !== 0 && this.$refs.orderRef) {
+		this.$refs.orderRef.onScrollToLower();
+		}
+	},
+	// 页面下拉刷新
+	onPullDownRefresh() {
+		// 只有在非下单tab时才触发刷新
+		if (this.activeTab !== 0 && this.$refs.orderRef) {
+			this.$refs.orderRef.handleSearch();
+		}
+		// 停止下拉刷新动画
+		setTimeout(() => {
+			uni.stopPullDownRefresh();
+		}, 500);
+	},
 	methods: {
 		setActiveTab(tab) {
 			console.log('setActiveTab', tab)
 			this.activeTab = tab
-	
-			// // 如果切换到非接单大厅的标签，加载对应状态的订单
-			// if (tab !== 'comprehensive') {
-			// this.page = 1
-			// this.orderList = []
-			// this.getOrdersByStatus(tab)
-			// } else {
-			// // 切换回接单大厅，重新加载待接单列表
-			// this.page = 1
-			// this.orderList = []
-			// this.getWaitingTasks()
-			// }
+			// 切换tab时清空搜索关键字
+			this.searchKeyword = ''
+		},
+		// 处理搜索确认
+		handleSearchConfirm() {
+			console.log('搜索关键字:', this.searchKeyword)
+			if (this.$refs.orderRef) {
+				this.$refs.orderRef.setSearchKeyword(this.searchKeyword)
+				this.$refs.orderRef.handleSearch()
+			}
 		},
 		// 注释掉强制城市选择检查
 		// checkCitySelected() {
@@ -533,7 +564,7 @@ export default {
 		// 获取服务商信息
 		async getProviderInfo(districtId) {
 			try {
-				console.log('🏪 首页-获取服务商信息，区域ID:', districtId);
+				console.log('�� 首页-获取服务商信息，区域ID:', districtId);
 				const res = await this.$request('task/provider/info', { district_id: districtId }, 'POST');
 				console.log('首页-服务商信息:', res);
 				if (res.code === 200) {
@@ -1008,6 +1039,55 @@ export default {
 .orderbox{
 	padding: 0rpx 20rpx;
 }
+
+.search-box {
+	background-color: #EFF7FF;
+	padding: 16rpx 20rpx;
+
+	.search-input {
+		background-color: #ffffff;
+		height: 70rpx;
+		border-radius: 35rpx;
+		display: flex;
+		align-items: center;
+		padding: 0 20rpx;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+
+		.search-icon {
+			font-size: 28rpx;
+			margin-right: 10rpx;
+		}
+
+		input {
+			flex: 1;
+			height: 70rpx;
+			font-size: 26rpx;
+			color: #333333;
+		}
+
+		.search-btn {
+			margin-left: 10rpx;
+			padding: 12rpx 28rpx;
+			background-color: #2492F2;
+			color: #ffffff;
+			border-radius: 30rpx;
+			font-size: 26rpx;
+			white-space: nowrap;
+			transition: all 0.3s;
+
+			&:active {
+				opacity: 0.8;
+				transform: scale(0.95);
+			}
+		}
+	}
+}
+
+.placeholder-style {
+	color: #AAAAAA;
+	font-size: 26rpx;
+}
+
 .listbox{
 	margin: 0 20rpx;
 	margin-bottom: 80px;

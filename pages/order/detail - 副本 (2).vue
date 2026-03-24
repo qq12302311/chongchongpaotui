@@ -10,7 +10,7 @@
 				<view class="city-efficiency-card">
 					<view class="efficiency-content">
 						<view class="city-area">
-							<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
 							<text class="city-name">{{ orderInfo.city_name }}</text>
 						</view>
 						<text class="efficiency-label">近100单平均完单时效：</text>
@@ -27,7 +27,7 @@
 						<!-- 步骤1: 骑手已接单/待接单 -->
 						<view class="step-item" :class="{ 'step-active': orderInfo.status !== 'waiting', 'step-working': orderInfo.status === 'waiting' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.0871.cn/djd-fz2.png" class="working-gif-2" mode="aspectFit"></image>
+								<image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.cc111.cn/djd-fz2.png" class="working-gif-2" mode="aspectFit"></image>
 								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status !== 'waiting' }"></view>
 							</view>
 							<view class="step-content">
@@ -45,7 +45,7 @@
 						<!-- 步骤2: 作业中 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'assigned' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image>
+								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.cc111.cn/aa.gif" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
 									'step-dot-half': orderInfo.status === 'assigned',
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
@@ -66,7 +66,7 @@
 						<!-- 步骤3: 完单反馈 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'finished' }">
 							<view class="step-icon-wrapper">
-								<!-- <image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
+								<!-- <image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.cc111.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
 								<view class="step-dot" :class="{
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
 								}"></view>
@@ -88,7 +88,7 @@
 						<!-- 步骤4: 确认完单 -->
 						<view class="step-item step-last" :class="{ 'step-working': orderInfo.status === 'completed' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'completed'" src="https://ccpt.qiniu.0871.cn/querenwandan.png" class="working-wandan" mode="aspectFit"></image>
+								<image v-if="orderInfo.status === 'completed'" src="https://ccpt.qiniu.cc111.cn/querenwandan.png" class="working-wandan" mode="aspectFit"></image>
 								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status === 'completed' }"></view>
 							</view>
 							<view class="step-content">
@@ -147,16 +147,16 @@
 										<text class="time-value">{{ formatDateTime(orderInfo.task_assignment.assigned_at || orderInfo.task_assignment.created_at) }}</text>
 									</view>
 									<view class="promotion-banner">
-										<image src="https://ccpt.qiniu.0871.cn/order/qishou/huore2.png" class="promotion-image" mode="aspectFit"></image>
+										<image src="https://ccpt.qiniu.cc111.cn/order/qishou/huore2.png" class="promotion-image" mode="aspectFit"></image>
 									</view>
 								</view>
 							</view>
 							<view class="rider-status">
 								<view class="status-gif" v-if="orderInfo.status === 'assigned'">
-									<image src="https://ccpt.qiniu.0871.cn/aa.gif" mode="aspectFit" class="gif-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/aa.gif" mode="aspectFit" class="gif-image"></image>
 								</view>
 								<view class="status-gif" v-if="orderInfo.status === 'completed'">
-									<image src="https://ccpt.qiniu.0871.cn/order/wancheng.png" mode="aspectFit" class="gif-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/order/wancheng.png" mode="aspectFit" class="gif-image"></image>
 								</view>
 								<view class="status-tag">{{getStatusText(orderInfo.status)}} <text class="arrow"></text></view>
 							</view>
@@ -180,14 +180,14 @@
 							<text class="info-label">门店 POI：</text>
 							<text class="info-value">{{orderInfo.task_detail ? orderInfo.task_detail.shop_poi : ''}}</text>
 							<view class="copy-btn" @tap="copyShopPoi">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
 							</view>
 						</view>
 						<view class="info-row" v-if="orderInfo.task_detail && orderInfo.task_detail.sn_mac_code && orderInfo.task_detail.sn_mac_code.length > 0">
 							<text class="info-label">设备编码：</text>
 							<text class="info-value">{{orderInfo.task_detail.sn_mac_code[0].value}}</text>
 							<view class="copy-btn" @tap="copyDeviceCode(orderInfo.task_detail.sn_mac_code[0].value)">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon"></image>
 							</view>
 						</view>
 					</view>
@@ -199,7 +199,7 @@
 			<view class="order-detail-card">
 				<view class="detail-list-toggle">
 					<view class="toggle-title">
-						<image class="header-icon" src="https://ccpt.qiniu.0871.cn/order/order.png" mode="aspectFit"></image>
+						<image class="header-icon" src="https://ccpt.qiniu.cc111.cn/order/order.png" mode="aspectFit"></image>
 						<text class="header-title">订单详情</text>
 					</view>
 				</view>
@@ -220,7 +220,7 @@
 							<view v-for="(code, index) in orderInfo.task_detail.sn_mac_code" :key="index" class="sn-code-item">
 								<text class="sn-code-text">{{code.value}}</text>
 								<view class="copy-code-btn" @tap="copyDeviceCode(code.value)">
-									<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
 								</view>
 							</view>
 						</view>
@@ -247,14 +247,14 @@
 						<view class="item-value store-name-container">
 							<text class="store-name-text">{{orderInfo.task_detail ? orderInfo.task_detail.store_name : ''}}</text>
 							<view class="copy-store-btn" @tap="copyStoreName">
-								<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
 							</view>
 						</view>
 					</view>
 					<view class="detail-sub-item address-container">
 						<text class="address-text">{{orderInfo.province_name}}{{orderInfo.city_name}}{{orderInfo.district_name}}{{orderInfo.shop_address}}{{orderInfo.address}}</text>
 						<view class="copy-address-btn" @tap="copyAddress">
-							<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" mode="aspectFit" class="copy-icon-small"></image>
 						</view>
 					</view>
 					<view class="detail-sub-item" v-if="orderInfo.task_detail && orderInfo.task_detail.description">
@@ -332,7 +332,7 @@
 						<!-- 打赏详情 -->
 						<view class="reward-detail" v-if="orderInfo.reward && orderInfo.reward.length > 0">
 							<view class="reward-detail-title">
-								<text class="reward-emoji">💰</text>
+								<text class="reward-emoji">��</text>
 								<text>打赏记录</text>
 							</view>
 							<view class="reward-list">
@@ -1183,7 +1183,7 @@
 
 			// 获取骑手头像
 			getRiderAvatar() {
-				const baseUrl = 'https://ccpt.qiniu.0871.cn/order/qishou/';
+				const baseUrl = 'https://ccpt.qiniu.cc111.cn/order/qishou/';
 
 				// 基于骑手ID生成固定的随机索引，确保同一个骑手总是显示相同的头像
 				const taskId = this.orderInfo.task_id;
@@ -1690,7 +1690,7 @@
 
 					// 调用打赏接口 - 使用完整URL
 					const res = await uni.request({
-						url: 'https://ccpt.0871.cn/api/task/reward',
+						url: 'https://ccpt.cc111.cn/api/task/reward',
 						method: 'POST',
 						data: params,
 						header: {

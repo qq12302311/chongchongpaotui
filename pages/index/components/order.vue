@@ -1,20 +1,12 @@
 <template>
-	<scroll-view
+	<view
 		v-show="currentTab!=0"
-      class="container"
-      scroll-y
-      @scrolltolower="onScrollToLower()"
-      refresher-enabled
-      :refresher-triggered="refreshing"
-      @refresherrefresh="handleSearch()"
-      :refresher-threshold="100"
-      :refresher-background="'#EFF7FF'"
-      :bounces="false"
-    >
+		class="container"
+	>
 		<view class="order-content">
 			<!-- 空状态  -->
 			<view v-if="!loading && orderList.length === 0" class="empty-state">
-				<image class="empty-image" src="https://ccpt.qiniu.0871.cn/order/notorder.png" mode="aspectFit"></image>
+				<image class="empty-image" src="https://ccpt.qiniu.cc111.cn/order/notorder.png" mode="aspectFit"></image>
 				<text class="empty-text">暂无相关订单</text>
 			</view>
 			<!-- 订单列表 -->
@@ -66,11 +58,11 @@
 							<text class="label">订单金额：</text>
 							<view class="price-wrapper" @click.stop="togglePrice(order.task_id, $event)">
 								<text class="value price" v-if="showPriceMap[order.task_id]">¥{{order.order_amount}}</text>
-								<image v-else class="arrow-icon" src="https://ccpt.qiniu.0871.cn/home/my/byj.svg" mode="aspectFit"></image>
+								<image v-else class="arrow-icon" src="https://ccpt.qiniu.cc111.cn/home/my/byj.svg" mode="aspectFit"></image>
 							</view>
 							<!-- 再来一单按钮 - 绝对定位 -->
 							<view class="reorder-btn-float" @click.stop="handleReorderFromOrder(order)">
-								<image class="reorder-emoji" src="https://ccpt.qiniu.0871.cn/zlyd.svg" mode="aspectFit"></image>
+								<image class="reorder-emoji" src="https://ccpt.qiniu.cc111.cn/zlyd.svg" mode="aspectFit"></image>
 								<text class="reorder-text">再来一单</text>
 							</view>
 						</view>
@@ -88,7 +80,7 @@
 				</view>
 			</view>
 		</view>
-	</scroll-view>
+	</view>
 </template>
 
 <script>
@@ -128,27 +120,26 @@
 		},
 
 	watch: {
-		currentTab(newVal) {
-			console.error('>>>', newVal)
+		currentTab(newVal, oldVal) {
+			// 避免重复触发：只有当值真正变化时才加载
+			if (newVal === oldVal) return
+			console.log('currentTab changed:', oldVal, '->', newVal)
 			this.statusValue = (newVal - 1)
-			this.switchTab(newVal - 1)
+			// 只有切换到非下单tab时才加载订单
+			if (newVal !== 0) {
+				this.switchTab(newVal - 1)
+			}
 		}
-	},	
-	onShow() {
+	},
+	mounted() {
 		// 计算导航栏高度
 		const systemInfo = uni.getSystemInfoSync()
 		const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
 		this.navBarHeight = menuButtonInfo.bottom + 12
-
-		this.loadOrderList() // 初始加载，不是加载更多
 	},
 	onUnload() {
 		// 页面卸载时清理可能残留的临时数据
 		uni.removeStorageSync('reorderFormData')
-	},
-	
-	mounted() {
-		// 初始化标签下划线位置
 	},
 	methods: {
 		// 上拉加载更多
@@ -169,12 +160,12 @@
 		// 【新增方法】根据城市和区县名称查找并更新 district_id
 		async updateDistrictIdByAddress(cityName, districtName) {
 			try {
-				console.log('🔍 [再来一单] 开始查找 district_id，城市:', cityName, '区县:', districtName);
+				console.log('�� [再来一单] 开始查找 district_id，城市:', cityName, '区县:', districtName);
 				
 				// 获取城市列表数据
 				let cityListData = uni.getStorageSync('cityList');
 				if (!cityListData) {
-					console.log('📥 城市列表数据为空，正在获取...');
+					console.log('�� 城市列表数据为空，正在获取...');
 					const res = await this.$request('service/zone', {}, 'POST');
 					if (res.code === 200 && res.data) {
 						cityListData = res.data;
@@ -237,9 +228,15 @@
 		toggleSearchConditions() {
 			this.showSearchConditions = !this.showSearchConditions
 		},
-		// 处理搜索
+		// 设置搜索关键字（供父组件调用）
+		setSearchKeyword(keyword) {
+			this.searchKeyword = keyword
+		},
+		// 处理搜索/下拉刷新
 		handleSearch() {
-			console.error('触发搜索handleSearchhandleSearch')
+			console.log('触发下拉刷新/搜索')
+			// 设置刷新状态
+			this.refreshing = true
 			// 重置页码和列表
 			this.page = 1
 			this.hasMore = true
@@ -253,11 +250,12 @@
 			this.$set(this.showPriceMap, taskId, !this.showPriceMap[taskId])
 		},
 		switchTab(index) {
-			console.error('切换标签到:', index)
+			console.log('切换标签到:', index)
 			this.updateTabLinePosition(index)
 			this.page = 1
 			this.hasMore = true
 			this.orderList = []
+			this.searchKeyword = '' // 切换标签时清空搜索关键字
 			this.loadOrderList(false) // 切换标签时重新加载，不是加载更多
 		},
 			updateTabLinePosition(index) {
@@ -366,12 +364,12 @@
 					})
 				} finally {
 					this.loading = false
-					if(!isLoadMore){
-						console.error('数据加载完毕，停止下拉刷新')
-						this.refreshing = true;
-						setTimeout(() => {
+					// 只有在下拉刷新触发时才需要重置refreshing状态
+					if(this.refreshing){
+						console.log('数据加载完毕，停止下拉刷新')
+						this.$nextTick(() => {
 							this.refreshing = false;
-						}, 1000);
+						});
 					}
 				}
 			},
@@ -904,7 +902,6 @@
 
 <style lang="scss" scoped>
 	.container {
-		height: calc(100vh - 240px);
 		background-color: #EFF7FF;
 		font-family: "HarmonyOS Sans SC", sans-serif;
 		padding-bottom: calc(100rpx + constant(safe-area-inset-bottom));
@@ -912,9 +909,7 @@
 		padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 		/* iOS >= 11.2 */
 		box-sizing: border-box;
-		overflow-x: hidden;
 		width: 100%;
-		margin-bottom: 120px;
 	}
 
 	.content {

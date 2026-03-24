@@ -9,7 +9,7 @@
 				</view>
 				<view class="history-section">
 					<view class="history-btn" @click="showHistoryRecords">
-						<image src="https://ccpt.qiniu.0871.cn/lsmd-jl.png" class="history-image" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/lsmd-jl.png" class="history-image" mode="aspectFit"></image>
 					</view>
 					<text class="history-subtitle">一键导入服务过门店，更方便！</text>
 				</view>
@@ -57,7 +57,7 @@
 					style="width: 100%; height: 100%;"
 				></map>
 				<view class="map-overlay">
-					<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="nav-icon"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="nav-icon"></image>
 					<text class="nav-text">点击导航</text>
 				</view>
 			</view>

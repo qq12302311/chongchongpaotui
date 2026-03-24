@@ -15,7 +15,7 @@
           <text v-if="userInfo.account_type === 'provider'" class="user-type-badge">服务商</text>
         </view>
         <view class="arrow-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit"></image>
         </view>
       </view>
     </view>
@@ -54,11 +54,10 @@
       <!-- 提现说明 -->
       <view class="withdraw-notice">
         <view class="notice-title">提现说明</view>
-        <view class="notice-item">• 独立骑手每月6号、16号、26号，"逢6"均可提现</view>
+        <!-- <view class="notice-item">• 独立骑手每月6号、16号、26号，"逢6"均可提现</view> -->
         <view class="notice-item">• 提现申请提交后，将在1-3个工作日内到账</view>
         <view class="notice-item">• 请确保提现账户信息准确无误</view>
         <view class="notice-item">• 提现手续费3%+3元/笔（限时免）</view>
-        <view class="notice-item" v-if="!isWithdrawDay">• 当前不在提现日期内，下次可提现日期：{{ nextWithdrawDate }}</view>
         <!-- 临时测试按钮 -->
        <!-- <view class="test-button" @click="forceShowPopup" style="margin-top: 20rpx; padding: 10rpx; background-color: #ff6b6b; color: white; text-align: center; border-radius: 8rpx; font-size: 24rpx;">
           测试弹窗（点击强制显示）
@@ -75,7 +74,7 @@
         <view class="popup-close" @click="closePopup">×</view>
         <image 
           class="popup-image" 
-          src="https://ccpt.qiniu.0871.cn/tixian666.png" 
+          src="https://ccpt.qiniu.cc111.cn/tixian666.png" 
           mode="widthFix"
           :show-loading="true"
           @load="handleImageLoad"
@@ -187,7 +186,7 @@ export default {
     canWithdraw() {
       const amount = parseFloat(this.withdrawAmount);
       const available = parseFloat(this.availableBalance);
-      return amount > 0 && amount <= available && this.withdrawInfo && this.isWithdrawDay;
+      return amount > 0 && amount <= available && this.withdrawInfo;
     },
 
     // 是否为提现日期（5号、15号、25号）
@@ -250,6 +249,7 @@ export default {
       // 从保存的账户信息中获取用户类型和ID
       if (riderUserInfo.withdraw_account_info) {
         const accountInfo = riderUserInfo.withdraw_account_info;
+		console.log(accountInfo,"sddsds")
         this.userInfo.account_type = accountInfo.account_type;
         this.userInfo.account_id = accountInfo.account_id;
         this.userInfo.account_name = accountInfo.account_name;
@@ -367,17 +367,17 @@ export default {
 
     // 确认提现
     confirmWithdraw() {
-      if (!this.canWithdraw) {
-        if (!this.isWithdrawDay) {
-          uni.showToast({
-            title: `仅限每月6号、16号、26号提现，下次可提现：${this.nextWithdrawDate}`,
-            icon: 'none',
-            duration: 3000
-          });
-          return;
-        }
-        return;
-      }
+      // if (!this.canWithdraw) {
+      //   if (!this.isWithdrawDay) {
+      //     uni.showToast({
+      //       title: `仅限每月6号、16号、26号提现，下次可提现：${this.nextWithdrawDate}`,
+      //       icon: 'none',
+      //       duration: 3000
+      //     });
+      //     return;
+      //   }
+      //   return;
+      // }
 
       uni.showModal({
         title: '确认提现',
@@ -410,7 +410,8 @@ export default {
 
         // 根据用户类型设置提现参数
         // 从用户信息中获取账户类型和ID
-        const ownerType = this.userInfo.account_type || 'member';
+        // const ownerType = this.userInfo.account_type || 'member';
+        const ownerType = 'member';
         const ownerId = this.userInfo.account_id || this.userInfo.id;
 
         const params = {

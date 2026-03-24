@@ -13,8 +13,8 @@
 					<view class="dabeijing pos-rel">
 						<view class="jiesuo">未解锁</view>
 						<view class="dis_flex hg-vip">
-							<image class="hg-img mar-rig-5" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/hg.svg"></image>
-							<image class="vip-img" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/VIP1.svg"></image>
+							<image class="hg-img mar-rig-5" mode="aspectFill" src="https://ccpt.qiniu.cc111.cn/home/my/hg.svg"></image>
+							<image class="vip-img" mode="aspectFill" src="https://ccpt.qiniu.cc111.cn/home/my/VIP1.svg"></image>
 						</view>
 						<view class="hx-cla"></view>
 						<view class="jingy-cla">还需990经验值解锁普通会员，获取经验值 ></view>
@@ -25,18 +25,18 @@
 							</view>
 							<view class="dis_flex">
 								<view>
-									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/ldkq.svg"></image>
+									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.cc111.cn/home/my/ldkq.svg"></image>
 								</view>
 								<view>
-									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/czzk.svg"></image>
+									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.cc111.cn/home/my/czzk.svg"></image>
 								</view>
 								<view>
-									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/zskf.svg"></image>
+									<image class="tq-1" mode="aspectFill" src="https://ccpt.qiniu.cc111.cn/home/my/zskf.svg"></image>
 								</view>
 							</view>
 						</view>
 						<view class="im-pos-1">
-							<image class="toux11" mode="aspectFill" src="https://ccpt.qiniu.0871.cn/home/my/toux11.png"></image>
+							<image class="toux11" mode="aspectFill" src="https://ccpt.qiniu.cc111.cn/home/my/toux11.png"></image>
 						</view>
 					</view>
 				</view>
@@ -45,7 +45,7 @@
 
 				<!-- 头像区域 - 独立定位 -->
 				<!-- <view class="avatar-container">
-					<image class="avatar" src="https://ccpt.qiniu.0871.cn/112lbtx.png" mode="aspectFill" @click="goToLogin"></image>
+					<image class="avatar" src="https://ccpt.qiniu.cc111.cn/112lbtx.png" mode="aspectFill" @click="goToLogin"></image>
 				</view> -->
 
 				<!-- 用户信息卡片 -->
@@ -67,7 +67,7 @@
 					<view class="balance-coupon">
 						<view class="balance item">
 							<view class="icon-wrap">
-								<image class="icon-image" src="https://ccpt.qiniu.0871.cn/my/wodeyue.png"
+								<image class="icon-image" src="https://ccpt.qiniu.cc111.cn/my/wodeyue.png"
 									mode="aspectFit"></image>
 							</view>
 							<view class="text-wrap">
@@ -77,7 +77,7 @@
 						</view>
 						<view class="coupon item">
 							<view class="icon-wrap">
-								<image class="icon-image" src="https://ccpt.qiniu.0871.cn/my/youhuiquan.png"
+								<image class="icon-image" src="https://ccpt.qiniu.cc111.cn/my/youhuiquan.png"
 									mode="aspectFit"></image>
 							</view>
 							<view class="text-wrap">
@@ -91,7 +91,7 @@
 			</view>
 			
 			<view class="czyh-cla">
-				<!-- <image class="czyh-cla" src="https://ccpt.qiniu.0871.cn/home/my/czyh.png" mode="aspectFit"></image> -->
+				<!-- <image class="czyh-cla" src="https://ccpt.qiniu.cc111.cn/home/my/czyh.png" mode="aspectFit"></image> -->
 			</view>
 
 			<!-- Common Functions -->
@@ -99,7 +99,7 @@
 				<view class="padding-10 dis_flex jus-con">
 					<view class="dis_flex">
 						<view>
-							<image class="cygn-cla" src="https://ccpt.qiniu.0871.cn/home/my/qb-11.png" mode="aspectFit"></image>
+							<image class="cygn-cla" src="https://ccpt.qiniu.cc111.cn/home/my/qb-11.png" mode="aspectFit"></image>
 						</view>
 						<view>
 							<view class="biti-12">我的钱包</view>
@@ -108,7 +108,7 @@
 					</view>
 					<view class="dis_flex">
 						<view>
-							<image class="cygn-cla" src="https://ccpt.qiniu.0871.cn/home/my/zd-11.png" mode="aspectFit"></image>
+							<image class="cygn-cla" src="https://ccpt.qiniu.cc111.cn/home/my/zd-11.png" mode="aspectFit"></image>
 						</view>
 						<view>
 							<view class="biti-12">优惠券</view>
@@ -122,42 +122,42 @@
 				<view class="function-grid">
 					<view class="function-item" @click="navigateTo('/riderEnd/register')">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/my/fuwuzhandian.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/my/fuwuzhandian.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">注册骑手接单</text>
 					</view>
 
 					<view class="function-item" @click="navigateTo('/pages/store-manage/index')">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/home/my/mdgl.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/home/my/mdgl.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">门店管理</text>
 					</view>
 
 					<view class="function-item" @click="navigateTo('/pages/service-standard/index')">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/my/fuwuzhinan.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/my/fuwuzhinan.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">服务标准</text>
 					</view>
 
 					<view class="function-item" @click="previewQRCode">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/my/zaixiankefu.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/my/zaixiankefu.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">在线客服</text>
 					</view>
 
 					<view class="function-item" @click="navigateTo('/pages/user-guide/index')">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/my/yonghuzhinan.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/my/yonghuzhinan.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">用户指南</text>
 					</view>
 
 					<view class="function-item" @click="openShareModal">
 						<view class="icon-bg bg-blue">
-							<image src="https://ccpt.qiniu.0871.cn/home/my/fxtj.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/home/my/fxtj.png" mode="aspectFit"></image>
 						</view>
 						<text class="func-name">分享推荐</text>
 					</view>
@@ -186,12 +186,12 @@
 				<view class="share-options">
 					<view class="share-btn wechat-btn">
 						<button class="share-button" open-type="share">
-							<image class="share-icon" src="https://ccpt.qiniu.0871.cn/yonghu.png" mode="aspectFit"></image>
+							<image class="share-icon" src="https://ccpt.qiniu.cc111.cn/yonghu.png" mode="aspectFit"></image>
 							<text>分享给好友</text>
 						</button>
 					</view>
 					<view class="share-btn referral-btn" @click="goToReferralList">
-						<image class="share-icon" src="https://ccpt.qiniu.0871.cn/rider/banner4.png" mode="aspectFit"></image>
+						<image class="share-icon" src="https://ccpt.qiniu.cc111.cn/rider/banner4.png" mode="aspectFit"></image>
 						<text>推荐人员列表</text>
 					</view>
 				</view>
@@ -207,7 +207,7 @@
 			<view class="service-content" @click.stop>
 				<view class="service-title">请添加运营微信，说明您可服务城市。方便后续推单！</view>
 				<view class="service-qrcode">
-					<image src="https://ccpt.qiniu.0871.cn/my/kefuwechat.png" mode="aspectFit" @click="previewQRCodeImage"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/my/kefuwechat.png" mode="aspectFit" @click="previewQRCodeImage"></image>
 				</view>
 				<view class="service-desc">扫描二维码添加客服微信</view>
 				<view class="service-cancel" @click="closeServiceModal">关闭</view>
@@ -379,8 +379,8 @@
 			// 预览二维码图片
 			previewQRCodeImage() {
 				uni.previewImage({
-					urls: ['https://ccpt.qiniu.0871.cn/my/kefuwechat.png'],
-					current: 'https://ccpt.qiniu.0871.cn/my/kefuwechat.png'
+					urls: ['https://ccpt.qiniu.cc111.cn/my/kefuwechat.png'],
+					current: 'https://ccpt.qiniu.cc111.cn/my/kefuwechat.png'
 				});
 			}
 		},
@@ -396,7 +396,7 @@
 			return {
 				title: '邀请您使用充充跑腿',
 				path: `/pages/login/index?referrerId=${this.userInfo.user_id}`,
-				imageUrl: 'https://ccpt.qiniu.0871.cn/yonghu.png'
+				imageUrl: 'https://ccpt.qiniu.cc111.cn/yonghu.png'
 			};
 		},
 		// 分享到朋友圈
@@ -410,7 +410,7 @@
 			return {
 				title: '邀请您使用充充跑腿',
 				query: `referrerId=${this.userInfo.user_id}`,
-				imageUrl: 'https://ccpt.qiniu.0871.cn/yonghu.png'
+				imageUrl: 'https://ccpt.qiniu.cc111.cn/yonghu.png'
 			};
 		}
 	}
@@ -448,7 +448,7 @@
 		  height: 50px;
 		  width: 100%;
 		  margin-bottom: 20px;
-		background-image: url("https://ccpt.qiniu.0871.cn/home/my/czyouhui.svg");
+		background-image: url("https://ccpt.qiniu.cc111.cn/home/my/czyouhui.svg");
 	}
 	.im-pos-1{
 		position: absolute;

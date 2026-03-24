@@ -20,7 +20,7 @@
           </view>
         </view>
         <view class="action-buttons">
-          <view class="action-btn withdraw-btn" @click="showWithdrawModal">
+         <view class="action-btn withdraw-btn" @click="showWithdrawModal">
             <text>提现</text>
           </view>
           <view class="action-btn detail-btn" @click="goToCommissionDetail">
@@ -99,6 +99,7 @@
 import NavBar from '@/components/NavBar.vue'
 import AuthModal from '@/components/AuthModal/index.vue'
 import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
+import md5 from 'md5'
 
 export default {
   components: {
@@ -124,17 +125,58 @@ export default {
       providerData: null // 服务商数据
     }
   },
-  onLoad() {
-    this.loadUserInfo();
+  async onShow() {
+    await this.loadUserInfo();
     this.loadWithdrawAccount();
     this.loadAccountData();
   },
   methods: {
-    loadUserInfo() {
-      const storedUserInfo = uni.getStorageSync('riderUserInfo');
-      if (storedUserInfo) {
-        this.userInfo = storedUserInfo;
-        this.riderUserInfo = storedUserInfo;
+    async loadUserInfo() {
+      try {
+        // 从缓存获取id和phone用于生成签名
+        const cachedInfo = uni.getStorageSync('riderUserInfo') || {};
+        const riderId = cachedInfo.id;
+        const riderPhone = cachedInfo.phone;
+
+        if (!riderId || !riderPhone) {
+          console.error('缺少骑手id或phone，无法请求接口');
+          return;
+        }
+
+        // 生成签名
+        const signStr = `service_member_id=${riderId}&phone_number=${riderPhone}`;
+        const sign = md5(signStr);
+
+        // 发起请求
+        const res = await uni.request({
+          url: 'https://ccpt.cc111.cn/api/service/member/info',
+          method: 'POST',
+          data: {
+            service_member_id: riderId,
+            sign: sign,
+            member_id: riderId
+          },
+          header: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const resData = res[1] || res;
+        // console.log('骑手信息接口完整返回:', JSON.stringify(resData.data));
+        if (resData.statusCode === 200 && resData.data) {
+          const responseData = resData.data.data || resData.data;
+          // console.log('解析后的骑手数据:', JSON.stringify(responseData));
+          // 保留缓存中的id和phone，合并接口返回的最新数据
+          this.riderUserInfo = { id: riderId, phone: riderPhone, ...responseData };
+          this.userInfo = { id: riderId, phone: riderPhone, ...responseData };
+          // 同步更新本地缓存
+          uni.setStorageSync('riderUserInfo', this.riderUserInfo);
+          // console.log('最终riderUserInfo:', JSON.stringify(this.riderUserInfo));
+        } else {
+          console.error('获取骑手信息接口返回异常:', resData);
+        }
+      } catch (error) {
+        console.error('请求骑手信息接口失败:', error);
       }
     },
 
@@ -261,8 +303,8 @@ export default {
                 id: item.id,
                 type: 'withdraw',
                 icon: item.payment_method === 'alipay'
-                  ? 'https://ccpt.qiniu.0871.cn/rider/alipay.svg'
-                  : 'https://ccpt.qiniu.0871.cn/rider/bank.svg',
+                  ? 'https://ccpt.qiniu.cc111.cn/rider/alipay.svg'
+                  : 'https://ccpt.qiniu.cc111.cn/rider/bank.svg',
                 title: `提现-到${item.payment_method === 'alipay' ? '支付宝' : '银行卡'}`,
                 time: this.formatDateTime(item.created_at),
                 amount: `-${item.amount}`,
@@ -377,7 +419,7 @@ export default {
 }
 
 .account-info-card {
-  background-image: url('https://ccpt.qiniu.0871.cn/rider/my/account_back.svg');
+  background-image: url('https://ccpt.qiniu.cc111.cn/rider/my/account_back.svg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

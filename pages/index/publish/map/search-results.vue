@@ -266,7 +266,7 @@ export default {
 			const originalCityName = cityName;
 			const originalDistrictName = districtName;
 			
-			// 🔥 新增：从cityListData获取省份信息，避免城市重名
+			// �� 新增：从cityListData获取省份信息，避免城市重名
 			const cityListData = uni.getStorageSync('cityList');
 			let provinceName = '';
 			if (cityListData && cityListData.length > 0) {
@@ -286,10 +286,10 @@ export default {
 			
 			// 处理城市名称，去除后缀（用于API搜索）
 			let searchCity = cityName.replace('市', '').replace('特别行政区', '').replace('自治州', '').replace('地区', '').replace('盟', '');
-			// 🔥 如果找到省份，将省份+城市组合作为搜索条件，避免重名
+			// �� 如果找到省份，将省份+城市组合作为搜索条件，避免重名
 			if (provinceName) {
 				searchCity = provinceName.replace('省', '').replace('自治区', '').replace('特别行政区', '') + searchCity;
-				console.log('🔥 使用省份+城市组合:', searchCity);
+				console.log('�� 使用省份+城市组合:', searchCity);
 			}
 			if (districtName) {
 				districtName = districtName.replace('区', '').replace('县', '').replace('市', '');
@@ -306,22 +306,22 @@ export default {
 				this.getLocationFromStorage();
 			}
 			
-			// 🔥 修复：先获取行政区域编码，使用adcode进行精确搜索
-			// 🔥 关键修复：如果有区县，使用"城市名 区县名"作为关键词，避免重名问题
+			// �� 修复：先获取行政区域编码，使用adcode进行精确搜索
+			// �� 关键修复：如果有区县，使用"城市名 区县名"作为关键词，避免重名问题
 			const districtKeywords = originalDistrictName ? `${originalCityName} ${originalDistrictName}` : originalCityName;
-			console.log('🔍 查询行政区域编码，关键词:', districtKeywords);
+			console.log('�� 查询行政区域编码，关键词:', districtKeywords);
 			
 			uni.request({
-				url: 'https://ccpt.0871.cn/api/task/district',
+				url: 'https://ccpt.cc111.cn/api/task/district',
 				method: 'POST',
 				data: {
 					key: 'e3a5024683cf405c94c5f158b05729b6',
-					keywords: districtKeywords,  // 🔥 使用"城市名 区县名"避免重名
-					subdistrict: 1,  // 🔥 查询下一级，以便精确匹配区县
+					keywords: districtKeywords,  // �� 使用"城市名 区县名"避免重名
+					subdistrict: 1,  // �� 查询下一级，以便精确匹配区县
 					extensions: 'base'
 				},
 				success: (districtRes) => {
-					console.log('📍 行政区域查询返回:', districtRes.data.data);
+					console.log('�� 行政区域查询返回:', districtRes.data.data);
 
 					let adcode = '';
 					let useAdcode = false;
@@ -329,11 +329,11 @@ export default {
 					// 获取adcode
 					if (districtRes.data.data.status === '1' && districtRes.data.data.districts && districtRes.data.data.districts.length > 0) {
 						const mainDistrict = districtRes.data.data.districts[0];
-						console.log('📍 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
+						console.log('�� 查询到的主区域:', mainDistrict.name, 'level:', mainDistrict.level);
 						
 						// 如果有区县，尝试在下级中精确匹配
 						if (originalDistrictName && mainDistrict.districts && mainDistrict.districts.length > 0) {
-							console.log('📍 开始在下级区域中查找:', originalDistrictName);
+							console.log('�� 开始在下级区域中查找:', originalDistrictName);
 							for (const subDistrict of mainDistrict.districts) {
 								console.log('   - 检查:', subDistrict.name, 'adcode:', subDistrict.adcode);
 								// 精确匹配区县名（去除"区"、"县"等后缀）
@@ -350,7 +350,7 @@ export default {
 						// 如果没找到区县adcode，使用城市级别的adcode
 						if (!adcode) {
 							adcode = mainDistrict.adcode;
-							console.log('📍 未找到精确区县，使用上级区域 adcode:', adcode, mainDistrict.name);
+							console.log('�� 未找到精确区县，使用上级区域 adcode:', adcode, mainDistrict.name);
 						}
 						
 						useAdcode = true;
@@ -359,12 +359,12 @@ export default {
 						console.warn('⚠️ 未获取到行政区域编码，使用城市名称搜索');
 					}
 					
-					// 🔥 优先使用adcode进行POI搜索，如果无结果再降级使用城市名称
+					// �� 优先使用adcode进行POI搜索，如果无结果再降级使用城市名称
 					const searchCityParam = useAdcode ? adcode : originalCityName;
-					console.log('🔍 POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
+					console.log('�� POI搜索参数 - keywords:', this.searchKeyword, ', city:', searchCityParam, ', 使用adcode:', useAdcode, ', citylimit: true');
 					
 					uni.request({
-						url: `https://ccpt.0871.cn/api/task/place/search`,
+						url: `https://ccpt.cc111.cn/api/task/place/search`,
 						method: 'POST',
 						data: {
 							key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -380,10 +380,10 @@ export default {
 							// 隐藏加载提示
 							uni.hideLoading()
 
-							console.log('📍 高德地址搜索返回数据:', res.data.data);
-							console.log('📍 返回POI数量:', res.data.data.pois ? res.data.data.pois.length : 0);
+							console.log('�� 高德地址搜索返回数据:', res.data.data);
+							console.log('�� 返回POI数量:', res.data.data.pois ? res.data.data.pois.length : 0);
 
-							// 🔥 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
+							// �� 如果使用adcode搜索无结果，自动降级使用城市名称重新搜索
 							if (useAdcode && (!res.data.data.pois || res.data.data.pois.length === 0) && (res.data.data.status === '1' || res.data.data.status === 'OK')) {
 								console.log('⚠️ adcode搜索无结果，降级使用城市级别重新搜索（去掉区县限制）');
 								uni.showLoading({
@@ -391,9 +391,9 @@ export default {
 									mask: true
 								});
 								
-								// 🔥 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
+								// �� 关键修复：降级时使用城市名（不包含区县），并设置 citylimit=true
 								uni.request({
-									url: `https://ccpt.0871.cn/api/task/place/search`,
+									url: `https://ccpt.cc111.cn/api/task/place/search`,
 									method: 'POST',
 									data: {
 										key: 'e3a5024683cf405c94c5f158b05729b6',
@@ -407,8 +407,8 @@ export default {
 									},
 									success: (retryRes) => {
 										uni.hideLoading();
-										console.log('🔄 降级搜索返回数据:', retryRes.data.data);
-										console.log('🔄 降级搜索返回POI数量:', retryRes.data.data.pois ? retryRes.data.data.pois.length : 0);
+										console.log('�� 降级搜索返回数据:', retryRes.data.data);
+										console.log('�� 降级搜索返回POI数量:', retryRes.data.data.pois ? retryRes.data.data.pois.length : 0);
 										// 处理降级搜索结果
 										this.handleSearchResults(retryRes, originalCityName, originalDistrictName, false);
 									},
@@ -426,7 +426,7 @@ export default {
 							}
 							
 							// 正常处理搜索结果
-							console.log('📍 使用', useAdcode ? 'adcode' : '城市名', '搜索，skipFilter:', useAdcode);
+							console.log('�� 使用', useAdcode ? 'adcode' : '城市名', '搜索，skipFilter:', useAdcode);
 							this.handleSearchResults(res, originalCityName, originalDistrictName, useAdcode);
 						},
 						fail: (err) => {
@@ -450,20 +450,20 @@ export default {
 		},
 		// 【新增方法】统一处理搜索结果
 		handleSearchResults(res, originalCityName, originalDistrictName, skipFilter = false) {
-			console.log('📍 处理搜索结果 - skipFilter:', skipFilter);
+			console.log('�� 处理搜索结果 - skipFilter:', skipFilter);
 
 			// 检查返回状态
 			if ((res.data.data.status === '1' || res.data.data.status === 'OK') && res.data.data.pois && res.data.data.pois.length > 0) {
-				console.log('📍 搜索返回POI数量:', res.data.data.pois.length);
+				console.log('�� 搜索返回POI数量:', res.data.data.pois.length);
 
 				let searchResults = res.data.data.pois
 					.filter(item => {
-						// 🔥 如果使用adcode搜索且skipFilter为true，不进行二次过滤
+						// �� 如果使用adcode搜索且skipFilter为true，不进行二次过滤
 						if (skipFilter) {
 							return true;
 						}
 						
-						// 🔥 二次过滤：确保结果在选定的城市内
+						// �� 二次过滤：确保结果在选定的城市内
 						// 检查cityname字段是否匹配
 						const itemCity = item.cityname || '';
 						const itemProvince = item.pname || '';
@@ -503,8 +503,8 @@ export default {
 					.map(item => {
 						// 计算与当前位置的距离
 						let distance = '0.0'
-						console.log('📏 计算距离 - 当前位置:', this.currentLocation);
-						console.log('📏 计算距离 - 目标位置:', item.location);
+						console.log('�� 计算距离 - 当前位置:', this.currentLocation);
+						console.log('�� 计算距离 - 目标位置:', item.location);
 
 						if (this.currentLocation.latitude && this.currentLocation.longitude) {
 							const lat1 = parseFloat(this.currentLocation.latitude)
@@ -528,7 +528,7 @@ export default {
 								const distanceInMeters = R * c
 
 								distance = (distanceInMeters / 1000).toFixed(1)
-								console.log('📏 计算出的距离:', distance, 'km');
+								console.log('�� 计算出的距离:', distance, 'km');
 							}
 						} else {
 							console.log('⚠️ 当前位置信息不完整，无法计算距离');
@@ -592,7 +592,7 @@ export default {
 			console.log('降级搜索参数:', searchParams);
 
 			uni.request({
-				url: `https://ccpt.0871.cn/api/task/place/search`,
+				url: `https://ccpt.cc111.cn/api/task/place/search`,
 				method: 'POST',
 				data: searchParams,
 				success: (res) => {
@@ -817,7 +817,7 @@ export default {
 		// 降级到高德地图逆地理编码
 		fallbackToAmapGeocode(item, cacheKey) {
 			uni.request({
-				url: 'https://ccpt.0871.cn/api/task/geocode',
+				url: 'https://ccpt.cc111.cn/api/task/geocode',
 				method: 'POST',
 				data: {
 					key: 'e3a5024683cf405c94c5f158b05729b6',

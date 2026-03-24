@@ -7,11 +7,11 @@
     @touchend="onTouchEnd"
   >
 		<!-- 第一个图标 - 绿约 -->
-		<image @click="goToLvyue" class="img-1" src="https://ccpt.qiniu.0871.cn/riderEnd/index/lvyue.svg" mode="aspectFit"></image>
+		<image @click="goToLvyue" class="img-1" src="https://ccpt.qiniu.cc111.cn/riderEnd/index/lvyue.svg" mode="aspectFit"></image>
 		<!-- 第二个图标 - 接单配饿 -->
-		<image @click="goToJiedanpeie" class="img-2" src="https://ccpt.qiniu.0871.cn/riderEnd/index/jiedanpeie.svg" mode="aspectFit"></image>
+		<image @click="goToJiedanpeie" class="img-2" src="https://ccpt.qiniu.cc111.cn/riderEnd/index/jiedanpeie.svg" mode="aspectFit"></image>
 		<!-- 第三个图标 - 骑手登记 -->
-		<image @click="goToQishoudengji" class="img-3" src="https://ccpt.qiniu.0871.cn/riderEnd/index/qishoudengji.svg" mode="aspectFit"></image>
+		<image @click="goToQishoudengji" class="img-3" src="https://ccpt.qiniu.cc111.cn/riderEnd/index/qishoudengji.svg" mode="aspectFit"></image>
   </view>
 </template>
 
@@ -22,7 +22,7 @@ export default {
     // 图片地址
     imageSrc: {
       type: String,
-      default: 'https://ccpt.qiniu.0871.cn/tuijian.png'
+      default: 'https://ccpt.qiniu.cc111.cn/tuijian.png'
     },
     // 点击跳转的页面路径
     targetUrl: {
@@ -148,7 +148,7 @@ export default {
 <style lang="scss" scoped>
 // 悬浮小图样式
 .floating-image {
-	background-image: url(https://ccpt.qiniu.0871.cn/riderEnd/index/beiban.svg);
+	background-image: url(https://ccpt.qiniu.cc111.cn/riderEnd/index/beiban.svg);
 	background-size: cover;
   position: fixed;
   width: 100rpx;

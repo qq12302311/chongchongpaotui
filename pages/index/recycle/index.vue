@@ -35,16 +35,16 @@
 		</view>
 		<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }" style="background: rgba(247, 247, 247, 1);">
 			<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
-				<image src="https://ccpt.qiniu.0871.cn/meituan.svg" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/meituan.svg" mode="aspectFit"></image>
 			</view>
 			<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
-				<image src="https://ccpt.qiniu.0871.cn/guaishou.svg" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/guaishou.svg" mode="aspectFit"></image>
 			</view>
 			<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-				<image src="https://ccpt.qiniu.0871.cn/zhumang.svg" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/zhumang.svg" mode="aspectFit"></image>
 			</view>
 			<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
-				<image src="https://ccpt.qiniu.0871.cn/xiaodian.svg" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/xiaodian.svg" mode="aspectFit"></image>
 			</view>
 		</view>
 	</view>
@@ -259,7 +259,7 @@
 								</view>
 								<view class="time-table-cell time-value" @click="showAppointmentTimePicker">
 									<text>{{ beforeDeadlineTextShow || '请选择时效范围' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 								</view>
 							</view>
 
@@ -276,7 +276,7 @@
 								</view>
 								<view class="time-table-cell time-value" @click="showTimeIntervalPicker">
 									<text>{{ timePickerTextShow || '请选择指定时间' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 								</view>
 							</view> -->
 						</view>
@@ -307,7 +307,7 @@
 						<view class="time-table-cell time-value">
 							<view class="time-picker-wrapper" @click="showTimeRangePicker">
 								<text class="time-display">{{ getTimeRangeDisplay() }}</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-arrow"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-arrow"></image>
 							</view>
 						</view>
 					</view>
@@ -375,7 +375,7 @@
 							</view>
 							<view class="time-table-cell time-value" @click="showCouponPicker">
 								<text>{{ formData.coupon || '请选择优惠券' }}</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 							</view>
 						</view>
 					</view>
@@ -489,7 +489,7 @@
 						</view>
 					</view>
 					<view v-if="priceDetails.couponAmount > 0 && priceDetails.total <= 1" class="price-tip">
-						<text class="tip-icon">💡</text>
+						<text class="tip-icon">��</text>
 						<text class="tip-text">支付金额低于1元时，实际需支付 <text style='color:#2492F2;font-weight:bold;'>1元</text></text>
 					</view>
 					<!-- 底部安全区域 -->
@@ -539,12 +539,12 @@
 		<!-- <uni-popup ref="tipModal" type="bottom" @change="onTipModalChange" :mask-click="true" :z-index="100000">
 			<view class="tip-modal">
 				<view class="tip-close" @click="closeTipModal">×</view>
-				<image src="https://ccpt.qiniu.0871.cn/fb-toubutupian.png" class="tip-banner" mode="widthFix"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/fb-toubutupian.png" class="tip-banner" mode="widthFix"></image>
 				<view class="tip-panel">
 					<view class="tip-options">
 						<view class="tip-option" :class="{ active: selectedTipOption === 'heart' }" @click="selectTipOption('heart', 8)">
 							<view class="option-icon-wrap">
-								<image src="https://ccpt.qiniu.0871.cn/fb-songaixin.png" class="option-icon" mode="aspectFit"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/fb-songaixin.png" class="option-icon" mode="aspectFit"></image>
 							</view>
 							<text class="option-title">送爱心</text>
 							<view class="option-amount" :class="{ active: selectedTipOption === 'heart' }">
@@ -554,7 +554,7 @@
 						</view>
 						<view class="tip-option" :class="{ active: selectedTipOption === 'drink' }" @click="selectTipOption('drink', 12)">
 							<view class="option-icon-wrap">
-								<image src="https://ccpt.qiniu.0871.cn/fb-zengyinliao.png" class="option-icon" mode="aspectFit"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/fb-zengyinliao.png" class="option-icon" mode="aspectFit"></image>
 							</view>
 							<text class="option-title">赠饮料</text>
 							<view class="option-amount" :class="{ active: selectedTipOption === 'drink' }">
@@ -564,7 +564,7 @@
 						</view>
 						<view class="tip-option" :class="{ active: selectedTipOption === 'chicken' }" @click="selectTipOption('chicken', 20)">
 							<view class="option-icon-wrap">
-								<image src="https://ccpt.qiniu.0871.cn/fb-jiajitui.png" class="option-icon" mode="aspectFit"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/fb-jiajitui.png" class="option-icon" mode="aspectFit"></image>
 							</view>
 							<text class="option-title">加鸡腿</text>
 							<view class="option-amount" :class="{ active: selectedTipOption === 'chicken' }">
@@ -574,7 +574,7 @@
 						</view>
 						<view class="tip-option" :class="{ active: selectedTipOption === 'redpack' }" @click="selectTipOption('redpack', 'more')">
 							<view class="option-icon-wrap">
-								<image src="https://ccpt.qiniu.0871.cn/fb-dahongbao.png" class="option-icon" mode="aspectFit"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/fb-dahongbao.png" class="option-icon" mode="aspectFit"></image>
 							</view>
 							<text class="option-title">豪横大红包</text>
 							<view class="option-amount" :class="{ active: selectedTipOption === 'redpack' }">
@@ -599,17 +599,17 @@
 		<uni-popup ref="orderConfirmPopup" type="center" @change="onOrderConfirmPopupChange" :mask-click="false" :z-index="100000">
 			<view class="order-confirm-popup">
 				<view class="confirm-header">
-					<image src="https://ccpt.qiniu.0871.cn/home/querengongdan.png" class="confirm-header-bg" mode="aspectFill"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/home/querengongdan.png" class="confirm-header-bg" mode="aspectFill"></image>
 				</view>
 				<view class="confirm-content">
 					<!-- 服务信息块 -->
 					<view class="service-info-block imgcc1">
 						<view class="confirm-item service-item">
 							<view class="confirm-value brand-value service-value">
-								<image v-if="selectedBrand === 'meituan'" src="https://ccpt.qiniu.0871.cn/meituan.svg" class="brand-icon" mode="aspectFit"></image>
-								<image v-if="selectedBrand === 'guaishou'" src="https://ccpt.qiniu.0871.cn/guaishou.svg" class="brand-icon" mode="aspectFit"></image>
-								<image v-if="selectedBrand === 'jiedian'" src="https://ccpt.qiniu.0871.cn/zhumang.svg" class="brand-icon" mode="aspectFit"></image>
-								<image v-if="selectedBrand === 'xiaodian'" src="https://ccpt.qiniu.0871.cn/xiaodian.svg" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'meituan'" src="https://ccpt.qiniu.cc111.cn/meituan.svg" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'guaishou'" src="https://ccpt.qiniu.cc111.cn/guaishou.svg" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'jiedian'" src="https://ccpt.qiniu.cc111.cn/zhumang.svg" class="brand-icon" mode="aspectFit"></image>
+								<image v-if="selectedBrand === 'xiaodian'" src="https://ccpt.qiniu.cc111.cn/xiaodian.svg" class="brand-icon" mode="aspectFit"></image>
 								<text class="brand-text">{{ getBrandName() }}</text>
 							</view>
 							<text class="confirm-label service-label">服务品牌</text>
@@ -1103,7 +1103,7 @@
 			initAreaData() {
 				this.selectedCity = uni.getStorageSync('selectedCity') || '';
 				this.selectedDistrictId = uni.getStorageSync('selectedDistrictId') || '';
-				console.log('🏙️ 初始化区域数据:', {
+				console.log('��️ 初始化区域数据:', {
 					selectedCity: this.selectedCity,
 					selectedDistrictId: this.selectedDistrictId,
 					hasSelectedArea: this.hasSelectedArea
@@ -1112,7 +1112,7 @@
 
 			// 显示区域选择模态框（透明蒙版点击时）
 			showAreaSelectionModal() {
-				console.log('🎭 透明蒙版被点击，显示区域选择提示');
+				console.log('�� 透明蒙版被点击，显示区域选择提示');
 
 				uni.showModal({
 					title: '选择服务区域',
@@ -1124,7 +1124,7 @@
 						if (res.confirm) {
 							// 监听区域选择完成事件
 							uni.$on('areaSelected', (data) => {
-								console.log('🎯 监听到区域选择完成，重新获取服务商信息', data);
+								console.log('�� 监听到区域选择完成，重新获取服务商信息', data);
 								// 更新 Vue 响应式数据
 								this.selectedCity = data.city;
 								this.selectedDistrictId = data.districtId;
@@ -1159,7 +1159,7 @@
 				const selectedCity = uni.getStorageSync('selectedCity');
 				const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
 
-				console.log('🏙️ 初始区域检查:', { selectedCity, selectedDistrictId });
+				console.log('��️ 初始区域检查:', { selectedCity, selectedDistrictId });
 
 				// 如果没有选择城市或区域，立即弹出区域选择页面
 				if (!selectedCity || !selectedDistrictId) {
@@ -1196,7 +1196,7 @@
 				const selectedCity = uni.getStorageSync('selectedCity');
 				const selectedDistrictId = uni.getStorageSync('selectedDistrictId');
 
-				console.log('🏙️ 检查区域选择:', { selectedCity, selectedDistrictId });
+				console.log('��️ 检查区域选择:', { selectedCity, selectedDistrictId });
 
 				// 如果没有选择城市或区域，弹出区域选择页面
 				if (!selectedCity || !selectedDistrictId) {
@@ -1234,7 +1234,7 @@
 		// 调用 user/create 接口
 		async callUserCreate() {
 			try {
-				console.log('📞 调用 user/create 接口')
+				console.log('�� 调用 user/create 接口')
 				const userInfo = uni.getStorageSync('userInfo')
 				
 				if (!userInfo || !userInfo.openid) {
@@ -1248,7 +1248,7 @@
 				}
 
 				const response = await uni.request({
-					url: 'https://ccpt.0871.cn/api/user/create',
+					url: 'https://ccpt.cc111.cn/api/user/create',
 					method: 'POST',
 					data: params,
 					header: {
@@ -1290,7 +1290,7 @@
 					}
 				}
 
-				console.log('🏪 获取服务商信息，区域ID:', selectedDistrictId);
+				console.log('�� 获取服务商信息，区域ID:', selectedDistrictId);
 				const res = await this.$request('task/provider/info', { district_id: selectedDistrictId }, 'POST');
 				console.log('服务商信息:', res);
 
@@ -2047,7 +2047,7 @@
 			// 开始上传
 			uploadFile(tempFilePaths) {
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: tempFilePaths[0],
 					name: 'image', // 必须填写，后台用来接收文件
 					formData: {
@@ -2095,7 +2095,7 @@
 					fileName: url,
 				}
 				uni.request({
-					url: 'https://tixian.0871.cn/upload/qiniuDelete',
+					url: 'https://tixian.cc111.cn/upload/qiniuDelete',
 					data: data,
 					header: {
 						'Accept': 'application/json',
@@ -5206,7 +5206,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di1.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -5220,7 +5220,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di1.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -5234,7 +5234,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di1.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -5248,7 +5248,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di1.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -5262,7 +5262,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di1.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -5276,7 +5276,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di1.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di1.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -5364,7 +5364,7 @@ extra_task_1: this.selectedAdditionalServices.includes('handleException') ? '处
 		bottom: 0;
 		width: 80rpx;
 		height: 80rpx;
-		background-image: url('https://ccpt.qiniu.0871.cn/home/di2.svg');
+		background-image: url('https://ccpt.qiniu.cc111.cn/home/di2.svg');
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: center;

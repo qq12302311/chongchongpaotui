@@ -40,7 +40,7 @@
 
 				<view class="search-input-wrapper">
 					<view class="search-input">
-						<text class="iconfont search-icon">🔍</text>
+						<text class="iconfont search-icon">��</text>
 						<input
 						type="text"
 						v-model="searchKeyword"
@@ -72,7 +72,7 @@
 				</view>
 				<!-- 空状态 -->
 				<view v-else-if="!loading && orderList.length === 0" class="empty-state">
-					<image class="empty-image" src="https://ccpt.qiniu.0871.cn/order/notorder.png" mode="aspectFit"></image>
+					<image class="empty-image" src="https://ccpt.qiniu.cc111.cn/order/notorder.png" mode="aspectFit"></image>
 					<text class="empty-text">暂无相关订单</text>
 				</view>
 				<!-- 订单列表 -->
@@ -124,11 +124,11 @@
 								<text class="label">订单金额：</text>
 								<view class="price-wrapper" @click.stop="togglePrice(order.task_id, $event)">
 									<text class="value price" v-if="showPriceMap[order.task_id]">¥{{order.order_amount}}</text>
-									<image v-else class="arrow-icon" src="https://ccpt.qiniu.0871.cn/home/my/byj.svg" mode="aspectFit"></image>
+									<image v-else class="arrow-icon" src="https://ccpt.qiniu.cc111.cn/home/my/byj.svg" mode="aspectFit"></image>
 								</view>
 								<!-- 再来一单按钮 - 绝对定位 -->
 								<view class="reorder-btn-float" @click.stop="handleReorderFromOrder(order)">
-									<image class="reorder-emoji" src="https://ccpt.qiniu.0871.cn/zlyd.svg" mode="aspectFit"></image>
+									<image class="reorder-emoji" src="https://ccpt.qiniu.cc111.cn/zlyd.svg" mode="aspectFit"></image>
 									<text class="reorder-text">再来一单</text>
 								</view>
 							</view>
@@ -230,12 +230,12 @@
 		// 【新增方法】根据城市和区县名称查找并更新 district_id
 		async updateDistrictIdByAddress(cityName, districtName) {
 			try {
-				console.log('🔍 [再来一单] 开始查找 district_id，城市:', cityName, '区县:', districtName);
+				console.log('�� [再来一单] 开始查找 district_id，城市:', cityName, '区县:', districtName);
 				
 				// 获取城市列表数据
 				let cityListData = uni.getStorageSync('cityList');
 				if (!cityListData) {
-					console.log('📥 城市列表数据为空，正在获取...');
+					console.log('�� 城市列表数据为空，正在获取...');
 					const res = await this.$request('service/zone', {}, 'POST');
 					if (res.code === 200 && res.data) {
 						cityListData = res.data;

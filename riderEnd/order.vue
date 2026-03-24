@@ -14,7 +14,7 @@
       </view>
       <view class="search-box">
         <view class="search-icon-container">
-          <image src="https://ccpt.qiniu.0871.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
         </view>
         <input type="text" placeholder="输入关键字搜索订单" class="search-input" />
       </view>
@@ -99,7 +99,7 @@
 
           <view class="order-footer">
             <view class="distance-info">
-              <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+              <image src="https://ccpt.qiniu.cc111.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
               <text class="distance-text">距离订单地址<text class="highlight">{{ order.distance }}km</text></text>
               <text class="location-detail" @click.stop="showLocationDetail(order)">点击导航</text>
             </view>
@@ -109,7 +109,7 @@
 
         <!-- 无数据提示 -->
         <view v-if="!loading && orderList.length === 0" class="empty-tip">
-          <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
           <text class="empty-text">暂无订单</text>
         </view>
       </view>

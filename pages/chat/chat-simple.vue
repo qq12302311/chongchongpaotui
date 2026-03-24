@@ -63,7 +63,7 @@
 			<!-- 快捷回复区域 -->
 			<view class="quick-reply-area">
 				<view class="quick-reply-header">
-					<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="header-icon"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="header-icon"></image>
 					<text class="header-text">快捷回复</text>
 				</view>
 				<view class="quick-reply-list">
@@ -449,9 +449,9 @@
 			// 获取默认头像
 			getDefaultAvatar(type) {
 				if (type === 'self') {
-					return 'https://ccpt.qiniu.0871.cn/duihua/qishou.png'
+					return 'https://ccpt.qiniu.cc111.cn/duihua/qishou.png'
 				} else {
-					return 'https://ccpt.qiniu.0871.cn/112lbtx.png'
+					return 'https://ccpt.qiniu.cc111.cn/112lbtx.png'
 				}
 			},
 
@@ -482,7 +482,7 @@
 			// 获取聊天记录
 			async getChat() {
 				const res = await uni.request({
-					url: `https://ccpt.0871.cn/api/chat`,
+					url: `https://ccpt.cc111.cn/api/chat`,
 					method: 'POST',
 					data: {
 						room_id: this.roomId,
@@ -515,9 +515,9 @@
 							let avatar = item.avatar
 							if (!avatar) {
 								if (item.messageable_type === 'App\\Models\\ServiceMember') {
-									avatar = 'https://ccpt.qiniu.0871.cn/duihua/qishou.png'
+									avatar = 'https://ccpt.qiniu.cc111.cn/duihua/qishou.png'
 								} else if (item.messageable_type === 'App\\Models\\User') {
-									avatar = 'https://ccpt.qiniu.0871.cn/112lbtx.png'
+									avatar = 'https://ccpt.qiniu.cc111.cn/112lbtx.png'
 								} else {
 									avatar = null
 								}

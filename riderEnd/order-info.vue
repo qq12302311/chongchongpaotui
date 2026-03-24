@@ -45,7 +45,7 @@
 		<view class="city-efficiency-card">
 			<view class="efficiency-content">
 				<view class="city-area">
-					<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/tb11.png" class="location-icon" mode="aspectFit"></image>
 					<text class="city-name">{{ orderInfo.city_name }} · {{ areaName() }}</text>
 				</view>
 				<text class="efficiency-label">近100单平均完单时效：</text>
@@ -163,7 +163,7 @@
 	<!-- 地图和门店信息卡片 -->
 	<view class="order-card map-store-card">
 		<!-- 卡片背景图 -->
-		<image class="card-bg-image store-bg-image" src="https://ccpt.qiniu.0871.cn/riderEnd/fuwumendian.svg" mode="aspectFit"></image>
+		<image class="card-bg-image store-bg-image" src="https://ccpt.qiniu.cc111.cn/riderEnd/fuwumendian.svg" mode="aspectFit"></image>
 		<!-- 地图导航 -->
 		<view class="map-card" v-if="orderInfo.shop_address || orderInfo.address">
 			<view class="map-container" @tap="openNavigation">
@@ -182,7 +182,7 @@
 				</map>
 				<view v-else class="map-placeholder">
 					<view class="map-icon-wrapper">
-						<image src="https://ccpt.qiniu.0871.cn/tb11.png" class="map-icon" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/tb11.png" class="map-icon" mode="aspectFit"></image>
 					</view>
 					<text class="map-text">点击打开地图导航</text>
 					<view class="map-arrow">→</view>
@@ -219,7 +219,7 @@
 	<view class="info-value-wrapper">
 		<text class="info-value">{{ orderInfo.task_detail && orderInfo.task_detail.store_name ? orderInfo.task_detail.store_name : '未知门店' }}</text>
 		<view class="copy-btn" @click.stop="copyText(orderInfo.task_detail && orderInfo.task_detail.store_name ? orderInfo.task_detail.store_name : '', '服务门店')">
-			<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+			<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 		</view>
 	</view>
 </view>
@@ -231,7 +231,7 @@
 	<view class="info-value-wrapper">
 		<text class="info-value">{{ orderInfo.shop_address ? orderInfo.shop_address : '无' }}</text>
 		<view class="copy-btn" @click.stop="copyText(orderInfo.shop_address ? orderInfo.shop_address : '', '地址详情')">
-			<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+			<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 		</view>
 	</view>
 </view>
@@ -246,7 +246,7 @@
 		<view class="info-value-wrapper">
 			<text class="info-value">{{ orderInfo.task_detail && orderInfo.task_detail.shop_poi ? orderInfo.task_detail.shop_poi : '无' }}</text>
 			<view class="copy-btn" v-if="orderInfo.task_detail && orderInfo.task_detail.shop_poi" @tap.stop="copyDeviceCode(orderInfo.task_detail.shop_poi)">
-				<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 			</view>
 		</view>
 	</view>
@@ -263,7 +263,7 @@
 			<view v-for="(code, index) in deviceCodes" :key="index" class="device-code-item">
 				<text class="code-text">{{ code }}</text>
 				<view class="copy-btn" @tap.stop="copyDeviceCode(code)">
-					<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 				</view>
 			</view>
 			<text v-if="deviceCodes.length === 0">无</text>
@@ -274,7 +274,7 @@
 	<!-- 订单信息卡片 -->
 	<view class="order-card order-info-card">
 		<!-- 卡片背景图 -->
-		<image class="card-bg-image order-bg-image" src="https://ccpt.qiniu.0871.cn/riderEnd/index/12311.svg" mode="aspectFit"></image>
+		<image class="card-bg-image order-bg-image" src="https://ccpt.qiniu.cc111.cn/riderEnd/index/12311.svg" mode="aspectFit"></image>
 		<!-- 订单编号 -->
 		<view class="info-row">
 			<view class="dot-icon"></view>
@@ -282,7 +282,7 @@
 			<view class="info-value-wrapper">
 				<text class="info-value">{{ orderInfo.task_no }}</text>
 				<view class="copy-btn" @tap.stop="copyOrderNumber">
-					<image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
 				</view>
 			</view>
 		</view>
@@ -374,7 +374,7 @@
 	<!-- 约定时效和上门时段卡片 -->
 	<view class="order-card time-card">
 		<!-- 卡片背景图 -->
-		<image class="card-bg-image time-bg-image" src="https://ccpt.qiniu.0871.cn/riderEnd/yuedingshixiao.svg" mode="aspectFit"></image>
+		<image class="card-bg-image time-bg-image" src="https://ccpt.qiniu.cc111.cn/riderEnd/yuedingshixiao.svg" mode="aspectFit"></image>
 		<!-- 约定时效 -->
 		<view class="info-row time-row">
 			<view class="dot-icon"></view>
@@ -398,7 +398,7 @@
 	<!-- 订单备注卡片 -->
 	<view class="order-card remark-card-new">
 		<!-- 卡片背景图 -->
-		<image class="card-bg-image remark-bg-image" src="https://ccpt.qiniu.0871.cn/riderEnd/dingdanbeizhu.svg" mode="aspectFit"></image>
+		<image class="card-bg-image remark-bg-image" src="https://ccpt.qiniu.cc111.cn/riderEnd/dingdanbeizhu.svg" mode="aspectFit"></image>
 		<view class="info-row">
 			<view class="dot-icon"></view>
 			<text class="info-label">订单备注</text>
@@ -622,11 +622,11 @@
 		<!-- 底部按钮 -->
 		<view class="bottom-bar">
 			<view class="home-btn" @click="goToHome">
-				<image src="https://ccpt.qiniu.0871.cn/rider/home.png" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/rider/home.png" mode="aspectFit"></image>
 				<text>接单大厅</text>
 			</view>
 			<!-- <view class="chat-btn" @click="goToChat">
-				<image src="https://ccpt.qiniu.0871.cn/rider/chat.png" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/rider/chat.png" mode="aspectFit"></image>
 				<text>聊天</text>
 			</view> -->
 			<template v-if="orderInfo.status === 'assigned'">
@@ -643,7 +643,7 @@
 			<view class="popup-mask" @click="closeFeedbackPopup"></view>
 			<view class="popup-content">
 			<view class="popup-header">
-				<image class="header-image" src="https://ccpt.qiniu.0871.cn/tjwct.png" mode="widthFix"></image>
+				<image class="header-image" src="https://ccpt.qiniu.cc111.cn/tjwct.png" mode="widthFix"></image>
 				<text class="close" @click="closeFeedbackPopup">×</text>
 			</view>
 				<view class="popup-body">
@@ -653,22 +653,22 @@
 							<view class="example-images">
 								<view class="example-item">
 									<text class="example-label">到店持宝打卡</text>
-									<image src="https://ccpt.qiniu.0871.cn/tupian1.jpg" mode="aspectFill" class="example-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/tupian1.jpg" mode="aspectFill" class="example-image"></image>
 									<text class="example-tag">示例图</text>
 								</view>
 								<view class="example-item">
 									<text class="example-label">维护前</text>
-									<image src="https://ccpt.qiniu.0871.cn/tupian2.jpg" mode="aspectFill" class="example-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/tupian2.jpg" mode="aspectFill" class="example-image"></image>
 									<text class="example-tag">示例图</text>
 								</view>
 								<view class="example-item">
 									<text class="example-label">维护后</text>
-									<image src="https://ccpt.qiniu.0871.cn/tupian3.jpg" mode="aspectFill" class="example-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/tupian3.jpg" mode="aspectFill" class="example-image"></image>
 									<text class="example-tag">示例图</text>
 								</view>
 								<view class="example-item">
 									<text class="example-label">仓宝状态确认</text>
-									<image src="https://ccpt.qiniu.0871.cn/tupian4.jpg" mode="aspectFill" class="example-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/tupian4.jpg" mode="aspectFill" class="example-image"></image>
 									<text class="example-tag">示例图</text>
 								</view>
 							</view>
@@ -801,7 +801,7 @@
 			<view class="cancel-popup-content">
 				<!-- 顶部图片区域 -->
 				<view class="cancel-header-wrapper">
-					<image class="cancel-header-image" src="https://ccpt.qiniu.0871.cn/riderEnd/qxtc.png" mode="widthFix"></image>
+					<image class="cancel-header-image" src="https://ccpt.qiniu.cc111.cn/riderEnd/qxtc.png" mode="widthFix"></image>
 					<!-- 红色提示文字 -->
 					<text class="cancel-warning-text">辛苦小哥尽量完成订单！</text>
 					<text class="cancel-warning-text-2">放弃将消耗您1次接单配额！</text>
@@ -838,7 +838,7 @@
 
 	<!-- 悬浮钱袋图标 -->
 	<view class="floating-money-bag" @click="handleMoneyBagClick" v-if="orderInfo.rewardInfo">
-		<image class="money-bag-icon" src="https://ccpt.qiniu.0871.cn/riderEnd/qiandai.svg" mode="aspectFit"></image>
+		<image class="money-bag-icon" src="https://ccpt.qiniu.cc111.cn/riderEnd/qiandai.svg" mode="aspectFit"></image>
 	</view>
 
 	<!-- 悬浮聊天图标 -->
@@ -1292,7 +1292,7 @@
 							id: 1,
 							latitude: this.orderInfo.latitude,
 							longitude: this.orderInfo.longitude,
-							iconPath: 'https://ccpt.qiniu.0871.cn/tb11.png',
+							iconPath: 'https://ccpt.qiniu.cc111.cn/tb11.png',
 							width: 30,
 							height: 30
 						}];
@@ -1562,7 +1562,7 @@
 				});
 
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: tempFilePaths[0],
 					name: 'image', // 必须填写，后台用来接收文件
 					formData: {
@@ -1625,7 +1625,7 @@
 
 				tempFilePaths.forEach((filePath, index) => {
 					uni.uploadFile({
-						url: 'https://tixian.0871.cn/upload/qiniuImageUpload',
+						url: 'https://tixian.cc111.cn/upload/qiniuImageUpload',
 						filePath: filePath,
 						name: 'image',
 						formData: {
@@ -1742,7 +1742,7 @@
 					if (this.isModifyMode) {
 						// 修改模式：调用更新接口
 						res = await uni.request({
-							url: 'https://ccpt.0871.cn/api/task/finish/update',
+							url: 'https://ccpt.cc111.cn/api/task/finish/update',
 							method: 'POST',
 							data: submitData,
 							header: {
@@ -2316,7 +2316,7 @@
 				left: 0;
 				right: 0;
 				bottom: 0;
-				background-image: url('https://ccpt.qiniu.0871.cn/riderend/ygwd.svg');
+				background-image: url('https://ccpt.qiniu.cc111.cn/riderend/ygwd.svg');
 				background-size: 100% 100%;
 				background-position: center;
 				background-repeat: no-repeat;

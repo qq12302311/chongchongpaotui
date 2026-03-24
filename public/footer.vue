@@ -8,7 +8,7 @@
 				<u-image class="u-page__item__slot-icon" slot="inactive-icon" :src="item.inactiveIcon" width="40rpx"
 					height="40rpx"></u-image>
 				<!-- <view class="cds-sds">
-					<u-icon name="https://agan.qiniu.0871.cn/edition/recharge/chongduoshao.svg" size="16"></u-icon>
+					<u-icon name="https://agan.qiniu.cc111.cn/edition/recharge/chongduoshao.svg" size="16"></u-icon>
 				</view> -->
 			</u-tabbar-item>
 		</u-tabbar>
@@ -35,26 +35,26 @@
 				modelshow: false,
 				list: [{
 						text: '首页',
-						activeIcon: 'https://agan.qiniu.0871.cn/edition/footer/active-home.svg',
-						inactiveIcon: 'https://agan.qiniu.0871.cn/edition/footer/home.svg',
+						activeIcon: 'https://agan.qiniu.cc111.cn/edition/footer/active-home.svg',
+						inactiveIcon: 'https://agan.qiniu.cc111.cn/edition/footer/home.svg',
 						name: 0,
 					},
 					// {
 					// 	text: '会员充值',
-					// 	activeIcon: 'https://agan.qiniu.0871.cn/edition/footer/active-huiyuanchongzhi.svg',
-					// 	inactiveIcon: 'https://agan.qiniu.0871.cn/edition/footer/huiyuanchongzhi.svg',
+					// 	activeIcon: 'https://agan.qiniu.cc111.cn/edition/footer/active-huiyuanchongzhi.svg',
+					// 	inactiveIcon: 'https://agan.qiniu.cc111.cn/edition/footer/huiyuanchongzhi.svg',
 					// 	name: 1,
 					// },
 					{
 						text: '订单',
-						activeIcon: 'https://agan.qiniu.0871.cn/edition/footer/active-order.svg',
-						inactiveIcon: 'https://agan.qiniu.0871.cn/edition/footer/order.svg',
+						activeIcon: 'https://agan.qiniu.cc111.cn/edition/footer/active-order.svg',
+						inactiveIcon: 'https://agan.qiniu.cc111.cn/edition/footer/order.svg',
 						name: 1,
 					},
 					{
 						text: '我的',
-						activeIcon: 'https://agan.qiniu.0871.cn/edition/footer/active-wode-3.svg',
-						inactiveIcon: 'https://agan.qiniu.0871.cn/edition/footer/wode-3.svg',
+						activeIcon: 'https://agan.qiniu.cc111.cn/edition/footer/active-wode-3.svg',
+						inactiveIcon: 'https://agan.qiniu.cc111.cn/edition/footer/wode-3.svg',
 						name: 2,
 					},
 				],

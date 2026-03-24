@@ -11,7 +11,7 @@
       <!-- 指南图片 -->
       <view class="guide-image-container">
         <image
-          src="https://ccpt.qiniu.0871.cn/my/yonghuzhinan1.png"
+          src="https://ccpt.qiniu.cc111.cn/my/yonghuzhinan1.png"
           mode="widthFix"
           class="guide-image"
           @click="previewImage"
@@ -54,7 +54,7 @@ export default {
     return {
       imageLoading: true,
       imageError: false,
-      imageUrl: 'https://ccpt.qiniu.0871.cn/my/yonghuzhinan1.png'
+      imageUrl: 'https://ccpt.qiniu.cc111.cn/my/yonghuzhinan1.png'
     }
   },
 

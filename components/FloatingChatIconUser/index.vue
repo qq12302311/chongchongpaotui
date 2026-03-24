@@ -9,7 +9,7 @@
   >
     <view class="icon-wrapper">
       <image
-        src="https://ccpt.qiniu.0871.cn/duihua2-active.svg"
+        src="https://ccpt.qiniu.cc111.cn/duihua2-active.svg"
         mode="aspectFit"
         class="chat-icon"
       ></image>
@@ -82,7 +82,7 @@ export default {
 
         // 调用接口获取未读消息数量
         const response = await uni.request({
-          url: 'https://ccpt.0871.cn/api/user/create',
+          url: 'https://ccpt.cc111.cn/api/user/create',
           method: 'POST',
           data: {
             openid: userInfo.openid,

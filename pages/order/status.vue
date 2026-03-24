@@ -24,7 +24,7 @@
       </view>
       <view class="status-text">待接单</view>
       <view class="share-btn" @click="shareOrder">
-        <image src="https://ccpt.qiniu.0871.cn/publish/fenxiang.png" mode="aspectFit"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/publish/fenxiang.png" mode="aspectFit"></image>
         <text>分享订单</text>
       </view>
 
@@ -35,19 +35,19 @@
       <!-- 操作按钮组 -->
       <view class="action-group">
         <view class="action-item" @click="urgeOrder">
-          <image src="https://ccpt.qiniu.0871.cn/publish/cuidan.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/publish/cuidan.png" mode="aspectFit"></image>
           <text>催单</text>
         </view>
         <view class="action-item" @click="editOrder">
-          <image src="https://ccpt.qiniu.0871.cn/publish/gaidanxinxi.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/publish/gaidanxinxi.png" mode="aspectFit"></image>
           <text>改单信息</text>
         </view>
         <view class="action-item" @click="orderAgain">
-          <image src="https://ccpt.qiniu.0871.cn/publish/zailaiyidan.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/publish/zailaiyidan.png" mode="aspectFit"></image>
           <text>再来一单</text>
         </view>
         <view class="action-item" @click="cancelOrder">
-          <image src="https://ccpt.qiniu.0871.cn/publish/quxiaodingdan.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/publish/quxiaodingdan.png" mode="aspectFit"></image>
           <text>取消订单</text>
         </view>
       </view>
@@ -57,7 +57,7 @@
     <view class="order-status-panel">
       <view class="panel-header" @click="toggleOrderStatus">
         <view class="status-icon-wrapper">
-          <image class="status-icon" src="https://ccpt.qiniu.0871.cn/publish/lujing.png" mode="aspectFit"></image>
+          <image class="status-icon" src="https://ccpt.qiniu.cc111.cn/publish/lujing.png" mode="aspectFit"></image>
           <text>订单状态</text>
         </view>
       </view>
@@ -67,12 +67,12 @@
     <view class="order-card">
       <view class="order-info">
         <view class="order-main">
-          <image class="order-icon" src="https://ccpt.qiniu.0871.cn/publish/banner.png" mode="aspectFit"></image>
+          <image class="order-icon" src="https://ccpt.qiniu.cc111.cn/publish/banner.png" mode="aspectFit"></image>
           <view class="order-content">
             <view class="order-title">充充快跑【离线&异常】订单</view>
             <view class="order-number">订单编号：888888888888888</view>
           </view>
-          <image class="arrow-icon" src="https://ccpt.qiniu.0871.cn/publish/you.png" mode="aspectFit"></image>
+          <image class="arrow-icon" src="https://ccpt.qiniu.cc111.cn/publish/you.png" mode="aspectFit"></image>
         </view>
 
       </view>

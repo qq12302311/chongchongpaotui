@@ -13,12 +13,13 @@
 			"style": {
 				"navigationStyle": "custom",
 				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2"
+				"navigationBarBackgroundColor": "#2492F2",
+		"enablePullDownRefresh": true
 			}
 		},
 		{
-			"path": "pages/login/index",
-			"style": {
+		"path": "pages/login/index",
+		"style": {
 				"navigationStyle": "custom",
 				"navigationBarTextStyle": "white",
 				"navigationBarBackgroundColor": "#2492F2"
@@ -49,24 +50,6 @@
 			}
 		},
 		{
-			"path": "pages/index/publish/index",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2",
-				"navigationBarTitleText": "发布订单"
-			}
-		},
-		{
-			"path": "pages/index/recycle/index",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2",
-				"navigationBarTitleText": "回收宝贝"
-			}
-		},
-		{
 			"path": "pages/index/offline/index",
 			"style": {
 				"navigationStyle": "custom",
@@ -90,26 +73,19 @@
 			}
 		},
 		{
-			"path": "pages/index/publish/map/index",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2"
-			}
-		},
-		{
-			"path": "pages/index/publish/map/search-results",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2"
-			}
-		},
-		{
 			"path": "pages/index/history-records/index",
 			"style": {
 				"navigationStyle": "custom",
 				"navigationBarTitleText": "历史门店记录"
+			}
+		},
+		{
+			"path": "pages/index/recycle/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#2492F2",
+				"navigationBarTitleText": "回收宝贝"
 			}
 		},
 		{
@@ -132,29 +108,6 @@
 				"navigationBarTextStyle": "white",
 				"navigationBarBackgroundColor": "#2492F2",
 				"navigationBarTitleText": "订单详情"
-			}
-		},
-		{
-			"path": "pages/index/publish/map/area-data",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTitleText": "区县数据"
-			}
-		},
-		{
-			"path": "pages/index/publish/store-info/index",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2"
-			}
-		},
-		{
-			"path": "pages/index/publish/coupon/index",
-			"style": {
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white",
-				"navigationBarBackgroundColor": "#2492F2"
 			}
 		},
 		{
@@ -218,6 +171,60 @@
 		}
 	],
 	"subPackages": [
+		{
+			"root": "pages/index/publish",
+			"name": "publish",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "发布订单"
+					}
+				},
+				{
+					"path": "map/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "map/search-results",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "map/area-data",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTitleText": "区县数据"
+					}
+				},
+				{
+					"path": "store-info/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				},
+				{
+					"path": "coupon/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2"
+					}
+				}
+			]
+		},
 		{
 			"root": "riderEnd",
 			"name": "rider",
@@ -515,6 +522,15 @@
 						"navigationBarTextStyle": "white",
 						"navigationBarBackgroundColor": "#2492F2",
 						"navigationBarTitleText": "提现详情"
+					}
+				},
+				{
+					"path": "financialStatistics/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTextStyle": "white",
+						"navigationBarBackgroundColor": "#2492F2",
+						"navigationBarTitleText": "财务统计"
 					}
 				},
 				{

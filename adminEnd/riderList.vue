@@ -282,7 +282,7 @@
           <view class="rider-header">
             <view class="rider-avatar-section">
               <view class="rider-avatar">
-                <image src="https://ccpt.qiniu.0871.cn/rider/verify/touxiang.png" mode="aspectFill"></image>
+                <image src="https://ccpt.qiniu.cc111.cn/rider/verify/touxiang.png" mode="aspectFill"></image>
               </view>
 
               <!-- 骑手认证状态 - 放在头像下面 -->
@@ -345,7 +345,7 @@
                   <text class="phone-text">{{ rider.phone_number }}</text>
                   <view class="copy-btn" @click.stop="copyText(rider.phone_number, '手机号')">
                     <!-- 复制 -->
-                    <image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+                    <image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
                   </view>
                 </view>
                 <view class="rider-rate-wrapper">
@@ -359,7 +359,7 @@
                   <text class="weixin-text">{{ rider.weixin }}</text>
                   <view class="copy-btn" @click.stop="copyText(rider.weixin, '微信号')">
                     <!-- 复制 -->
-                    <image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+                    <image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
                   </view>
                 </view>
                 <view class="rider-deposit-wrapper">
@@ -474,6 +474,7 @@
             <view class="action-btn edit" @click.stop="showZoneEditModal(rider)">编辑区域</view>
             <view class="action-btn balance" @click.stop="showBalanceModal(rider)">余额</view>
             <view class="action-btn reset" @click.stop="showResetPasswordModal(rider)">密码</view>
+            <view class="action-btn split-register" @click.stop="registerSplitReceiver(rider)">注册分账</view>
             <view v-if="rider.submit_certification === '待审核' && rider.latest_certification" class="action-btn verify" @click.stop="showVerifyModal(rider)">
               审核
             </view>
@@ -869,6 +870,7 @@
 
 <script>
 import NavBar from '@/components/NavBar.vue'
+import md5 from 'md5'
 
 export default {
   components: {
@@ -1036,7 +1038,7 @@ export default {
                   type: this.pickerSelect.value,
                 })
               const res = await uni.request({
-                url: `https://ccpt.0871.cn/api/sms`,
+                url: `https://ccpt.cc111.cn/api/sms`,
                 method: 'POST',
                 data: {
                   phone: this.selectedIds[i],
@@ -2459,6 +2461,46 @@ export default {
         this.balanceLoading = false; // 重置加载状态
       }
     },
+
+    // 注册为分账接收方
+    async registerSplitReceiver(rider) {
+      uni.showModal({
+        title: '注册分账接收方',
+        content: `确认将骑手「${rider.real_name || rider.contact_person}」注册为分账接收方？`,
+        success: async (res) => {
+          if (!res.confirm) return;
+          uni.showLoading({ title: '注册中...' });
+          try {
+            const timestamp = Math.floor(Date.now() / 1000);
+            const signStr = `service_member_id=${rider.service_member_id}&phone_number=${rider.phone_number}&timestamp=${timestamp}`;
+            const sign = md5(signStr);
+            const result = await uni.request({
+              url: 'https://ccpt.cc111.cn/api/withdraw/split/register',
+              method: 'POST',
+              data: {
+                service_member_id: rider.service_member_id,
+                owner_type: 'member',
+                phone_number: rider.phone_number,
+                timestamp,
+                sign
+              },
+              header: { 'Content-Type': 'application/json' }
+            });
+            uni.hideLoading();
+            const data = result[1] ? result[1].data : result.data;
+            if (data && (data.code === 0 || data.code === 200 || data.success)) {
+              uni.showToast({ title: '注册成功', icon: 'success' });
+            } else {
+              uni.showToast({ title: data && (data.msg || data.message) || '注册失败', icon: 'none', duration: 2000 });
+            }
+          } catch (err) {
+            uni.hideLoading();
+            console.error('注册分账接收方失败:', err);
+            uni.showToast({ title: '网络请求失败', icon: 'none', duration: 2000 });
+          }
+        }
+      });
+    },
   }
 }
 </script>
@@ -3358,6 +3400,11 @@ export default {
   &.enable {
     background-color: rgba(46, 213, 115, 0.1);
     color: #2ed573;
+  }
+
+  &.split-register {
+    background-color: rgba(0, 184, 148, 0.1);
+    color: #00b894;
   }
 }
 

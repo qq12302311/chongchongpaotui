@@ -17,7 +17,7 @@
 
     <!-- 顶部背景 -->
     <view class="top-bg">
-      <!-- <image class="logo" src="https://ccpt.qiniu.0871.cn/rider/logo.png" mode="aspectFit"></image>
+      <!-- <image class="logo" src="https://ccpt.qiniu.cc111.cn/rider/logo.png" mode="aspectFit"></image>
       <view class="welcome-text">欢迎注册充充跑腿骑手端</view> -->
     </view>
 
@@ -159,7 +159,7 @@
           />
           <view class="password-toggle" @click="togglePasswordVisibility">
             <image
-              :src="showPassword ? 'https://ccpt.qiniu.0871.cn/rider/eye-open.png' : 'https://ccpt.qiniu.0871.cn/rider/eye-close.png'"
+              :src="showPassword ? 'https://ccpt.qiniu.cc111.cn/rider/eye-open.png' : 'https://ccpt.qiniu.cc111.cn/rider/eye-close.png'"
               mode="aspectFit"
               class="eye-icon"
             ></image>
@@ -185,7 +185,7 @@
           />
           <view class="password-toggle" @click="toggleConfirmPasswordVisibility">
             <image
-              :src="showConfirmPassword ? 'https://ccpt.qiniu.0871.cn/rider/eye-open.png' : 'https://ccpt.qiniu.0871.cn/rider/eye-close.png'"
+              :src="showConfirmPassword ? 'https://ccpt.qiniu.cc111.cn/rider/eye-open.png' : 'https://ccpt.qiniu.cc111.cn/rider/eye-close.png'"
               mode="aspectFit"
               class="eye-icon"
             ></image>
@@ -402,7 +402,7 @@
           <text class="success-text">恭喜您注册成功！</text>
           <text class="qrcode-desc">请添加运营微信，说明您可服务城市。方便后续推单！</text>
           <view class="qrcode-image" @click="previewQRCode">
-            <image src="https://ccpt.qiniu.0871.cn/my/kefuwechat.png" mode="aspectFit" />
+            <image src="https://ccpt.qiniu.cc111.cn/my/kefuwechat.png" mode="aspectFit" />
           </view>
         </view>
         <view class="qrcode-footer">
@@ -1568,8 +1568,8 @@ export default {
     // 预览二维码
     previewQRCode() {
       uni.previewImage({
-        urls: ['https://ccpt.qiniu.0871.cn/my/kefuwechat.png'],
-        current: 'https://ccpt.qiniu.0871.cn/my/kefuwechat.png'
+        urls: ['https://ccpt.qiniu.cc111.cn/my/kefuwechat.png'],
+        current: 'https://ccpt.qiniu.cc111.cn/my/kefuwechat.png'
       });
     }
   },
@@ -1582,7 +1582,7 @@ export default {
 		  console.log('解析二维码链接:', q)
 
 		  // 从URL中提取rider_id参数
-		  // 链接格式：https://ccpt.0871.cn/qrcode?rider_id=1
+		  // 链接格式：https://ccpt.cc111.cn/qrcode?rider_id=1
 		  // 使用正则表达式提取rider_id（兼容小程序环境）
 		  const match = q.match(/rider_id=(\d+)/)
 		  if (match && match[1]) {
@@ -1670,7 +1670,7 @@ export default {
 
 .top-bg {
   height: 300rpx;
-  background: url('https://ccpt.qiniu.0871.cn/rider/crea_banner.png') no-repeat center center;
+  background: url('https://ccpt.qiniu.cc111.cn/rider/crea_banner.png') no-repeat center center;
   background-size: cover;
   display: flex;
   flex-direction: column;

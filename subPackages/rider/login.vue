@@ -17,7 +17,7 @@
 
     <!-- 顶部背景 -->
     <view class="top-bg">
-      <image class="logo" src="https://ccpt.qiniu.0871.cn/rider/logo.png" mode="aspectFit"></image>
+      <image class="logo" src="https://ccpt.qiniu.cc111.cn/rider/logo.png" mode="aspectFit"></image>
       <view class="welcome-text">欢迎使用充充跑腿骑手端</view>
     </view>
 
@@ -63,7 +63,7 @@
           />
           <view class="password-toggle" @click="togglePasswordVisibility">
             <image
-              :src="showPassword ? 'https://ccpt.qiniu.0871.cn/rider/eye-open.png' : 'https://ccpt.qiniu.0871.cn/rider/eye-close.png'"
+              :src="showPassword ? 'https://ccpt.qiniu.cc111.cn/rider/eye-open.png' : 'https://ccpt.qiniu.cc111.cn/rider/eye-close.png'"
               mode="aspectFit"
               class="eye-icon"
             ></image>

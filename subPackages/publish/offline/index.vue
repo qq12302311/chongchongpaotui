@@ -5,7 +5,7 @@
 		<view class="content" :style="{ paddingTop: navBarHeight + 'px' }">
 			<!-- 第一块：Banner -->
 			<view class="banner">
-				<image src="https://ccpt.qiniu.0871.cn/home/banner.png" mode="aspectFill"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/home/banner.png" mode="aspectFill"></image>
 			</view>
 
 			<!-- 选择品牌 - 独立卡片 -->
@@ -17,19 +17,19 @@
 					</view>
 					<view class="brand-list" :class="{ 'two-brands': availableBrands.length === 2 }">
 						<view class="brand-item" v-if="providerInfo.meituan" :class="{ active: selectedBrand === 'meituan', 'meituan-active': selectedBrand === 'meituan' }" @click="selectBrand('meituan')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/meituan.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/publish/meituan.png" mode="aspectFit"></image>
 							<text>美团</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.guaishou" :class="{ active: selectedBrand === 'guaishou', 'didi-active': selectedBrand === 'guaishou' }" @click="selectBrand('guaishou')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/guaishou.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/publish/guaishou.png" mode="aspectFit"></image>
 							<text>怪兽</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.jiedian" :class="{ active: selectedBrand === 'jiedian', 'jidian-active': selectedBrand === 'jiedian' }" @click="selectBrand('jiedian')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/jiedian.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/publish/jiedian.png" mode="aspectFit"></image>
 							<text>街电</text>
 						</view>
 						<view class="brand-item" v-if="providerInfo.xiaodian" :class="{ active: selectedBrand === 'xiaodian', 'xiaoe-active': selectedBrand === 'xiaodian' }" @click="selectBrand('xiaodian')">
-							<image src="https://ccpt.qiniu.0871.cn/publish/xiaodian.png" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/publish/xiaodian.png" mode="aspectFit"></image>
 							<text>小电</text>
 						</view>
 					</view>
@@ -223,7 +223,7 @@
 								</view>
 								<view class="time-table-cell time-value" @click="showAppointmentTimePicker">
 									<text>{{ beforeDeadlineTextShow || '请选择时间范围' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 								</view>
 							</view>
 
@@ -240,7 +240,7 @@
 								</view>
 								<view class="time-table-cell time-value" @click="showTimeIntervalPicker">
 									<text>{{ timePickerTextShow || '请选择指定时间' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 								</view>
 							</view> -->
 						</view>
@@ -270,7 +270,7 @@
 							<view class="time-table-cell time-value">
 								<view class="time-picker-wrapper" @click="showTimeRangePicker">
 									<text class="time-display">{{ getTimeRangeDisplay() }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-arrow"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-arrow"></image>
 								</view>
 							</view>
 						</view>
@@ -315,7 +315,7 @@
 							</view>
 							<view class="time-table-cell time-value" @click="showCouponPicker">
 								<text>{{ formData.coupon || '请选择优惠券' }}</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="time-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="time-icon"></image>
 							</view>
 						</view>
 					</view>
@@ -407,7 +407,7 @@
 						</view>
 					</view>
 					<view v-if="priceDetails.couponAmount > 0 && priceDetails.total <= 1" class="price-tip">
-						<text class="tip-icon">💡</text>
+						<text class="tip-icon">��</text>
 						<text class="tip-text">支付金额低于1元时，实际需支付 <text style='color:#2492F2;font-weight:bold;'>1元</text></text>
 					</view>
 					<!-- 底部安全区域 -->
@@ -1055,7 +1055,7 @@
 			// 开始上传
 			uploadFile(tempFilePaths) {
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: tempFilePaths[0],
 					name: 'image', // 必须填写，后台用来接收文件
 					formData: {
@@ -1103,7 +1103,7 @@
 					fileName: url,
 				}
 				uni.request({
-					url: 'https://tixian.0871.cn/upload/qiniuDelete',
+					url: 'https://tixian.cc111.cn/upload/qiniuDelete',
 					data: data,
 					header: {
 						'Accept': 'application/json',
@@ -1371,7 +1371,7 @@
 			},
 			showCouponPicker() {
 				uni.navigateTo({
-					url: '/pages/index/publish/coupon/index?baseServiceFee=' + this.priceDetails.baseServiceFee.toFixed(2),
+					url: '/subPackages/publish/coupon/index?baseServiceFee=' + this.priceDetails.baseServiceFee.toFixed(2),
 					fail: (err) => {
 						console.error('页面跳转失败:', err)
 						uni.showToast({
@@ -1451,7 +1451,7 @@
 			},
 			showPriceAgreement() {
 				uni.navigateTo({
-					url: '/pages/index/price-agreement/index'
+					url: '/subPackages/publish/price-agreement/index'
 				})
 			},
 			// 显示价格疑问弹窗
@@ -1541,7 +1541,7 @@
 			// 处理起点地址选择
 			handleStartAddressSelect() {
 				uni.navigateTo({
-					url: '/pages/index/publish/map/index?type=start',
+					url: '/subPackages/publish/map/index?type=start',
 					fail: (err) => {
 						console.error('页面跳转失败:', err);
 						uni.showToast({
@@ -1554,7 +1554,7 @@
 			// 处理终点地址选择
 			handleEndAddressSelect() {
 				uni.navigateTo({
-					url: '/pages/index/publish/map/index?type=end',
+					url: '/subPackages/publish/map/index?type=end',
 					fail: (err) => {
 						console.error('页面跳转失败:', err);
 						uni.showToast({
@@ -1567,7 +1567,7 @@
 			// 处理详细地址选择
 			handleAddressSelect() {
 				uni.navigateTo({
-					url: '/pages/index/publish/map/index?type=address',
+					url: '/subPackages/publish/map/index?type=address',
 					success: (res) => {
 						// 监听地址选择页面返回的数据
 						uni.$on('addressSelected', (data) => {

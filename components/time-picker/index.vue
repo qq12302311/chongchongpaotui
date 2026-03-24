@@ -31,7 +31,7 @@
 							@change="handleDateChange">
 							<view class="date-picker">
 								<text>{{ selectedDate || '请选择日期' }}</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="picker-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="picker-icon"></image>
 							</view>
 						</picker>
 					</view>
@@ -44,7 +44,7 @@
 								@change="handleStartTimeChange">
 								<view class="time-picker">
 									<text>{{ startTime || '开始时间' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="picker-icon">
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="picker-icon">
 									</image>
 								</view>
 							</picker>
@@ -53,7 +53,7 @@
 								@change="handleEndTimeChange">
 								<view class="time-picker">
 									<text>{{ endTime || '结束时间' }}</text>
-									<image src="https://ccpt.qiniu.0871.cn/publish/right.png" class="picker-icon">
+									<image src="https://ccpt.qiniu.cc111.cn/publish/right.png" class="picker-icon">
 									</image>
 								</view>
 							</picker>

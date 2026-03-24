@@ -51,7 +51,7 @@
               <text class="price-amount">{{ item.order_amount }}</text>
             </view>
             <view class="delete-btn" @click="deleteCartItem(index)">
-              <image src="https://ccpt.qiniu.0871.cn/delete-gwc.svg" class="delete-icon" mode="aspectFit"></image>
+              <image src="https://ccpt.qiniu.cc111.cn/delete-gwc.svg" class="delete-icon" mode="aspectFit"></image>
             </view>
           </view>
         </view>
@@ -59,7 +59,7 @@
 
       <!-- 空购物车状态 -->
       <view class="empty-cart" v-else>
-        <!-- <image src="https://ccpt.qiniu.0871.cn/cart/empty.png" class="empty-icon" mode="aspectFit"></image> -->
+        <!-- <image src="https://ccpt.qiniu.cc111.cn/cart/empty.png" class="empty-icon" mode="aspectFit"></image> -->
         <text class="empty-text">购物车空空如也</text>
         <view class="go-shopping-btn" @click="goShopping">
           <text class="btn-text">去加入购物车</text>

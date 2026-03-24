@@ -102,7 +102,7 @@
                   <text style="font-size: 22rpx; color: #666; margin-right: 6rpx;">电话：</text>
                   <text style="font-size: 24rpx; color: #333; margin-right: 8rpx;">{{ user.phone_number }}</text>
                   <view style="padding: 4rpx; border-radius: 4rpx; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;" @click.stop="copyText(user.phone_number, '手机号')">
-                    <image src="https://ccpt.qiniu.0871.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
+                    <image src="https://ccpt.qiniu.cc111.cn/adminEnd/copy.svg" style="width: 26rpx; height: 26rpx;"></image>
                   </view>
                 </view>
               </view>

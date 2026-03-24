@@ -2,12 +2,12 @@
 	<uni-popup ref="tipModal" type="bottom" :mask-click="true" :z-index="100000" @maskClick="handleClose" @change="handlePopupChange">
 		<view class="tip-modal">
 			<view class="tip-close" @click="handleClose">×</view>
-			<image src="https://ccpt.qiniu.0871.cn/fb-toubutupian.png" class="tip-banner" mode="widthFix"></image>
+			<image src="https://ccpt.qiniu.cc111.cn/fb-toubutupian.png" class="tip-banner" mode="widthFix"></image>
 			<view class="tip-panel">
 				<view class="tip-options">
 					<view class="tip-option" :class="{ active: selectedTipOption === 'heart' }" @click="selectTipOption('heart', 8)">
 						<view class="option-icon-wrap">
-							<image src="https://ccpt.qiniu.0871.cn/fb-songaixin.png" class="option-icon" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/fb-songaixin.png" class="option-icon" mode="aspectFit"></image>
 						</view>
 						<text class="option-title">送爱心</text>
 						<view class="option-amount" :class="{ active: selectedTipOption === 'heart' }">
@@ -17,7 +17,7 @@
 					</view>
 					<view class="tip-option" :class="{ active: selectedTipOption === 'drink' }" @click="selectTipOption('drink', 12)">
 						<view class="option-icon-wrap">
-							<image src="https://ccpt.qiniu.0871.cn/fb-zengyinliao.png" class="option-icon" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/fb-zengyinliao.png" class="option-icon" mode="aspectFit"></image>
 						</view>
 						<text class="option-title">赠饮料</text>
 						<view class="option-amount" :class="{ active: selectedTipOption === 'drink' }">
@@ -27,7 +27,7 @@
 					</view>
 					<view class="tip-option" :class="{ active: selectedTipOption === 'chicken' }" @click="selectTipOption('chicken', 20)">
 						<view class="option-icon-wrap">
-							<image src="https://ccpt.qiniu.0871.cn/fb-jiajitui.png" class="option-icon" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/fb-jiajitui.png" class="option-icon" mode="aspectFit"></image>
 						</view>
 						<text class="option-title">加鸡腿</text>
 						<view class="option-amount" :class="{ active: selectedTipOption === 'chicken' }">
@@ -37,7 +37,7 @@
 					</view>
 					<view class="tip-option" :class="{ active: selectedTipOption === 'redpack' }" @click="selectTipOption('redpack', 'more')">
 						<view class="option-icon-wrap">
-							<image src="https://ccpt.qiniu.0871.cn/fb-dahongbao.png" class="option-icon" mode="aspectFit"></image>
+							<image src="https://ccpt.qiniu.cc111.cn/fb-dahongbao.png" class="option-icon" mode="aspectFit"></image>
 						</view>
 						<text class="option-title">豪横大红包</text>
 						<view class="option-amount" :class="{ active: selectedTipOption === 'redpack' }">

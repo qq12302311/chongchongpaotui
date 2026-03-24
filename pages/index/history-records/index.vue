@@ -303,11 +303,62 @@ export default {
 		goBack() {
 			uni.navigateBack()
 		},
-		loadHistoryRecords() {
-			// 从本地存储获取历史记录
-			const records = uni.getStorageSync('storeHistoryRecords') || []
-			this.records = records.sort((a, b) => b.createTime - a.createTime)
-			this.filteredRecords = [...this.records]
+		async loadHistoryRecords() {
+			try {
+				// 获取用户信息
+				const userInfo = uni.getStorageSync('userInfo') || {}
+				const userId = userInfo.user_id || 0
+				
+				// 如果有用户ID，从服务器查询历史门店
+				if (userId) {
+					console.log('📥 从服务器查询历史门店，用户ID:', userId)
+					uni.showLoading({ title: '加载中...', mask: true })
+					
+					const res = await this.$request('user/addresses/get', {
+						user_id: userId
+					}, 'POST')
+					
+					uni.hideLoading()
+					
+					if (res && res.status === 'success') {
+						const serverRecords = Array.isArray(res.data) ? res.data : []
+						console.log('✅ 服务器返回历史门店数量:', serverRecords.length)
+						
+						// 更新本地存储
+						if (serverRecords.length > 0) {
+							uni.setStorageSync('storeHistoryRecords', serverRecords)
+							this.records = serverRecords
+							this.filteredRecords = [...this.records]
+							console.log('✅ 已更新本地存储和页面数据')
+						} else {
+							// 服务器没有数据，尝试从本地存储读取
+							const localRecords = uni.getStorageSync('storeHistoryRecords') || []
+							this.records = localRecords.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+							this.filteredRecords = [...this.records]
+							console.log('ℹ️ 服务器无数据，使用本地存储，数量:', this.records.length)
+						}
+					} else {
+						console.warn('⚠️ 服务器查询失败，使用本地存储')
+						// 查询失败，从本地存储读取
+						const localRecords = uni.getStorageSync('storeHistoryRecords') || []
+						this.records = localRecords.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+						this.filteredRecords = [...this.records]
+					}
+				} else {
+					console.log('ℹ️ 未登录，仅从本地存储读取')
+					// 没有用户ID，从本地存储获取历史记录
+					const localRecords = uni.getStorageSync('storeHistoryRecords') || []
+					this.records = localRecords.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+					this.filteredRecords = [...this.records]
+				}
+			} catch (error) {
+				uni.hideLoading()
+				console.error('❌ 加载历史门店失败:', error)
+				// 出错时从本地存储读取
+				const localRecords = uni.getStorageSync('storeHistoryRecords') || []
+				this.records = localRecords.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+				this.filteredRecords = [...this.records]
+			}
 		},
 
 		// 删除记录

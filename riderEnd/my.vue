@@ -9,11 +9,11 @@
     <!-- 用户信息区域 -->
     <view class="user-info" @click="navigateToUserInfo">
       <view class="avatar-container">
-        <image class="avatar" :src="isLoggedIn ? 'https://ccpt.qiniu.0871.cn/riderEnd/touxiang.svg' : 'https://ccpt.qiniu.0871.cn/riderEnd/touxiang.svg'" mode="aspectFill"></image>
+        <image class="avatar" :src="isLoggedIn ? 'https://ccpt.qiniu.cc111.cn/riderEnd/touxiang.svg' : 'https://ccpt.qiniu.cc111.cn/riderEnd/touxiang.svg'" mode="aspectFill"></image>
         <!-- 认证状态徽章 -->
         <template v-if="isLoggedIn">
           <view v-if="userInfo.submit_certification === '已通过'" class="verify-badge passed no-bg">
-            <image src="https://ccpt.qiniu.0871.cn/rider/verify/yirenzheng.png" class="cert-icon large" mode="aspectFit" />
+            <image src="https://ccpt.qiniu.cc111.cn/rider/verify/yirenzheng.png" class="cert-icon large" mode="aspectFit" />
           </view>
           <view v-else-if="userInfo.submit_certification === '待审核'" class="verify-badge pending">待审核</view>
           <view v-else-if="userInfo.submit_certification === '已拒绝'" class="verify-badge rejected">已拒绝</view>
@@ -28,7 +28,7 @@
         <view class="user-zone" v-if="isLoggedIn && hasServiceZones">已配置接单城市: {{ formattedServiceZones }}</view>
       </view>
       <view class="arrow-right">
-        <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit"></image>
       </view>
     </view>
 
@@ -38,7 +38,7 @@
         <view class="account-item" @click="navigateTo('/riderEnd/quota')">
           <view class="account-title">
             <text>接单配额</text>
-            <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
           </view>
           <view class="account-value"><text style="font-size: 10px;">剩余</text><text style="font-size: 18px;">{{ userInfo.task_quota || 18 }}</text></view>
           <view class="account-detail">本月基础配额: {{ userInfo.quota_base || 20 }}</view>
@@ -48,7 +48,7 @@
         <view class="account-item">
           <view class="account-title">
             <text>接单统计</text>
-            <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
           </view>
           <view class="account-value">{{ userInfo.month_completed_tasks_count || 0 }}</view>
           <view class="account-detail">今日完单: {{ userInfo.today_completed_tasks_count || 0 }}</view>
@@ -58,7 +58,7 @@
         <view class="account-item" @click="navigateToAccount">
           <view class="account-title">
             <text>我的账户</text>
-            <image src="https://ccpt.qiniu.0871.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/riderEnd/youxiang.svg" mode="aspectFit" class="title-arrow"></image>
           </view>
           <view class="account-value">{{userInfo.balance}}</view>
           <view class="account-detail">今日佣金: {{ userInfo.today_commission || 0 }}</view>
@@ -70,7 +70,7 @@
     <!-- 功能菜单列表 -->
     <view class="menu-list">
       <!-- <view class="menu-item deposit-item" @click="navigateTo('/pages/deposit/index')">
-        <image :src="userInfo.depositPaid ? 'https://ccpt.qiniu.0871.cn/rider/bzj-yj.png' : 'https://ccpt.qiniu.0871.cn/rider/bzj-wj.png'" mode="aspectFill" class="deposit-bg"></image>
+        <image :src="userInfo.depositPaid ? 'https://ccpt.qiniu.cc111.cn/rider/bzj-yj.png' : 'https://ccpt.qiniu.cc111.cn/rider/bzj-wj.png'" mode="aspectFill" class="deposit-bg"></image>
         <view class="deposit-content">
           <text class="deposit-title">保证金账户</text>
           <text class="deposit-status" v-if="!userInfo.depositPaid">未缴纳</text>
@@ -80,44 +80,44 @@
 
       <view class="menu-item" @click="navigateTo('/riderEnd/manual')">
         <view class="menu-icon blue-light">
-          <image src="https://ccpt.qiniu.0871.cn/riderEnd/1.svg" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/riderEnd/1.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>接单手册</text>
         </view>
         <view class="menu-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <view class="menu-item" @click="navigateTo('/riderEnd/verify')">
         <view class="menu-icon orange">
-          <image src="https://ccpt.qiniu.0871.cn/riderEnd/2.svg" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/riderEnd/2.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>骑手认证</text>
         </view>
         <view class="menu-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <view class="menu-item" @click="navigateTo('/riderEnd/settings')">
         <view class="menu-icon blue-light">
-          <image src="https://ccpt.qiniu.0871.cn/riderEnd/3.svg" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/riderEnd/3.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>骑手设置</text>
         </view>
         <view class="menu-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <!-- 服务商合同签署按钮 -->
       <view v-if="userInfo.level>=5" class="menu-item" @click="navigateTo('/riderEnd/contract')">
         <view class="menu-icon orange">
-          <image src="https://ccpt.qiniu.0871.cn/riderEnd/4.svg" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/riderEnd/4.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content switch-role">
           <!-- <text>服务商合同签署</text> -->
@@ -127,14 +127,14 @@
 		</view>
         </view>
         <view class="menu-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <!-- 切换角色按钮 -->
       <!-- <view class="menu-item" @click="switchToCustomer">
         <view class="menu-icon blue-light">
-          <image src="https://ccpt.qiniu.0871.cn/my/avatar.png" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/my/avatar.png" mode="aspectFit"></image>
         </view>
         <view class="menu-content switch-role">
           <view class="role-row">
@@ -143,36 +143,36 @@
           </view>
         </view>
         <view class="menu-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view> -->
 
       <!-- 分享推荐按钮 -->
       <view class="menu-item" @click="sharePromotion" v-if="isLoggedIn">
         <view class="menu-icon green">
-          <image src="https://ccpt.qiniu.0871.cn/riderEnd/5.svg" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/riderEnd/5.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>分享推荐</text>
         </view>
         <view class="menu-right">
           <view class="reward-info">
-            <text class="reward-text">💰 推荐新骑手返点奖拿100天</text>
+            <text class="reward-text">�� 推荐新骑手返点奖拿100天</text>
           </view>
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <!-- 运维端入口按钮 (仅管理员可见) -->
       <view class="menu-item" @click="goToAdmin" v-if="isLoggedIn && isAdmin">
         <view class="menu-icon purple">
-          <image src="https://ccpt.qiniu.0871.cn/riderEnd/6.svg" mode="aspectFit"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/riderEnd/6.svg" mode="aspectFit"></image>
         </view>
         <view class="menu-content">
           <text>运维管理</text>
         </view>
         <view class="menu-right">
-          <image src="https://ccpt.qiniu.0871.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/xiangyou.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
     </view>
@@ -194,12 +194,12 @@
         <view class="share-options">
           <view class="share-btn wechat-btn">
             <button class="share-button" open-type="share">
-              <image class="share-icon" src="https://ccpt.qiniu.0871.cn/qishou.png" mode="aspectFit"></image>
+              <image class="share-icon" src="https://ccpt.qiniu.cc111.cn/qishou.png" mode="aspectFit"></image>
               <text>分享给好友</text>
             </button>
           </view>
           <view class="share-btn referral-btn" @click="goToReferralList">
-            <image class="share-icon" src="https://ccpt.qiniu.0871.cn/rider/banner4.png" mode="aspectFit"></image>
+            <image class="share-icon" src="https://ccpt.qiniu.cc111.cn/rider/banner4.png" mode="aspectFit"></image>
             <text>推荐人员列表</text>
           </view>
         </view>
@@ -349,7 +349,7 @@ export default {
     return {
       title: '邀请您加入充充跑腿骑手',
       path: `/riderEnd/register?referrerId=${this.userInfo.id}`,
-      imageUrl: 'https://ccpt.qiniu.0871.cn/qishou.png' // 分享给好友的图标
+      imageUrl: 'https://ccpt.qiniu.cc111.cn/qishou.png' // 分享给好友的图标
     };
   },
   // 分享到朋友圈
@@ -364,7 +364,7 @@ export default {
     return {
       title: '邀请您加入充充跑腿骑手',
       query: `referrerId=${this.userInfo.id}`,
-      imageUrl: 'https://ccpt.qiniu.0871.cn/qishou.png' // 分享到朋友圈的图标
+      imageUrl: 'https://ccpt.qiniu.cc111.cn/qishou.png' // 分享到朋友圈的图标
     };
   },
   methods: {

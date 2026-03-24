@@ -73,7 +73,7 @@
         >
           <view class="rider-header">
             <view class="rider-avatar">
-              <image :src="rider.avatar || 'https://ccpt.qiniu.0871.cn/rider/verify/touxiang.png'" mode="aspectFill"></image>
+              <image :src="rider.avatar || 'https://ccpt.qiniu.cc111.cn/rider/verify/touxiang.png'" mode="aspectFill"></image>
             </view>
             <view class="rider-info">
               <view class="rider-name">{{ rider.name || '未设置姓名' }}</view>
@@ -180,11 +180,11 @@
           <view class="verify-images">
             <view class="verify-image-item">
               <text class="image-label">身份证正面</text>
-              <image :src="currentRider.id_card_front || 'https://ccpt.qiniu.0871.cn/rider/verify/id-card-front.png'" mode="aspectFit" class="id-card-image"></image>
+              <image :src="currentRider.id_card_front || 'https://ccpt.qiniu.cc111.cn/rider/verify/id-card-front.png'" mode="aspectFit" class="id-card-image"></image>
             </view>
             <view class="verify-image-item">
               <text class="image-label">身份证反面</text>
-              <image :src="currentRider.id_card_back || 'https://ccpt.qiniu.0871.cn/rider/verify/id-card-back.png'" mode="aspectFit" class="id-card-image"></image>
+              <image :src="currentRider.id_card_back || 'https://ccpt.qiniu.cc111.cn/rider/verify/id-card-back.png'" mode="aspectFit" class="id-card-image"></image>
             </view>
           </view>
         </view>

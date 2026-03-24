@@ -11,7 +11,7 @@
       <view class="manual-container">
         <image
           class="manual-image"
-          src="https://ccpt.qiniu.0871.cn/rider/my/jiedanshouce.jpg"
+          src="https://ccpt.qiniu.cc111.cn/rider/my/jiedanshouce.jpg"
           mode="widthFix"
           @click="previewManual"
           @load="onImageLoad"
@@ -37,8 +37,8 @@ export default {
     // 预览手册图片
     previewManual() {
       uni.previewImage({
-        urls: ['https://ccpt.qiniu.0871.cn/rider/my/jiedanshouce.jpg'],
-        current: 'https://ccpt.qiniu.0871.cn/rider/my/jiedanshouce.jpg'
+        urls: ['https://ccpt.qiniu.cc111.cn/rider/my/jiedanshouce.jpg'],
+        current: 'https://ccpt.qiniu.cc111.cn/rider/my/jiedanshouce.jpg'
       });
     },
 

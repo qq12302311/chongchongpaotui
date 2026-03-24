@@ -112,7 +112,7 @@
 			// 开发环境
 			// this.websocketUrl = `ws://localhost:8080/chat?room_id=${encodeURIComponent(this.roomId)}`
 			// 生产环境
-			this.websocketUrl = `wss://ccpt.0871.cn/api/chat?room_id=${encodeURIComponent(this.roomId)}`
+			this.websocketUrl = `wss://ccpt.cc111.cn/api/chat?room_id=${encodeURIComponent(this.roomId)}`
 
 			// 连接 WebSocket
 			this.connectWebSocket()
@@ -404,7 +404,7 @@
 
 				// 测试网络连接
 				uni.request({
-					url: 'https://ccpt.0871.cn/api/test',
+					url: 'https://ccpt.cc111.cn/api/test',
 					method: 'GET',
 					timeout: 5000,
 					success: (res) => {

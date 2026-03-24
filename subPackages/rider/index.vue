@@ -39,7 +39,7 @@
     <view class="hall-header">
       <view class="hall-title">接单大厅</view>
       <view class="search-box">
-        <image src="https://ccpt.qiniu.0871.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
         <input type="text" placeholder="请输入搜索关键字" class="search-input" />
       </view>
     </view>
@@ -60,7 +60,7 @@
       </view>
       <view class="tab-item" :class="{ active: activeTab === 'area' }" @click="setActiveTab('area')">
         <text>地区</text>
-        <image src="https://ccpt.qiniu.0871.cn/rider/xiangxia.png" mode="aspectFit" class="arrow-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/rider/xiangxia.png" mode="aspectFit" class="arrow-icon"></image>
         <view class="active-line" v-if="activeTab === 'area'"></view>
       </view>
     </view>
@@ -74,7 +74,7 @@
           <image
             v-if="order.isCompleted && order.isRecentTask"
             class="completed-stamp-image"
-            src="https://ccpt.qiniu.0871.cn/rider/yiwanjie.svg"
+            src="https://ccpt.qiniu.cc111.cn/rider/yiwanjie.svg"
             mode="aspectFit">
           </image>
 
@@ -82,7 +82,7 @@
           <image
             v-if="order.isAssigned && order.isRecentTask"
             class="assigned-stamp-image"
-            src="https://ccpt.qiniu.0871.cn/rider/assigned.svg"
+            src="https://ccpt.qiniu.cc111.cn/rider/assigned.svg"
             mode="aspectFit">
           </image>
 
@@ -109,7 +109,7 @@
             </view>
 
             <view class="distance-info">
-              <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+              <image src="https://ccpt.qiniu.cc111.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
               <text class="distance-text"><text class="highlight">{{ order.distance || 0 }}km</text></text>
             </view>
             <button v-if="!order.isCompleted && !order.isAssigned" class="take-order-btn" @click.stop="goToOrderDetail(order)">去接单</button>
@@ -131,7 +131,7 @@
 
         <!-- 无数据提示 -->
         <view v-if="!loading && orderList.length === 0" class="empty-tip">
-          <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
           <text class="empty-text">本区域暂无待接新订单</text>
           <text class="empty-subtitle">请持续关注</text>
 
@@ -261,32 +261,32 @@ export default {
       posterList: [ // 海报列表
         {
           id: 1,
-          image: 'https://ccpt.qiniu.0871.cn/p16.png',
+          image: 'https://ccpt.qiniu.cc111.cn/p16.png',
           title: '海报1',
           url: ''
         },
         {
           id: 2,
-          image: 'https://ccpt.qiniu.0871.cn/p14.png',
+          image: 'https://ccpt.qiniu.cc111.cn/p14.png',
           title: '海报2',
           url: ''
         },
         {
           id: 3,
-          image: 'https://ccpt.qiniu.0871.cn/p1.png',
+          image: 'https://ccpt.qiniu.cc111.cn/p1.png',
           title: '海报3',
           url: ''
         }
 		// ,
   //       {
   //         id: 4,
-  //         image: 'https://ccpt.qiniu.0871.cn/p2.png',
+  //         image: 'https://ccpt.qiniu.cc111.cn/p2.png',
   //         title: '海报4',
   //         url: ''
   //       },
   //       {
   //         id: 5,
-  //         image: 'https://ccpt.qiniu.0871.cn/p3.png',
+  //         image: 'https://ccpt.qiniu.cc111.cn/p3.png',
   //         title: '海报5',
   //         url: ''
   //       }
@@ -294,13 +294,13 @@ export default {
       bannerList: [ // banner轮播图列表
         {
           id: 1,
-          image: 'https://ccpt.qiniu.0871.cn/rider/banner12.png',
+          image: 'https://ccpt.qiniu.cc111.cn/rider/banner12.png',
           title: 'Banner 1',
           url: ''
         },
         {
           id: 2,
-          image: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+          image: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png',
           title: 'Banner 2',
           url: ''
         }

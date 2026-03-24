@@ -41,6 +41,20 @@
         </view>
       </view>
 
+      <!-- 快捷功能入口 -->
+      <view class="quick-actions">
+        <view class="quick-action-card" @click="navigateToFinancialStatistics">
+          <view class="action-icon financial-icon"></view>
+          <text class="action-title">财务统计</text>
+          <text class="action-desc">收入支出提现统计</text>
+        </view>
+        <view class="quick-action-card" @click="navigateToWithdrawManage">
+          <view class="action-icon withdraw-icon"></view>
+          <text class="action-title">提现管理</text>
+          <text class="action-desc">审核处理提现申请</text>
+        </view>
+      </view>
+
       <!-- 日期筛选区域 -->
       <view class="date-filter-section">
         <view class="date-filter-tabs">
@@ -391,7 +405,7 @@ export default {
         }
 
         const response = await uni.request({
-          url: 'https://ccpt.0871.cn/api/service/ledger',
+          url: 'https://ccpt.cc111.cn/api/service/ledger',
           method: 'POST',
           data: params,
           header: {
@@ -610,6 +624,16 @@ export default {
       uni.navigateTo({ url: '/adminEnd/chatManage/chatList' })
     },
 
+    // 导航到财务统计页面
+    navigateToFinancialStatistics() {
+      uni.navigateTo({ url: '/adminEnd/financialStatistics/index' })
+    },
+
+    // 导航到提现管理页面
+    navigateToWithdrawManage() {
+      uni.navigateTo({ url: '/adminEnd/withdrawManage/index' })
+    },
+
 
 
   }
@@ -733,6 +757,86 @@ export default {
         font-size: 24rpx;
         opacity: 0.8;
       }
+    }
+  }
+}
+
+// 快捷功能入口样式
+.quick-actions {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 30rpx;
+  margin-bottom: 30rpx;
+
+  .quick-action-card {
+    flex: 1;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16rpx;
+    padding: 30rpx;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6rpx;
+      background: linear-gradient(90deg, #4481eb, #04befe);
+    }
+
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+    }
+
+    .action-icon {
+      width: 64rpx;
+      height: 64rpx;
+      margin-bottom: 16rpx;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #4481eb 0%, #04befe 100%);
+
+      &::after {
+        content: '';
+        display: block;
+        width: 32rpx;
+        height: 32rpx;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+      }
+
+      &.financial-icon::after {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z'/%3E%3C/svg%3E");
+      }
+
+      &.withdraw-icon::after {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E");
+      }
+    }
+
+    .action-title {
+      font-size: 28rpx;
+      font-weight: 600;
+      color: #303133;
+      margin-bottom: 8rpx;
+    }
+
+    .action-desc {
+      font-size: 22rpx;
+      color: #909399;
+      text-align: center;
     }
   }
 }

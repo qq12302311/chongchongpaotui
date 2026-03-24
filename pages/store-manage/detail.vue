@@ -13,7 +13,7 @@
 							<view class="delete-icon" @click.stop="deleteImage(index)">×</view>
 						</view>
 						<view class="upload-btn" @click="uploadImage" v-if="storeInfo.door_images.length < 3">
-							<image src="https://ccpt.qiniu.0871.cn/publish/mentou.png" mode="aspectFit"
+							<image src="https://ccpt.qiniu.cc111.cn/publish/mentou.png" mode="aspectFit"
 								class="upload-icon"></image>
 							<text class="upload-text">选择图片</text>
 						</view>
@@ -36,7 +36,7 @@
 					</view>
 					<view class="info-value-row">
 						<text class="info-value">{{ storeInfo.store_name || '东北铁锅炖大鹅' }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('storeName')"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('storeName')"></image>
 					</view>
 				</view>
 
@@ -48,7 +48,7 @@
 					</view>
 					<view class="info-value-row">
 						<text class="info-value">{{ storeInfo.shop_poi || '19668549555' }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('shopPoi')"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('shopPoi')"></image>
 					</view>
 				</view>
 
@@ -62,7 +62,7 @@
 						<text class="info-value" v-if="index != 0" @click="storeInfo.sn_mac_code.splice(index, 1)" style="color: red;">移除</text>
 						<!-- <text class="info-value">{{ item.value }}</text> -->
 						<input v-model="item.value" class="info-value" placeholder="请输入设备编码" />
-						<!-- <image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('snMac',index)"></image> -->
+						<!-- <image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('snMac',index)"></image> -->
 					</view>
 				</view>
 				<view class="info-item">
@@ -80,7 +80,7 @@
 					</view>
 					<view class="info-value-row">
 						<text class="info-value">{{ getDeviceLocation() }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('deviceLocation')"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('deviceLocation')"></image>
 					</view>
 				</view>
 
@@ -92,7 +92,7 @@
 					</view>
 					<view class="info-value-row">
 						<text class="info-value">{{ getFullAddress() }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('address')"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('address')"></image>
 					</view>
 				</view>
 
@@ -104,7 +104,7 @@
 					</view>
 					<view class="info-value-row">
 						<text class="info-value">{{ getServiceTime() }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('serviceTime')"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('serviceTime')"></image>
 					</view>
 				</view>
 
@@ -116,7 +116,7 @@
 					</view>
 					<view class="info-value-row">
 						<text class="info-value">{{ storeInfo.location_description || '其中有断电！帮忙通电并反馈原因，那就太感谢了' }}</text>
-						<image src="https://ccpt.qiniu.0871.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('remark')"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/home/my/edit.png" class="edit-icon" mode="aspectFit" @click="editField('remark')"></image>
 					</view>
 				</view>
 			</view>
@@ -212,7 +212,7 @@ export default {
 		qiniuUploadFile(filePath) {
 			return new Promise((resolve, reject) => {
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload',
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload',
 					filePath: filePath,
 					name: 'image',
 					formData: {

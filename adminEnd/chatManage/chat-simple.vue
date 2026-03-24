@@ -417,9 +417,9 @@
 			// 获取默认头像
 			getDefaultAvatar(type) {
 				if (type === 'self') {
-					return 'https://ccpt.qiniu.0871.cn/duihua/qishou.png'
+					return 'https://ccpt.qiniu.cc111.cn/duihua/qishou.png'
 				} else {
-					return 'https://ccpt.qiniu.0871.cn/my/avatar.png'
+					return 'https://ccpt.qiniu.cc111.cn/my/avatar.png'
 				}
 			},
 
@@ -450,7 +450,7 @@
 			// 获取聊天记录
 			async getChat() {
 				const res = await uni.request({
-					url: `https://ccpt.0871.cn/api/chat`,
+					url: `https://ccpt.cc111.cn/api/chat`,
 					method: 'POST',
 					data: {
 						room_id: this.roomId,
@@ -483,9 +483,9 @@
 							let avatar = item.avatar
 							if (!avatar) {
 								if (item.messageable_type === 'App\\Models\\ServiceMember') {
-									avatar = 'https://ccpt.qiniu.0871.cn/duihua/qishou.png'
+									avatar = 'https://ccpt.qiniu.cc111.cn/duihua/qishou.png'
 								} else if (item.messageable_type === 'App\\Models\\User') {
-									avatar = 'https://ccpt.qiniu.0871.cn/my/avatar.png'
+									avatar = 'https://ccpt.qiniu.cc111.cn/my/avatar.png'
 								} else {
 									avatar = null
 								}

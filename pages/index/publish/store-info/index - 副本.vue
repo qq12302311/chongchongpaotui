@@ -23,7 +23,7 @@
 		<!-- 设备编码帮助弹窗 -->
 		<view v-if="showDeviceCodeModal" class="help-modal" @click="closeDeviceCodeModal">
 			<image
-				src="https://ccpt.qiniu.0871.cn/home/chakanpoi.jpg"
+				src="https://ccpt.qiniu.cc111.cn/home/chakanpoi.jpg"
 				mode="widthFix"
 				class="help-image"
 				@click="closeDeviceCodeModal"
@@ -35,7 +35,7 @@
 		<!-- 门店POI帮助弹窗 -->
 		<view v-if="showPoiModal" class="help-modal" @click="closePoiModal">
 			<image
-				src="https://ccpt.qiniu.0871.cn/home/chakanpoi.jpg"
+				src="https://ccpt.qiniu.cc111.cn/home/chakanpoi.jpg"
 				mode="widthFix"
 				class="help-image"
 				@click="closePoiModal"
@@ -59,7 +59,7 @@
 								@input="updateField('storeName', $event.detail.value)" class="custom-input"
 								placeholder=" " />
 							<view class="placeholder-box" v-if="!formData.storeName">
-								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">点击填写门店名称</text>
 							</view>
 						</view>
@@ -79,7 +79,7 @@
 								disabled auto-height />
 							<view class="placeholder-box" v-if="!formData.address">
 								<text class="placeholder-text">选择地址定位</text>
-								<image src="https://ccpt.qiniu.0871.cn/publish/address.png" class="location-icon">
+								<image src="https://ccpt.qiniu.cc111.cn/publish/address.png" class="location-icon">
 								</image>
 							</view>
 						</view>
@@ -120,7 +120,7 @@
 								@input="updateField('phone', $event.detail.value)" class="custom-input"
 								placeholder=" " />
 							<view class="placeholder-box" v-if="!formData.phone">
-								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">点击填写联系电话</text>
 							</view>
 						</view>
@@ -166,7 +166,7 @@
 								@input="updateSnMacValue(0, $event.detail.value)" class="custom-input"
 								:id="'input-' + formData.snMacList[0].id" placeholder=" " />
 							<view class="placeholder-box" v-if="!formData.snMacList[0].value && !snMacErrors[0]">
-								<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon"></image>
+								<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon"></image>
 								<text class="placeholder-text">编码不低于8位数字和字母</text>
 							</view>
 							<!-- 第一个设备编码错误提示 -->
@@ -188,7 +188,7 @@
 										@input="updateSnMacValue(index + 1, $event.detail.value)" class="custom-input"
 										:id="'input-' + snMac.id" placeholder=" " />
 									<view class="placeholder-box" v-if="!snMac.value && !snMacErrors[index + 1]">
-										<image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="input-icon">
+										<image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="input-icon">
 										</image>
 										<text class="placeholder-text">点击填写设备编码</text>
 									</view>
@@ -273,7 +273,7 @@
 						<text class="optional-tag">（选填）</text>
 					</view>
 					<view class="upload-tip">
-						<image src="https://ccpt.qiniu.0871.cn/publish/Tips.png" mode="aspectFit" class="tip-icon">
+						<image src="https://ccpt.qiniu.cc111.cn/publish/Tips.png" mode="aspectFit" class="tip-icon">
 						</image>
 						<text class="tip-text">门店门头便于充充骑手快速准确找到门店完成订单！可从工作台、美团或第三方导航中获取</text>
 					</view>
@@ -288,7 +288,7 @@
 
 						<!-- 上传按钮 -->
 						<view class="upload-btn" @click="uploadImage" v-if="formData.doorImages.length < 5">
-							<image src="https://ccpt.qiniu.0871.cn/publish/mentou.png" mode="aspectFit"
+							<image src="https://ccpt.qiniu.cc111.cn/publish/mentou.png" mode="aspectFit"
 								class="upload-icon"></image>
 							<text class="upload-text">选择图片</text>
 						</view>
@@ -769,7 +769,7 @@
 			qiniuUploadFile(filePath) {
 				return new Promise((resolve, reject) => {
 					uni.uploadFile({
-						url: 'https://tixian.0871.cn/upload/qiniuImageUpload',
+						url: 'https://tixian.cc111.cn/upload/qiniuImageUpload',
 						filePath: filePath,
 						name: 'image',
 						formData: {

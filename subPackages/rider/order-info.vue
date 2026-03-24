@@ -141,7 +141,7 @@
 							备注：{{ orderInfo.task_detail && orderInfo.task_detail.description || '无' }}</view>
 						<!-- 新版导航按钮，绝对定位到右上角 -->
 						<button class="nav-btn-mini" @click="openShopLocation" type="default">
-							<image src="https://ccpt.qiniu.0871.cn/rider/dingwei4.svg" class="nav-icon" mode="aspectFit" />
+							<image src="https://ccpt.qiniu.cc111.cn/rider/dingwei4.svg" class="nav-icon" mode="aspectFit" />
 							<text class="nav-text">点击导航</text>
 						</button>
 					</view>
@@ -288,7 +288,7 @@
 		<!-- 底部按钮 -->
 		<view class="bottom-bar">
 			<view class="home-btn" @click="goToHome">
-				<image src="https://ccpt.qiniu.0871.cn/rider/home.png" mode="aspectFit"></image>
+				<image src="https://ccpt.qiniu.cc111.cn/rider/home.png" mode="aspectFit"></image>
 				<text>接单大厅</text>
 			</view>
 			<template v-if="orderInfo.status === 'assigned'">
@@ -729,7 +729,7 @@
 				});
 
 				uni.uploadFile({
-					url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+					url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 					filePath: tempFilePaths[0],
 					name: 'image', // 必须填写，后台用来接收文件
 					formData: {
@@ -792,7 +792,7 @@
 
 				tempFilePaths.forEach((filePath, index) => {
 					uni.uploadFile({
-						url: 'https://tixian.0871.cn/upload/qiniuImageUpload',
+						url: 'https://tixian.cc111.cn/upload/qiniuImageUpload',
 						filePath: filePath,
 						name: 'image',
 						formData: {

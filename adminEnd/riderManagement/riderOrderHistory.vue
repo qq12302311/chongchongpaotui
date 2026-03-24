@@ -9,7 +9,7 @@
     <!-- 骑手信息卡片 -->
     <view class="rider-info-card">
       <view class="rider-avatar">
-        <image src="https://ccpt.qiniu.0871.cn/rider/verify/touxiang.png" mode="aspectFill"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/rider/verify/touxiang.png" mode="aspectFill"></image>
       </view>
       <view class="rider-details">
         <view class="rider-name">{{ riderInfo.real_name || riderInfo.contact_person || '骑手' }}</view>
@@ -32,7 +32,7 @@
     <view class="search-area">
       <view class="search-box">
         <view class="search-icon-container">
-          <image src="https://ccpt.qiniu.0871.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
         </view>
         <input 
           type="text" 
@@ -129,7 +129,7 @@
 
           <view class="order-footer">
             <view class="distance-info">
-              <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+              <image src="https://ccpt.qiniu.cc111.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
               <text class="distance-text">{{ order.address }}</text>
             </view>
           </view>
@@ -137,7 +137,7 @@
 
         <!-- 无数据提示 -->
         <view v-if="!loading && orderList.length === 0" class="empty-tip">
-          <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
           <text class="empty-text">暂无订单记录</text>
         </view>
 

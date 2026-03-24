@@ -9,18 +9,18 @@
       @touchend="onTouchEnd"
     >
       <!-- <image :src="imageSrc" mode="aspectFit"></image> -->
-      <!-- <image src="https://ccpt.qiniu.0871.cn/gwc-1.png" mode="aspectFit"></image> -->
-      <!-- <image @click="goToCart" class="img-3" src="https://ccpt.qiniu.0871.cn/gwc-gwc2.svg" mode="aspectFit"></image> -->
+      <!-- <image src="https://ccpt.qiniu.cc111.cn/gwc-1.png" mode="aspectFit"></image> -->
+      <!-- <image @click="goToCart" class="img-3" src="https://ccpt.qiniu.cc111.cn/gwc-gwc2.svg" mode="aspectFit"></image> -->
       <view class="img-wrapper" @tap.stop="handleChatClick">
-        <image class="img-4" src="https://ccpt.qiniu.0871.cn/duihua2-active.svg" mode="aspectFit"></image>
+        <image class="img-4" src="https://ccpt.qiniu.cc111.cn/duihua2-active.svg" mode="aspectFit"></image>
         <!-- 角标 -->
         <view v-if="showBadge" class="badge">{{ displayUnreadCount }}</view>
       </view>
       <view @tap.stop="handleClick">
-        <image class="img-2" src="https://ccpt.qiniu.0871.cn/home/ptyh.svg" mode="aspectFit"></image>
+        <image class="img-2" src="https://ccpt.qiniu.cc111.cn/home/ptyh.svg" mode="aspectFit"></image>
       </view>
 	  <view @tap.stop="goToCart">
-	    <image class="img-5" src="https://ccpt.qiniu.0871.cn/gwc-gwc2.svg" mode="aspectFit"></image>
+	    <image class="img-5" src="https://ccpt.qiniu.cc111.cn/gwc-gwc2.svg" mode="aspectFit"></image>
 	  </view>
     </view>
 
@@ -89,7 +89,7 @@
         <!-- 快捷回复区域 -->
         <view class="quick-reply-area">
           <view class="quick-reply-header">
-            <image src="https://ccpt.qiniu.0871.cn/publish/bi.png" class="header-icon"></image>
+            <image src="https://ccpt.qiniu.cc111.cn/publish/bi.png" class="header-icon"></image>
             <text class="header-text">快捷回复</text>
           </view>
           <view class="quick-reply-list">
@@ -128,7 +128,7 @@ export default {
     // 图片地址
     imageSrc: {
       type: String,
-      default: 'https://ccpt.qiniu.0871.cn/tuijian.png'
+      default: 'https://ccpt.qiniu.cc111.cn/tuijian.png'
     },
     // 点击跳转的页面路径
     targetUrl: {
@@ -347,7 +347,7 @@ export default {
 
         // 调用接口获取未读消息数量
         const response = await uni.request({
-          url: 'https://ccpt.0871.cn/api/user/create',
+          url: 'https://ccpt.cc111.cn/api/user/create',
           method: 'POST',
           data: {
             openid: userInfo.openid,
@@ -476,7 +476,7 @@ export default {
         console.log('开始获取聊天记录...');
 
         const res = await uni.request({
-          url: `https://ccpt.0871.cn/api/chat`,
+          url: `https://ccpt.cc111.cn/api/chat`,
           method: 'POST',
           data: {
             room_id: this.currentRoomId,
@@ -569,9 +569,9 @@ export default {
               let avatar = item.avatar;
               if (!avatar) {
                 if (item.messageable_type === 'App\\Models\\ServiceMember') {
-                  avatar = 'https://ccpt.qiniu.0871.cn/duihua/qishou.png';
+                  avatar = 'https://ccpt.qiniu.cc111.cn/duihua/qishou.png';
                 } else if (item.messageable_type === 'App\\Models\\User') {
-                  avatar = 'https://ccpt.qiniu.0871.cn/112lbtx.png';
+                  avatar = 'https://ccpt.qiniu.cc111.cn/112lbtx.png';
                 } else {
                   avatar = null;
                 }
@@ -846,9 +846,9 @@ export default {
     // 获取默认头像（复制自 chat-simple.vue）
     getDefaultAvatar(type) {
       if (type === 'self') {
-        return 'https://ccpt.qiniu.0871.cn/duihua/qishou.png';
+        return 'https://ccpt.qiniu.cc111.cn/duihua/qishou.png';
       } else {
-        return 'https://ccpt.qiniu.0871.cn/112lbtx.png';
+        return 'https://ccpt.qiniu.cc111.cn/112lbtx.png';
       }
     },
     // 滚动到底部
@@ -914,7 +914,7 @@ export default {
         console.log('准备发送消息:', payload);
 
         // 先显示自己的消息
-        const selfAvatar = userInfo.avatar || 'https://ccpt.qiniu.0871.cn/112lbtx.png';
+        const selfAvatar = userInfo.avatar || 'https://ccpt.qiniu.cc111.cn/112lbtx.png';
         this.messages.push({
           sender: '我',
           message: message,
@@ -1041,7 +1041,7 @@ export default {
 <style lang="scss" scoped>
 // 悬浮小图样式
 .floating-image {
-	background-image: url('https://ccpt.qiniu.0871.cn/riderEnd/index/beiban.svg');
+	background-image: url('https://ccpt.qiniu.cc111.cn/riderEnd/index/beiban.svg');
 	background-size: 100% 100%;
   position: fixed;
   // 移除固定的 right 和 bottom，改为动态设置

@@ -13,7 +13,7 @@
 						<!-- 步骤1: 骑手已接单/待接单 -->
 						<view class="step-item" :class="{ 'step-active': orderInfo.status !== 'waiting', 'step-working': orderInfo.status === 'waiting' }">
 							<view class="step-icon-wrapper">
-								<!-- <image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
+								<!-- <image v-if="orderInfo.status === 'waiting'" src="https://ccpt.qiniu.cc111.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
 								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status !== 'waiting' }"></view>
 							</view>
 							<view class="step-content">
@@ -31,7 +31,7 @@
 						<!-- 步骤2: 作业中 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'assigned' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image>
+								<image v-if="orderInfo.status === 'assigned'" src="https://ccpt.qiniu.cc111.cn/aa.gif" class="working-gif" mode="aspectFit"></image>
 								<view class="step-dot" :class="{
 									'step-dot-half': orderInfo.status === 'assigned',
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
@@ -52,7 +52,7 @@
 						<!-- 步骤3: 完单反馈 -->
 						<view class="step-item" :class="{ 'step-working': orderInfo.status === 'finished' }">
 							<view class="step-icon-wrapper">
-								<!-- <image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.0871.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
+								<!-- <image v-if="orderInfo.status === 'finished'" src="https://ccpt.qiniu.cc111.cn/aa.gif" class="working-gif" mode="aspectFit"></image> -->
 								<view class="step-dot" :class="{
 									'step-dot-active': orderInfo.status === 'finished' || orderInfo.status === 'completed'
 								}"></view>
@@ -74,7 +74,7 @@
 						<!-- 步骤4: 确认完单 -->
 						<view class="step-item step-last" :class="{ 'step-working': orderInfo.status === 'completed' }">
 							<view class="step-icon-wrapper">
-								<image v-if="orderInfo.status === 'completed'" src="https://ccpt.qiniu.0871.cn/querenwandan.png" class="working-wandan" mode="aspectFit"></image>
+								<image v-if="orderInfo.status === 'completed'" src="https://ccpt.qiniu.cc111.cn/querenwandan.png" class="working-wandan" mode="aspectFit"></image>
 								<view class="step-dot" :class="{ 'step-dot-active': orderInfo.status === 'completed' }"></view>
 							</view>
 							<view class="step-content">
@@ -132,16 +132,16 @@
 										<text class="time-value">{{ formatDateTime(orderInfo.task_assignment.assigned_at || orderInfo.task_assignment.created_at) }}</text>
 									</view>
 									<view class="promotion-banner">
-										<image src="https://ccpt.qiniu.0871.cn/order/qishou/huore2.png" class="promotion-image" mode="aspectFit"></image>
+										<image src="https://ccpt.qiniu.cc111.cn/order/qishou/huore2.png" class="promotion-image" mode="aspectFit"></image>
 									</view>
 								</view>
 							</view>
 							<view class="rider-status">
 								<view class="status-gif" v-if="orderInfo.status === 'assigned'">
-									<image src="https://ccpt.qiniu.0871.cn/aa.gif" mode="aspectFit" class="gif-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/aa.gif" mode="aspectFit" class="gif-image"></image>
 								</view>
 								<view class="status-gif" v-if="orderInfo.status === 'completed'">
-									<image src="https://ccpt.qiniu.0871.cn/order/wancheng.png" mode="aspectFit" class="gif-image"></image>
+									<image src="https://ccpt.qiniu.cc111.cn/order/wancheng.png" mode="aspectFit" class="gif-image"></image>
 								</view>
 								<view class="status-tag">{{getStatusText(orderInfo.status)}} <text class="arrow"></text></view>
 							</view>
@@ -185,7 +185,7 @@
 			<view class="order-detail-card">
 				<view class="detail-list-toggle">
 					<view class="toggle-title">
-						<image class="header-icon" src="https://ccpt.qiniu.0871.cn/order/order.png" mode="aspectFit"></image>
+						<image class="header-icon" src="https://ccpt.qiniu.cc111.cn/order/order.png" mode="aspectFit"></image>
 						<text class="header-title">订单详情</text>
 					</view>
 				</view>
@@ -441,7 +441,7 @@
 		<view class="cancel-modal-container" v-if="showCancelModal">
 			<!-- 弹窗头部带卡通人物 -->
 			<view class="cancel-modal-top">
-				<image class="modal-character" src="https://ccpt.qiniu.0871.cn/qxyy-qs.png" mode="widthFix"></image>
+				<image class="modal-character" src="https://ccpt.qiniu.cc111.cn/qxyy-qs.png" mode="widthFix"></image>
 			</view>
 
 			<!-- 弹窗内容 -->
@@ -476,12 +476,12 @@
 		<view class="confirm-cancel-container" v-if="showConfirmCancelModal">
 			<!-- 弹窗头部带卡通人物 -->
 			<view class="confirm-cancel-top">
-				<image class="modal-character" src="https://ccpt.qiniu.0871.cn/tjcgtb.png" mode="widthFix"></image>
+				<image class="modal-character" src="https://ccpt.qiniu.cc111.cn/tjcgtb.png" mode="widthFix"></image>
 			</view>
 
 			<!-- 弹窗内容 -->
 			<view @click="copy_wechat()" class="confirm-cancel-content">
-				<image class="content-image" src="https://ccpt.qiniu.0871.cn/tjcg-zj.png" mode="widthFix"></image>
+				<image class="content-image" src="https://ccpt.qiniu.cc111.cn/tjcg-zj.png" mode="widthFix"></image>
 			</view>
 
 			<!-- 弹窗底部按钮 -->
@@ -1272,7 +1272,7 @@
 
 			// 获取骑手头像
 			getRiderAvatar() {
-				const baseUrl = 'https://ccpt.qiniu.0871.cn/order/qishou/';
+				const baseUrl = 'https://ccpt.qiniu.cc111.cn/order/qishou/';
 
 				// 基于骑手ID生成固定的随机索引，确保同一个骑手总是显示相同的头像
 				const taskId = this.orderInfo.task_id;

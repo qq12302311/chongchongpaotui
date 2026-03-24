@@ -3,7 +3,7 @@
     <!-- 购物车图标 -->
     <!-- <view class="floating-cart" @click="goToCart">
       <view class="cart-icon-container">
-        <image src="https://ccpt.qiniu.0871.cn/gwc-1.png" class="cart-icon" mode="aspectFit"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/gwc-1.png" class="cart-icon" mode="aspectFit"></image>
         <view class="cart-badge" v-if="cartCount > 0">
           <text class="cart-count">{{ cartCount > 99 ? '99+' : cartCount }}</text>
         </view>
@@ -13,13 +13,13 @@
     <!-- 充电服务图标 -->
    <!-- <view class="floating-charge" @click="goToCharge">
       <view class="charge-icon-container">
-        <image src="https://ccpt.qiniu.0871.cn/gwc-2.png" class="charge-icon" mode="aspectFit"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/gwc-2.png" class="charge-icon" mode="aspectFit"></image>
         <view class="charge-badge">
           <text class="charge-count">2</text>
         </view>
       </view>
       <view class="charge-bottom">
-        <image src="https://ccpt.qiniu.0871.cn/gwc-3.png" class="charge-person" mode="aspectFit"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/gwc-3.png" class="charge-person" mode="aspectFit"></image>
         <view class="charge-text">
           <text class="text-content">推荐有奖金</text>
         </view>

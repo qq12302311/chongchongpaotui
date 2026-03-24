@@ -40,7 +40,7 @@
       <view class="hall-title">接单大厅</view>
       <view class="header-right">
         <view class="search-box">
-          <image src="https://ccpt.qiniu.0871.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/sousuo.png" mode="aspectFit" class="search-icon"></image>
           <input type="text" placeholder="请输入搜索关键字" class="search-input" />
         </view>
       </view>
@@ -62,7 +62,7 @@
       </view>
       <view class="tab-item" :class="{ active: activeTab === 'area' }" @click="setActiveTab('area')">
         <text>地区</text>
-        <image src="https://ccpt.qiniu.0871.cn/rider/xiangxia.png" mode="aspectFit" class="arrow-icon"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/rider/xiangxia.png" mode="aspectFit" class="arrow-icon"></image>
         <view class="active-line" v-if="activeTab === 'area'"></view>
       </view>
     </view>
@@ -76,7 +76,7 @@
           <image
             v-if="order.isCompleted && order.isRecentTask"
             class="completed-stamp-image-gray"
-            src="https://ccpt.qiniu.0871.cn/rider/yiwanjie.svg"
+            src="https://ccpt.qiniu.cc111.cn/rider/yiwanjie.svg"
             mode="aspectFit">
           </image>
 
@@ -84,7 +84,7 @@
           <image
             v-if="order.isAssigned && order.isRecentTask"
             class="assigned-stamp-image"
-            src="https://ccpt.qiniu.0871.cn/rider/assigned.svg"
+            src="https://ccpt.qiniu.cc111.cn/rider/assigned.svg"
             mode="aspectFit">
           </image>
 
@@ -118,7 +118,7 @@
           
           <!-- 打赏信息横幅 -->
 		  <view class="reward-badge">
-			<image src="https://ccpt.qiniu.0871.cn/dstb.png" class="reward-badge-image" mode="aspectFit"></image>
+			<image src="https://ccpt.qiniu.cc111.cn/dstb.png" class="reward-badge-image" mode="aspectFit"></image>
 			<text class="reward-badge-amount">{{ order.reward.amount || '10' }}</text>
 		  </view>
           <view class="reward-banner" v-if="order.reward">
@@ -146,7 +146,7 @@
             <view class="order-details">
               <view class="address">{{ formatAddress(order) }}</view>
               <view class="distance-info">
-                <image src="https://ccpt.qiniu.0871.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
+                <image src="https://ccpt.qiniu.cc111.cn/rider/map2.png" mode="aspectFit" class="location-icon"></image>
                 <text class="distance-text"><text class="highlight">{{ order.distance || 0 }}km</text></text>
               </view>
               <view class="service-item" :data-content="order.serviceItem">任务：</view>
@@ -154,7 +154,7 @@
 
             <view class="service-time" :data-content="getDisplayAmount(order)"></view>
             <view v-if="!order.isCompleted && !order.isAssigned && !order.refundRequest" class="order-action-buttons" @click.stop="goToOrderDetail(order)">
-				<image class="button-class" src="https://ccpt.qiniu.0871.cn/zhuandanjiedan.svg"></image>
+				<image class="button-class" src="https://ccpt.qiniu.cc111.cn/zhuandanjiedan.svg"></image>
               <!-- <button :class="['take-order-btn', { 'single-btn': isTransferredOrder(order) }]" @click.stop="goToOrderDetail(order)">去接单</button>
               <button v-if="!isTransferredOrder(order)" class="transfer-order-btn" open-type="share" @click.stop="transferOrder(order)">转单</button> -->
             </view>
@@ -184,7 +184,7 @@
 
         <!-- 无数据提示 -->
         <view v-if="!loading && orderList.length === 0" class="empty-tip">
-          <image src="https://ccpt.qiniu.0871.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
+          <image src="https://ccpt.qiniu.cc111.cn/rider/empty.png" mode="aspectFit" class="empty-image"></image>
           <text class="empty-text">本区域暂无待接新订单</text>
           <text class="empty-subtitle">请持续关注</text>
 
@@ -235,7 +235,7 @@
         <!-- 顶部装饰图片 -->
         <image 
           class="order-modal-header-image" 
-          src="https://ccpt.qiniu.0871.cn/duihua/dingdanjianshu.png" 
+          src="https://ccpt.qiniu.cc111.cn/duihua/dingdanjianshu.png" 
           mode="widthFix"
         ></image>
         
@@ -349,7 +349,7 @@
         <view class="cancel-modal-header">
           <image 
             class="cancel-modal-header-image" 
-            src="https://ccpt.qiniu.0871.cn/rider/new/chexiao.png" 
+            src="https://ccpt.qiniu.cc111.cn/rider/new/chexiao.png" 
             mode="widthFix"
           ></image>
           <text class="cancel-intro-text">您有{{ canceledTasks.length }}个任务已被系统自动撤销：</text>
@@ -456,26 +456,26 @@ export default {
       posterList: [ // 海报列表
         {
           id: 1,
-          image: 'https://ccpt.qiniu.0871.cn/banner123.png',
+          image: 'https://ccpt.qiniu.cc111.cn/banner123.png',
           title: '海报1',
           url: ''
         },
         {
           id: 2,
-          image: 'https://ccpt.qiniu.0871.cn/banner20.png',
+          image: 'https://ccpt.qiniu.cc111.cn/banner20.png',
           title: '海报2',
           url: ''
         }
 		// ,
   //       {
   //         id: 4,
-  //         image: 'https://ccpt.qiniu.0871.cn/p2.png',
+  //         image: 'https://ccpt.qiniu.cc111.cn/p2.png',
   //         title: '海报4',
   //         url: ''
   //       },
   //       {
   //         id: 5,
-  //         image: 'https://ccpt.qiniu.0871.cn/p3.png',
+  //         image: 'https://ccpt.qiniu.cc111.cn/p3.png',
   //         title: '海报5',
   //         url: ''
   //       }
@@ -483,19 +483,19 @@ export default {
       bannerList: [ // banner轮播图列表
         {
           id: 1,
-          image: 'https://ccpt.qiniu.0871.cn/rider/banner3.png',
+          image: 'https://ccpt.qiniu.cc111.cn/rider/banner3.png',
           title: 'Banner 1',
           url: ''
         },
         {
           id: 2,
-          image: 'https://ccpt.qiniu.0871.cn/rider/banner5.png',
+          image: 'https://ccpt.qiniu.cc111.cn/rider/banner5.png',
           title: 'Banner 1',
           url: ''
         },
         {
           id: 3,
-          image: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+          image: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png',
           title: 'Banner 2',
           url: ''
         }
@@ -512,7 +512,7 @@ export default {
       // 分享统计数据缓存
       shareCountData: {},
       // 分享图片路径
-      shareImageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+      shareImageUrl: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png',
       // 分享参数
       shareParams: null,
       // 当前要转派的订单
@@ -632,7 +632,7 @@ export default {
         title: `${order.serviceItem} | ${this.getTransferDisplayAmount(order)} | ${this.formatAddress(order)}`,
         desc: `【订单转派】距离: ${order.distance}km | 转单奖励: ${this.getTransferReward(order)}`,
         path: `/riderEnd/index?task_referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
-        imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+        imageUrl: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png'
       };
 
       // 延迟清除转派订单信息，确保分享完成
@@ -677,7 +677,7 @@ export default {
         title: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
         desc: '快来加入充充跑腿，成为骑手，轻松接单赚钱！',
         path: '/riderEnd/index',
-        imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+        imageUrl: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png'
       }
     }
   },
@@ -686,7 +686,7 @@ export default {
     return {
       title: '充充跑腿骑手端 - 接单大厅',
       query: 'from=timeline',
-      imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png'
+      imageUrl: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png'
     }
   },
   methods: {
@@ -1498,7 +1498,7 @@ export default {
             title: `${order.serviceItem} | ${this.getTransferDisplayAmount(order)} | ${this.formatAddress(order)}`,
             desc: `【订单转派】距离: ${order.distance}km | 转单奖励: ${this.getTransferReward(order)}`,
             path: `/riderEnd/index?task_referrer_id=${this.riderUserInfo.id}&shared_order_id=${order.id}`,
-            imageUrl: 'https://ccpt.qiniu.0871.cn/rider/banner4.png',
+            imageUrl: 'https://ccpt.qiniu.cc111.cn/rider/banner4.png',
             success: (res) => {
               console.log('订单转派分享成功', res);
               uni.showToast({
@@ -1992,7 +1992,7 @@ export default {
     requestShareData(params) {
       return new Promise((resolve, reject) => {
         uni.request({
-          url: 'https://ccpt.0871.cn/api/service/task/list',
+          url: 'https://ccpt.cc111.cn/api/service/task/list',
           method: 'POST',
           data: params,
           header: {
@@ -2168,7 +2168,7 @@ export default {
               },
               fail: (err) => {
                 console.error('生成分享图片失败:', err);
-                this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
+                this.shareImageUrl = 'https://ccpt.qiniu.cc111.cn/rider/banner4.png';
                 resolve(this.shareImageUrl);
               }
             }, this);
@@ -2176,7 +2176,7 @@ export default {
         });
         } catch (error) {
           console.error('生成分享图片异常:', error);
-          this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
+          this.shareImageUrl = 'https://ccpt.qiniu.cc111.cn/rider/banner4.png';
           resolve(this.shareImageUrl);
         }
       });
@@ -2186,7 +2186,7 @@ export default {
 	async uploadFile(tempFilePaths) {
 		return new Promise((resolve, reject) => {
 			uni.uploadFile({
-				url: 'https://tixian.0871.cn/upload/qiniuImageUpload', // 服务器上传接口地址
+				url: 'https://tixian.cc111.cn/upload/qiniuImageUpload', // 服务器上传接口地址
 				filePath: tempFilePaths,
 				name: 'image', // 必须填写，后台用来接收文件
 				formData: {
@@ -2201,19 +2201,19 @@ export default {
 							resolve(res.path);
 						} else {
 							console.error('上传响应中没有path字段:', res);
-							this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
-							resolve('https://ccpt.qiniu.0871.cn/rider/banner4.png');
+							this.shareImageUrl = 'https://ccpt.qiniu.cc111.cn/rider/banner4.png';
+							resolve('https://ccpt.qiniu.cc111.cn/rider/banner4.png');
 						}
 					} catch (error) {
 						console.error('解析上传响应失败:', error);
-						this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
-						resolve('https://ccpt.qiniu.0871.cn/rider/banner4.png');
+						this.shareImageUrl = 'https://ccpt.qiniu.cc111.cn/rider/banner4.png';
+						resolve('https://ccpt.qiniu.cc111.cn/rider/banner4.png');
 					}
 				},
 				fail: (uploadFileErr) => {
 					console.error('图片上传失败', uploadFileErr);
-					this.shareImageUrl = 'https://ccpt.qiniu.0871.cn/rider/banner4.png';
-					resolve('https://ccpt.qiniu.0871.cn/rider/banner4.png');
+					this.shareImageUrl = 'https://ccpt.qiniu.cc111.cn/rider/banner4.png';
+					resolve('https://ccpt.qiniu.cc111.cn/rider/banner4.png');
 				}
 			});
 		});

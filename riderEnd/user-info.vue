@@ -10,11 +10,11 @@
 		<view class="user-header">
 			<view class="user-info-row">
 				<view class="avatar-container">
-					<image class="avatar" src="https://ccpt.qiniu.0871.cn/rider/verify/touxiang.png" mode="aspectFill">
+					<image class="avatar" src="https://ccpt.qiniu.cc111.cn/rider/verify/touxiang.png" mode="aspectFill">
 					</image>
 					<!-- 认证徽章，仅已通过时显示 -->
 					<view class="verify-badge" v-if="userInfo.submit_certification === '已通过'">
-						<image src="https://ccpt.qiniu.0871.cn/rider/verify/yirenzheng.png" mode="aspectFit"></image>
+						<image src="https://ccpt.qiniu.cc111.cn/rider/verify/yirenzheng.png" mode="aspectFit"></image>
 					</view>
 				</view>
 				<view class="user-details">
@@ -23,7 +23,7 @@
 				</view>
 				<!-- 认证章，仅已通过时显示 -->
 				<view class="verify-stamp" v-if="userInfo.submit_certification === '已通过'">
-					<image src="https://ccpt.qiniu.0871.cn/rider/verify/renzheng.png" mode="aspectFit"></image>
+					<image src="https://ccpt.qiniu.cc111.cn/rider/verify/renzheng.png" mode="aspectFit"></image>
 				</view>
 			</view>
 		</view>
@@ -68,6 +68,7 @@
 <script>
 	import NavBar from '@/components/NavBar.vue'
 	import FloatingChatIcon from '@/components/FloatingChatIcon/index.vue'
+	import md5 from 'md5'
 
 	export default {
 		components: {
@@ -92,14 +93,16 @@
 		},
 		methods: {
 			// 获取用户信息
-			getUserInfo() {
+			async getUserInfo() {
 				const riderUserInfo = uni.getStorageSync('riderUserInfo')
 				if (riderUserInfo) {
-					// 如果本地存储中有用户信息，则使用本地存储的信息
+					// 先用本地缓存渲染
 					this.userInfo = {
 						...this.userInfo,
 						...riderUserInfo
 					}
+					// 再调接口获取最新数据（含 name/contact_person）
+					await this.fetchLatestUserInfo(riderUserInfo)
 				} else {
 					// 如果没有登录，返回上一页
 					uni.showToast({
@@ -109,6 +112,36 @@
 					setTimeout(() => {
 						uni.navigateBack()
 					}, 1500)
+				}
+			},
+
+			// 调接口获取最新用户信息
+			async fetchLatestUserInfo(riderUserInfo) {
+				try {
+					if (!riderUserInfo.id || !riderUserInfo.phone) return
+					const signStr = `service_member_id=${riderUserInfo.id}&phone_number=${riderUserInfo.phone}`
+					const sign = md5(signStr)
+					const params = {
+						service_member_id: riderUserInfo.id,
+						sign: sign,
+						member_id: riderUserInfo.id
+					}
+					const res = await this.$request('service/member/info', params, 'POST')
+					if (res.status === 'success' && res.data) {
+						const updatedUserInfo = {
+							...riderUserInfo,
+							name: res.data.contact_person || res.data.name || riderUserInfo.name,
+							submit_certification: res.data.submit_certification || riderUserInfo.submit_certification,
+							latest_certification: res.data.latest_certification || riderUserInfo.latest_certification
+						}
+						uni.setStorageSync('riderUserInfo', updatedUserInfo)
+						this.userInfo = {
+							...this.userInfo,
+							...updatedUserInfo
+						}
+					}
+				} catch (e) {
+					console.error('获取用户信息失败:', e)
 				}
 			},
 

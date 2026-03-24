@@ -9,7 +9,7 @@
 				>
 					<image
 						class="icon"
-						:src="current === 0 ? 'https://ccpt.qiniu.0871.cn/home-active.svg' : 'https://ccpt.qiniu.0871.cn/home2.svg'"
+						:src="current === 0 ? 'https://ccpt.qiniu.cc111.cn/home-active.svg' : 'https://ccpt.qiniu.cc111.cn/home2.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 0 }">首页</text>
 				</view>
@@ -21,7 +21,7 @@
 				>
 					<image
 						class="icon"
-						:src="current === 1 ? 'https://ccpt.qiniu.0871.cn/order2-active.svg' : 'https://ccpt.qiniu.0871.cn/order2.svg'"
+						:src="current === 1 ? 'https://ccpt.qiniu.cc111.cn/order2-active.svg' : 'https://ccpt.qiniu.cc111.cn/order2.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 1 }">订单</text>
 				</view> -->
@@ -33,13 +33,13 @@
 				>
 					<image
 						class="icon"
-						:src="current === 2 ? 'https://ccpt.qiniu.0871.cn/gwc-gwc2.svg' : 'https://ccpt.qiniu.0871.cn/gwc-gwc3.svg'"
+						:src="current === 2 ? 'https://ccpt.qiniu.cc111.cn/gwc-gwc2.svg' : 'https://ccpt.qiniu.cc111.cn/gwc-gwc3.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 2 }">购物车</text>
 				</view> -->
 
 				<view class="tab-item" :class="{ active: activeTab === 1 }" @click="goToChat()">
-					<image :src="activeTab === 1 ? 'https://ccpt.qiniu.0871.cn/duihua2-active.svg' : 'https://ccpt.qiniu.0871.cn/duihua2.svg'" mode="aspectFit" class="icon"></image>
+					<image :src="activeTab === 1 ? 'https://ccpt.qiniu.cc111.cn/duihua2-active.svg' : 'https://ccpt.qiniu.cc111.cn/duihua2.svg'" mode="aspectFit" class="icon"></image>
 					<text class="text">对话</text>
 				</view>
 
@@ -50,7 +50,7 @@
 				>
 					<image
 						class="icon"
-						:src="current === 3 ? 'https://ccpt.qiniu.0871.cn/my-active.svg' : 'https://ccpt.qiniu.0871.cn/my.svg'"
+						:src="current === 3 ? 'https://ccpt.qiniu.cc111.cn/my-active.svg' : 'https://ccpt.qiniu.cc111.cn/my.svg'"
 					></image>
 					<text class="text" :class="{ active: current === 3 }">我的</text>
 				</view>

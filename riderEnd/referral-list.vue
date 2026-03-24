@@ -29,7 +29,7 @@
 
       <!-- 空状态 -->
       <view v-else-if="referralList.length === 0" class="empty-state">
-        <view class="empty-icon">👥</view>
+        <view class="empty-icon">��</view>
         <text class="empty-text">暂无推荐人员</text>
         <text class="empty-desc">快去分享推荐链接邀请好友加入吧！</text>
       </view>
@@ -144,7 +144,7 @@ export default {
         };
 
         const response = await uni.request({
-          url: 'https://ccpt.0871.cn/api/service/ledger',
+          url: 'https://ccpt.cc111.cn/api/service/ledger',
           method: 'POST',
           data: params,
           header: {

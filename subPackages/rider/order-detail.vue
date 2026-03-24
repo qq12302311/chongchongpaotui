@@ -12,7 +12,7 @@
       <image
         v-if="isCompleted"
         class="completed-stamp-image"
-        src="https://ccpt.qiniu.0871.cn/rider/yiwanjie.svg"
+        src="https://ccpt.qiniu.cc111.cn/rider/yiwanjie.svg"
         mode="aspectFit">
       </image>
 
@@ -20,7 +20,7 @@
       <image
         v-if="isAssigned"
         class="assigned-stamp-image"
-        src="https://ccpt.qiniu.0871.cn/rider/assigned.svg"
+        src="https://ccpt.qiniu.cc111.cn/rider/assigned.svg"
         mode="aspectFit">
       </image>
 
@@ -77,26 +77,26 @@
 
     <!-- 更多订单信息提示 -->
     <view class="more-info-tip" v-if="!isAccepted && !isCompleted && !isAssigned">
-      <image src="https://ccpt.qiniu.0871.cn/rider/notice.png" mode="aspectFit" class="notice-icon"></image>
+      <image src="https://ccpt.qiniu.cc111.cn/rider/notice.png" mode="aspectFit" class="notice-icon"></image>
       <text>更多订单详情在确认接单后展示</text>
     </view>
 
     <!-- 完结订单提示 -->
     <view class="completed-info-tip" v-if="isCompleted">
-      <image src="https://ccpt.qiniu.0871.cn/rider/notice.png" mode="aspectFit" class="notice-icon"></image>
+      <image src="https://ccpt.qiniu.cc111.cn/rider/notice.png" mode="aspectFit" class="notice-icon"></image>
       <text>此订单已完结，仅供查看</text>
     </view>
 
     <!-- 进行中订单提示 -->
     <view class="assigned-info-tip" v-if="isAssigned">
-      <image src="https://ccpt.qiniu.0871.cn/rider/notice.png" mode="aspectFit" class="notice-icon"></image>
+      <image src="https://ccpt.qiniu.cc111.cn/rider/notice.png" mode="aspectFit" class="notice-icon"></image>
       <text>此订单正在进行中</text>
     </view>
 
     <!-- 底部按钮 -->
     <view class="bottom-bar">
       <view class="home-btn" @click="goToHome">
-        <image src="https://ccpt.qiniu.0871.cn/rider/home.png" mode="aspectFit"></image>
+        <image src="https://ccpt.qiniu.cc111.cn/rider/home.png" mode="aspectFit"></image>
         <text>接单大厅</text>
       </view>
       <button v-if="!isCompleted && !isAssigned" class="confirm-btn" @click="showConfirmModal = true">

@@ -666,7 +666,7 @@
 
 							// 跳转到搜索结果页面
 							uni.navigateTo({
-								url: '/pages/index/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.latitude + '&longitude=' + this.longitude
+								url: '/subPackages/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.latitude + '&longitude=' + this.longitude
 							});
 						} else {
 							console.log(res,'当时的')
@@ -703,7 +703,7 @@
 
 				// 跳转到搜索结果页面
 				uni.navigateTo({
-					url: '/pages/index/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.latitude + '&longitude=' + this.longitude
+					url: '/subPackages/publish/map/search-results?type=' + this.addressType + '&latitude=' + this.latitude + '&longitude=' + this.longitude
 				});
 			},
 			// 处理选择地址
