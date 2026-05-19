@@ -412,6 +412,11 @@ export default {
 							}
 						}
 
+						if (item.task_name.includes('商机发布')) {
+							item.type = '1';
+							item.url = '/pages/index/publish/sjfb';
+						}
+
 						// 设置副标题
 						// if (item.type !== '1') {
 						// 	item.detail = '即将上线...';

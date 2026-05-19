@@ -9,6 +9,10 @@
         <image :src="activeTab === 'order' ? 'https://ccpt.qiniu.cc111.cn/order-active.svg' : 'https://ccpt.qiniu.cc111.cn/order.svg'" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">订单</text>
       </view> -->
+      <view class="tab-item" :class="{ active: activeTab === 'sj' }" @click="switchTab('sj')">
+        <image :src="activeTab === 'sj' ? 'https://ccpt.qiniu.cc111.cn/duihua2-active.svg' : 'https://ccpt.qiniu.cc111.cn/duihua2.svg'" mode="aspectFit" class="tab-icon"></image>
+        <text class="tab-text">商机</text>
+      </view>
       <view class="tab-item" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">
         <image :src="activeTab === 'chat' ? 'https://ccpt.qiniu.cc111.cn/duihua2-active.svg' : 'https://ccpt.qiniu.cc111.cn/duihua2.svg'" mode="aspectFit" class="tab-icon"></image>
         <text class="tab-text">对话</text>
@@ -43,6 +47,9 @@ export default {
           break;
         case 'order':
           url = '/riderEnd/order';
+          break;
+        case 'sj':
+          url = '/riderEnd/sj';
           break;
         case 'chat':
           url = '/riderEnd/chat-list';

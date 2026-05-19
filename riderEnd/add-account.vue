@@ -319,8 +319,9 @@ export default {
           phone_number: '',
           account_holder: this.bankForm.name,
           bank_name: this.bankForm.bankName,
+          bank_code: this.bankForm.cardNumber,
           bank_province: this.bankForm.province,
-          bank_city: this.bankForm.province, // 使用省市字段
+          bank_city: this.bankForm.province,
           bank_branch: this.bankForm.branch,
           bank_card_number: this.bankForm.cardNumber,
           bank_reserved_phone: this.bankForm.phone

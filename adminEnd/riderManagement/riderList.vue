@@ -113,6 +113,7 @@
             <view class="action-btn" :class="rider.status === 'active' ? 'disable' : 'enable'" @click.stop="toggleRiderStatus(rider)">
               {{ rider.status === 'active' ? '禁用' : '启用' }}
             </view>
+            <view class="action-btn split" @click.stop="showSplitModal(rider)">余额分账</view>
           </view>
         </view>
       </view>
@@ -199,6 +200,151 @@
         <view class="modal-btn approve" @click="approveVerify">通过</view>
       </view>
     </view>
+
+    <!-- 余额分账测试弹窗 -->
+    <view class="modal-mask" v-if="showSplit" @click="closeSplitModal"></view>
+    <view class="modal-container split-modal-container" v-if="showSplit">
+      <view class="modal-header">
+        <text class="modal-title">余额分账测试</text>
+        <view class="modal-close" @click="closeSplitModal">×</view>
+      </view>
+      <scroll-view class="modal-content" scroll-y>
+
+        <!-- Tab 切换 -->
+        <view class="split-tabs">
+          <view
+            class="split-tab"
+            :class="{ 'split-tab-active': splitActiveTab === 'balance' }"
+            @click="splitActiveTab = 'balance'"
+          >余额分账</view>
+          <view
+            class="split-tab"
+            :class="{ 'split-tab-active': splitActiveTab === 'd1' }"
+            @click="splitActiveTab = 'd1'"
+          >D1提现</view>
+        </view>
+
+        <!-- 余额分账表单 -->
+        <view v-if="splitActiveTab === 'balance'">
+          <view class="split-section-title">拉卡拉余额分账（/api/v3/sacs/balanceSeparate）</view>
+          <view class="input-group">
+            <text class="input-label">商户号 merchant_no *</text>
+            <input type="text" v-model="splitForm.merchant_no" placeholder="请输入商户号" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">分账总金额 total_amt（分）*</text>
+            <input type="digit" v-model="splitForm.total_amt" placeholder="单位：分，如100表示1元" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">分账计算类型 cal_type</text>
+            <view class="radio-group">
+              <view class="radio-item" @click="splitForm.cal_type = '0'">
+                <view class="radio-dot" :class="{ 'radio-dot-active': splitForm.cal_type === '0' }"></view>
+                <text>0-按金额</text>
+              </view>
+              <view class="radio-item" @click="splitForm.cal_type = '1'">
+                <view class="radio-dot" :class="{ 'radio-dot-active': splitForm.cal_type === '1' }"></view>
+                <text>1-按比例</text>
+              </view>
+            </view>
+          </view>
+          <view class="split-section-title">分账接收方（recv_datas）</view>
+          <view v-for="(recv, idx) in splitForm.recv_datas" :key="idx" class="recv-item">
+            <view class="recv-item-header">
+              <text class="recv-item-title">接收方 {{ idx + 1 }}</text>
+              <view class="recv-remove-btn" v-if="splitForm.recv_datas.length > 1" @click="removeRecvData(idx)">删除</view>
+            </view>
+            <view class="input-group">
+              <text class="input-label">接收方编号 recv_no（他人）</text>
+              <input type="text" v-model="recv.recv_no" placeholder="分给他人时填写分账接收方编号" class="input-field" />
+            </view>
+            <view class="input-group">
+              <text class="input-label">接收方商户号 recv_merchant_no（自身）</text>
+              <input type="text" v-model="recv.recv_merchant_no" placeholder="分给自身时填写，与merchant_no相同" class="input-field" />
+            </view>
+            <view class="input-group">
+              <text class="input-label">分账数值 separate_value *</text>
+              <input type="digit" v-model="recv.separate_value" placeholder="按金额时填分（如100），按比例时填小数（如0.55）" class="input-field" />
+            </view>
+          </view>
+          <view class="add-recv-btn" @click="addRecvData">+ 添加接收方</view>
+          <view class="input-group">
+            <text class="input-label">商户分账流水号 out_separate_no（留空自动生成）</text>
+            <input type="text" v-model="splitForm.out_separate_no" placeholder="留空自动生成" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">回调地址 notify_url（可选）</text>
+            <input type="text" v-model="splitForm.notify_url" placeholder="可选" class="input-field" />
+          </view>
+
+          <!-- 响应结果 -->
+          <view v-if="splitResult.balance" class="result-box" :class="splitResult.balance.success ? 'result-success' : 'result-error'">
+            <text class="result-title">{{ splitResult.balance.success ? '请求成功' : '请求失败' }}</text>
+            <text class="result-content">{{ splitResult.balance.text }}</text>
+          </view>
+
+          <view class="split-submit-btn" @click="doBalanceSplit" :class="{ 'btn-loading': splitLoading.balance }">
+            {{ splitLoading.balance ? '请求中...' : '发起余额分账' }}
+          </view>
+        </view>
+
+        <!-- D1提现表单 -->
+        <view v-if="splitActiveTab === 'd1'">
+          <view class="split-section-title">拉卡拉 D1 提现（/api/v2/laep/industry/ewalletWithdrawD1）</view>
+          <view class="input-group">
+            <text class="input-label">机构号 orgNo（留空取配置值）</text>
+            <input type="text" v-model="d1Form.orgNo" placeholder="留空则使用服务端配置" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">商户号/SR接收方编号 merchantNo *</text>
+            <input type="text" v-model="d1Form.merchantNo" placeholder="分账接收方编号（SR开头）或商户号" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">提现金额 drawAmt（元）*</text>
+            <input type="digit" v-model="d1Form.drawAmt" placeholder="单位：元，如10.00" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">账号类型 payType</text>
+            <view class="radio-group">
+              <view class="radio-item" @click="d1Form.payType = '04'">
+                <view class="radio-dot" :class="{ 'radio-dot-active': d1Form.payType === '04' }"></view>
+                <text>04-分账接收方账户</text>
+              </view>
+              <view class="radio-item" @click="d1Form.payType = '01'">
+                <view class="radio-dot" :class="{ 'radio-dot-active': d1Form.payType === '01' }"></view>
+                <text>01-收款账户</text>
+              </view>
+            </view>
+          </view>
+          <view class="input-group">
+            <text class="input-label">商户订单号 merOrderNo（留空自动生成）</text>
+            <input type="text" v-model="d1Form.merOrderNo" placeholder="留空自动生成" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">通知地址 notifyUrl（可选）</text>
+            <input type="text" v-model="d1Form.notifyUrl" placeholder="可选" class="input-field" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">备注 remark（可选）</text>
+            <input type="text" v-model="d1Form.remark" placeholder="可选，最多64字" class="input-field" />
+          </view>
+
+          <!-- 响应结果 -->
+          <view v-if="splitResult.d1" class="result-box" :class="splitResult.d1.success ? 'result-success' : 'result-error'">
+            <text class="result-title">{{ splitResult.d1.success ? '请求成功' : '请求失败' }}</text>
+            <text class="result-content">{{ splitResult.d1.text }}</text>
+          </view>
+
+          <view class="split-submit-btn" @click="doD1Withdraw" :class="{ 'btn-loading': splitLoading.d1 }">
+            {{ splitLoading.d1 ? '请求中...' : '发起D1提现' }}
+          </view>
+        </view>
+
+      </scroll-view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" @click="closeSplitModal">关闭</view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -235,7 +381,29 @@ export default {
         balance: '',
         service_area: ''
       },
-      adminInfo: null
+      adminInfo: null,
+      // 余额分账弹窗相关
+      showSplit: false,
+      splitActiveTab: 'balance',
+      splitForm: {
+        merchant_no: '',
+        total_amt: '',
+        cal_type: '0',
+        recv_datas: [{ recv_no: '', recv_merchant_no: '', separate_value: '' }],
+        out_separate_no: '',
+        notify_url: ''
+      },
+      d1Form: {
+        orgNo: '',
+        merchantNo: '',
+        drawAmt: '',
+        payType: '04',
+        merOrderNo: '',
+        notifyUrl: '',
+        remark: ''
+      },
+      splitLoading: { balance: false, d1: false },
+      splitResult: { balance: null, d1: null }
     }
   },
   onLoad() {
@@ -550,6 +718,157 @@ export default {
           title: '网络请求失败',
           icon: 'none'
         });
+      }
+    },
+
+    // 显示余额分账测试弹窗
+    showSplitModal(rider) {
+      this.currentRider = rider;
+      this.splitActiveTab = 'balance';
+      this.splitResult = { balance: null, d1: null };
+      // 预填分账接收方编号
+      const recvNo = rider.lkl_split_receiver_no || '';
+      this.splitForm = {
+        merchant_no: '',
+        total_amt: '',
+        cal_type: '0',
+        recv_datas: [{ recv_no: recvNo, recv_merchant_no: '', separate_value: '' }],
+        out_separate_no: '',
+        notify_url: ''
+      };
+      this.d1Form = {
+        orgNo: '',
+        merchantNo: recvNo,
+        drawAmt: '',
+        payType: '04',
+        merOrderNo: '',
+        notifyUrl: '',
+        remark: ''
+      };
+      this.showSplit = true;
+    },
+
+    // 关闭余额分账弹窗
+    closeSplitModal() {
+      this.showSplit = false;
+    },
+
+    // 添加接收方
+    addRecvData() {
+      this.splitForm.recv_datas.push({ recv_no: '', recv_merchant_no: '', separate_value: '' });
+    },
+
+    // 删除接收方
+    removeRecvData(idx) {
+      this.splitForm.recv_datas.splice(idx, 1);
+    },
+
+    // 发起余额分账
+    async doBalanceSplit() {
+      if (this.splitLoading.balance) return;
+      if (!this.splitForm.merchant_no) {
+        uni.showToast({ title: '请填写商户号', icon: 'none' });
+        return;
+      }
+      if (!this.splitForm.total_amt) {
+        uni.showToast({ title: '请填写分账总金额', icon: 'none' });
+        return;
+      }
+      const hasValidRecv = this.splitForm.recv_datas.some(r => r.separate_value);
+      if (!hasValidRecv) {
+        uni.showToast({ title: '请填写至少一个接收方的分账数值', icon: 'none' });
+        return;
+      }
+
+      this.splitLoading.balance = true;
+      this.splitResult.balance = null;
+
+      try {
+        const recvDatas = this.splitForm.recv_datas
+          .filter(r => r.separate_value)
+          .map(r => {
+            const item = { separate_value: r.separate_value };
+            if (r.recv_no) item.recv_no = r.recv_no;
+            if (r.recv_merchant_no) item.recv_merchant_no = r.recv_merchant_no;
+            return item;
+          });
+
+        const params = {
+          service_member_id: this.adminInfo.id,
+          merchant_no: this.splitForm.merchant_no,
+          total_amt: this.splitForm.total_amt,
+          cal_type: this.splitForm.cal_type,
+          recv_datas: recvDatas,
+          sign: 'chongchong'
+        };
+        if (this.splitForm.out_separate_no) params.out_separate_no = this.splitForm.out_separate_no;
+        if (this.splitForm.notify_url) params.notify_url = this.splitForm.notify_url;
+
+        const res = await this.$request('withdraw/openapi/balance/split', params, 'POST');
+        const success = res.status === 'success';
+        this.splitResult.balance = {
+          success,
+          text: JSON.stringify(res, null, 2)
+        };
+        if (success) {
+          uni.showToast({ title: '余额分账请求已发送', icon: 'success' });
+        } else {
+          uni.showToast({ title: res.message || '余额分账失败', icon: 'none' });
+        }
+      } catch (err) {
+        console.error('余额分账失败:', err);
+        this.splitResult.balance = { success: false, text: String(err) };
+        uni.showToast({ title: '网络请求失败', icon: 'none' });
+      } finally {
+        this.splitLoading.balance = false;
+      }
+    },
+
+    // 发起D1提现
+    async doD1Withdraw() {
+      if (this.splitLoading.d1) return;
+      if (!this.d1Form.merchantNo) {
+        uni.showToast({ title: '请填写商户号/SR接收方编号', icon: 'none' });
+        return;
+      }
+      if (!this.d1Form.drawAmt) {
+        uni.showToast({ title: '请填写提现金额', icon: 'none' });
+        return;
+      }
+
+      this.splitLoading.d1 = true;
+      this.splitResult.d1 = null;
+
+      try {
+        const params = {
+          service_member_id: this.adminInfo.id,
+          merchantNo: this.d1Form.merchantNo,
+          drawAmt: this.d1Form.drawAmt,
+          payType: this.d1Form.payType,
+          sign: 'chongchong'
+        };
+        if (this.d1Form.orgNo) params.orgNo = this.d1Form.orgNo;
+        if (this.d1Form.merOrderNo) params.merOrderNo = this.d1Form.merOrderNo;
+        if (this.d1Form.notifyUrl) params.notifyUrl = this.d1Form.notifyUrl;
+        if (this.d1Form.remark) params.remark = this.d1Form.remark;
+
+        const res = await this.$request('withdraw/openapi/d1/withdraw', params, 'POST');
+        const success = res.status === 'success';
+        this.splitResult.d1 = {
+          success,
+          text: JSON.stringify(res, null, 2)
+        };
+        if (success) {
+          uni.showToast({ title: 'D1提现请求已发送', icon: 'success' });
+        } else {
+          uni.showToast({ title: res.message || 'D1提现失败', icon: 'none' });
+        }
+      } catch (err) {
+        console.error('D1提现失败:', err);
+        this.splitResult.d1 = { success: false, text: String(err) };
+        uni.showToast({ title: '网络请求失败', icon: 'none' });
+      } finally {
+        this.splitLoading.d1 = false;
       }
     }
   }
@@ -1080,5 +1399,181 @@ export default {
   border: 1rpx solid #e0e0e0;
   border-radius: 8rpx;
   object-fit: contain;
+}
+
+// 余额分账按钮
+.action-btn {
+  &.split {
+    background-color: rgba(0, 184, 148, 0.1);
+    color: #00b894;
+  }
+}
+
+// 余额分账弹窗
+.split-modal-container {
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.split-tabs {
+  display: flex;
+  border-bottom: 1rpx solid #f0f0f0;
+  margin-bottom: 24rpx;
+}
+
+.split-tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: #999;
+  border-bottom: 4rpx solid transparent;
+
+  &.split-tab-active {
+    color: #6c5ce7;
+    border-bottom-color: #6c5ce7;
+    font-weight: 500;
+  }
+}
+
+.split-section-title {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 16rpx;
+  padding: 8rpx 0;
+  border-bottom: 1rpx dashed #eee;
+  word-break: break-all;
+}
+
+.radio-group {
+  display: flex;
+  gap: 32rpx;
+  margin-top: 8rpx;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  font-size: 26rpx;
+  color: #333;
+}
+
+.radio-dot {
+  width: 28rpx;
+  height: 28rpx;
+  border: 2rpx solid #ccc;
+  border-radius: 50%;
+  margin-right: 8rpx;
+  position: relative;
+
+  &.radio-dot-active {
+    border-color: #6c5ce7;
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 16rpx;
+      height: 16rpx;
+      background-color: #6c5ce7;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+.recv-item {
+  background-color: #f8f9fa;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  margin-bottom: 16rpx;
+  border: 1rpx solid #eee;
+}
+
+.recv-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.recv-item-title {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+.recv-remove-btn {
+  font-size: 24rpx;
+  color: #ff4757;
+  padding: 4rpx 12rpx;
+  background-color: rgba(255, 71, 87, 0.1);
+  border-radius: 20rpx;
+}
+
+.add-recv-btn {
+  text-align: center;
+  padding: 16rpx;
+  color: #6c5ce7;
+  font-size: 26rpx;
+  border: 1rpx dashed #6c5ce7;
+  border-radius: 8rpx;
+  margin-bottom: 24rpx;
+}
+
+.split-submit-btn {
+  width: 100%;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #6c5ce7;
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  margin-top: 24rpx;
+  margin-bottom: 8rpx;
+
+  &.btn-loading {
+    opacity: 0.6;
+  }
+}
+
+.result-box {
+  border-radius: 8rpx;
+  padding: 16rpx;
+  margin-top: 20rpx;
+  margin-bottom: 8rpx;
+
+  &.result-success {
+    background-color: rgba(46, 213, 115, 0.08);
+    border: 1rpx solid rgba(46, 213, 115, 0.3);
+  }
+
+  &.result-error {
+    background-color: rgba(255, 71, 87, 0.08);
+    border: 1rpx solid rgba(255, 71, 87, 0.3);
+  }
+}
+
+.result-title {
+  font-size: 24rpx;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.result-success .result-title { color: #2ed573; }
+.result-error .result-title   { color: #ff4757; }
+
+.result-content {
+  font-size: 20rpx;
+  color: #666;
+  word-break: break-all;
+  white-space: pre-wrap;
+  display: block;
 }
 </style>

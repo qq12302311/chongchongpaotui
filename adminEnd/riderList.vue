@@ -475,6 +475,8 @@
             <view class="action-btn balance" @click.stop="showBalanceModal(rider)">余额</view>
             <view class="action-btn reset" @click.stop="showResetPasswordModal(rider)">密码</view>
             <view class="action-btn split-register" @click.stop="registerSplitReceiver(rider)">注册分账</view>
+            <view class="action-btn split-test" @click.stop="showSplitTestModal(rider)">余额分账</view>
+            <view class="action-btn settle-profile" @click.stop="setSettleProfile(rider)">设置提款</view>
             <view v-if="rider.submit_certification === '待审核' && rider.latest_certification" class="action-btn verify" @click.stop="showVerifyModal(rider)">
               审核
             </view>
@@ -863,6 +865,48 @@
       </view>
     </view>
 
+    <!-- 余额分账测试弹窗 -->
+    <view class="modal-mask" v-if="showSplitTest" @click="closeSplitTestModal"></view>
+    <view class="modal-container" v-if="showSplitTest">
+      <view class="modal-header">
+        <text class="modal-title">余额分账</text>
+        <view class="modal-close" @click="closeSplitTestModal">×</view>
+      </view>
+      <view class="modal-content">
+        <view class="split-rider-info">
+          <text class="split-rider-name">骑手：{{ currentRider.real_name || currentRider.contact_person }}</text>
+          <text class="split-rider-receiver">接收方编号：{{ currentRider.lkl_split_receiver_no || '未注册，将自动查询' }}</text>
+        </view>
+        <view class="input-group">
+          <text class="input-label">提现金额（元）</text>
+          <input
+            type="digit"
+            v-model="splitTestAmount"
+            placeholder="请输入提现金额，如 10.00"
+            class="input-field"
+          />
+        </view>
+        <view class="split-flow-tips">
+          <text>提交后将依次执行：</text>
+          <text>① 查询分账绑定关系</text>
+          <text>② 查询接收方详情</text>
+          <text>③ 发起余额分账</text>
+          <text>④ 发起 D1 提现</text>
+        </view>
+        <view v-if="splitTestResult !== null" class="result-box" :class="splitTestResult.ok ? 'result-ok' : 'result-fail'">
+          <text class="result-label">{{ splitTestResult.ok ? '操作成功' : '操作失败' }}</text>
+          <text class="result-body">{{ splitTestResult.text }}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" @click="closeSplitTestModal">取消</view>
+        <view class="modal-btn confirm" :class="{ 'btn-disabled': splitTestLoading }" @click="doSplitWithdraw">
+          <view v-if="splitTestLoading" class="btn-loading-small"></view>
+          <text>{{ splitTestLoading ? '处理中...' : '确认提现' }}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部安全区域 -->
     <view class="safe-area-bottom"></view>
   </view>
@@ -975,7 +1019,12 @@ export default {
         description: '' // 操作说明
       },
 	  // 批量操作
-	  selectedIds: []
+	  selectedIds: [],
+      // 余额分账测试弹窗
+      showSplitTest: false,
+      splitTestAmount: '',
+      splitTestLoading: false,
+      splitTestResult: null
     }
   },
   computed: {
@@ -2475,12 +2524,12 @@ export default {
             const signStr = `service_member_id=${rider.service_member_id}&phone_number=${rider.phone_number}&timestamp=${timestamp}`;
             const sign = md5(signStr);
             const result = await uni.request({
-              url: 'https://ccpt.cc111.cn/api/withdraw/split/register',
+              url: 'https://ccpt.cc111.cn/api/withdraw/openapi/split/register',
               method: 'POST',
               data: {
                 service_member_id: rider.service_member_id,
                 owner_type: 'member',
-                phone_number: rider.phone_number,
+                receiver_phone: rider.phone_number,
                 timestamp,
                 sign
               },
@@ -2488,14 +2537,112 @@ export default {
             });
             uni.hideLoading();
             const data = result[1] ? result[1].data : result.data;
-            if (data && (data.code === 0 || data.code === 200 || data.success)) {
-              uni.showToast({ title: '注册成功', icon: 'success' });
+            const status = data && data.status;
+            const message = data && data.message;
+            if (status === 'success') {
+              uni.showToast({ title: message || '注册并绑定分账关系成功', icon: 'success', duration: 2000 });
+            } else if (status === 'partial') {
+              uni.showModal({ title: '部分成功', content: message || '注册成功，绑定分账关系失败', showCancel: false });
             } else {
-              uni.showToast({ title: data && (data.msg || data.message) || '注册失败', icon: 'none', duration: 2000 });
+              uni.showModal({ title: '操作失败', content: message || '注册失败，请重试', showCancel: false });
             }
           } catch (err) {
             uni.hideLoading();
             console.error('注册分账接收方失败:', err);
+            uni.showToast({ title: '网络请求失败', icon: 'none', duration: 2000 });
+          }
+        }
+      });
+    },
+
+    // ─── 余额分账 ──────────────────────────────────────────────
+
+    showSplitTestModal(rider) {
+      this.currentRider = rider;
+      this.splitTestAmount = '';
+      this.splitTestResult = null;
+      this.showSplitTest = true;
+    },
+
+    closeSplitTestModal() {
+      this.showSplitTest = false;
+    },
+
+    async doSplitWithdraw() {
+      if (this.splitTestLoading) return;
+      const amount = parseFloat(this.splitTestAmount);
+      if (!this.splitTestAmount || isNaN(amount) || amount <= 0) {
+        uni.showToast({ title: '请输入有效的提现金额', icon: 'none' }); return;
+      }
+      this.splitTestLoading = true;
+      this.splitTestResult = null;
+      try {
+        const result = await uni.request({
+          url: 'https://ccpt.cc111.cn/api/withdraw/openapi/rider/split-withdraw',
+          method: 'POST',
+          data: {
+            service_member_id: this.adminInfo.service_member_id || this.adminInfo.id,
+            rider_id: this.currentRider.service_member_id,
+            amount: this.splitTestAmount,
+            timestamp: Math.floor(Date.now() / 1000),
+            sign: 'chongchong'
+          },
+          header: { 'Content-Type': 'application/json' }
+        });
+        const res = result[1] ? result[1].data : result.data;
+        const ok = res && res.status === 'success';
+        this.splitTestResult = { ok, text: JSON.stringify(res, null, 2) };
+        uni.showToast({ title: ok ? '余额分账及提现已发起' : (res && res.message || '操作失败'), icon: ok ? 'success' : 'none' });
+      } catch (err) {
+        console.error('余额分账失败:', err);
+        this.splitTestResult = { ok: false, text: String(err) };
+        uni.showToast({ title: '网络请求失败', icon: 'none' });
+      } finally {
+        this.splitTestLoading = false;
+      }
+    },
+
+    // 设置分账接收方提款模式（默认 01 主动提款）
+    setSettleProfile(rider) {
+      if (!rider.lkl_split_receiver_no) {
+        uni.showModal({
+          title: '提示',
+          content: `骑手「${rider.real_name || rider.contact_person}」尚未绑定分账接收方编号，请先点击"注册分账"。`,
+          showCancel: false
+        });
+        return;
+      }
+      uni.showModal({
+        title: '设置提款模式',
+        content: `确认将骑手「${rider.real_name || rider.contact_person}」（接收方：${rider.lkl_split_receiver_no}）的提款模式设置为「01 主动提款」？`,
+        success: async (res) => {
+          if (!res.confirm) return;
+          uni.showLoading({ title: '设置中...' });
+          try {
+            const result = await uni.request({
+              url: 'https://ccpt.cc111.cn/api/withdraw/openapi/rider/set-settle-profile',
+              method: 'POST',
+              data: {
+                service_member_id: this.adminInfo.service_member_id || this.adminInfo.id,
+                rider_id: rider.service_member_id,
+                settle_type: '01',
+                timestamp: Math.floor(Date.now() / 1000),
+                sign: 'chongchong'
+              },
+              header: { 'Content-Type': 'application/json' }
+            });
+            uni.hideLoading();
+            const data = result[1] ? result[1].data : result.data;
+            const status = data && data.status;
+            const message = data && data.message;
+            if (status === 'success') {
+              uni.showToast({ title: message || '设置成功', icon: 'success', duration: 2000 });
+            } else {
+              uni.showModal({ title: '设置失败', content: message || '请重试', showCancel: false });
+            }
+          } catch (err) {
+            uni.hideLoading();
+            console.error('设置提款模式失败:', err);
             uni.showToast({ title: '网络请求失败', icon: 'none', duration: 2000 });
           }
         }
@@ -3406,6 +3553,16 @@ export default {
     background-color: rgba(0, 184, 148, 0.1);
     color: #00b894;
   }
+
+  &.split-test {
+    background-color: rgba(108, 92, 231, 0.1);
+    color: #6c5ce7;
+  }
+
+  &.settle-profile {
+    background-color: rgba(253, 150, 68, 0.1);
+    color: #fd9644;
+  }
 }
 
 .load-more, .no-more, .loading-more {
@@ -4226,4 +4383,72 @@ export default {
 	}
 }
 
+// 余额分账弹窗样式
+.split-rider-info {
+  background-color: #f8f9fa;
+  border-radius: 8rpx;
+  padding: 16rpx 20rpx;
+  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.split-rider-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.split-rider-receiver {
+  font-size: 24rpx;
+  color: #999;
+  word-break: break-all;
+}
+
+.split-flow-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 16rpx;
+  background-color: rgba(108, 92, 231, 0.05);
+  border-radius: 8rpx;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #888;
+}
+
+.result-box {
+  border-radius: 8rpx;
+  padding: 16rpx;
+  margin-top: 16rpx;
+
+  &.result-ok {
+    background-color: rgba(46, 213, 115, 0.08);
+    border: 1rpx solid rgba(46, 213, 115, 0.3);
+  }
+
+  &.result-fail {
+    background-color: rgba(255, 71, 87, 0.08);
+    border: 1rpx solid rgba(255, 71, 87, 0.3);
+  }
+}
+
+.result-label {
+  font-size: 24rpx;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.result-ok .result-label { color: #2ed573; }
+.result-fail .result-label { color: #ff4757; }
+
+.result-body {
+  font-size: 20rpx;
+  color: #666;
+  word-break: break-all;
+  white-space: pre-wrap;
+  display: block;
+}
 </style>

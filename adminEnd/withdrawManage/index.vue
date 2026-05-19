@@ -34,6 +34,30 @@
 			</view>
 		</view>
 
+		<!-- 合作协议上传（一次性配置） -->
+		<view class="entrust-upload-card">
+			<view class="entrust-header" @click="showEntrustUpload = !showEntrustUpload">
+				<text class="entrust-title">合作协议配置</text>
+				<text class="entrust-toggle">{{ showEntrustUpload ? '收起' : '展开' }}</text>
+			</view>
+			<view v-if="showEntrustUpload" class="entrust-body">
+				<text class="entrust-desc">上传平台与骑手合作协议文件，获取 attFileId 后填入服务器 .env 配置。</text>
+				<view class="entrust-row">
+					<view class="entrust-btn" @click="chooseEntrustFile">
+						<text>{{ entrustUploading ? '上传中...' : '选择并上传协议文件' }}</text>
+					</view>
+				</view>
+				<view v-if="entrustResult" class="entrust-result">
+					<text class="result-label">attFileId（填入 .env）：</text>
+					<text class="result-value" @click="copyText(entrustResult)">{{ entrustResult }}</text>
+					<text class="result-hint">点击复制</text>
+				</view>
+				<view v-if="entrustError" class="entrust-error">
+					<text>{{ entrustError }}</text>
+				</view>
+			</view>
+		</view>
+
 		<!-- 批量操作栏 -->
 		<view class="batch-actions" v-if="currentStatus === 'pending' && withdrawList.length > 0">
 			<view class="batch-left">
@@ -69,7 +93,7 @@
 				<view class="withdraw-header">
 					<view class="withdraw-info">
 						<view class="rider-name-wrapper">
-							<text class="rider-name">{{ withdraw.real_name || (withdraw.applicant && withdraw.applicant.contact_person) || '未知骑手' }}</text>
+							<text class="rider-name">{{ getWithdrawDisplayName(withdraw) }}</text>
 							<!-- 待审核状态显示复选框 -->
 							<view class="checkbox-wrapper" v-if="withdraw.status === 'pending'" @click.stop="toggleSelect(withdraw.id)">
 								<checkbox-group>
@@ -77,6 +101,13 @@
 								</checkbox-group>
 							</view>
 						</view>
+						<view class="rider-phone-row" v-if="getWithdrawRiderPhone(withdraw)">
+							<text class="rider-phone-text">{{ getWithdrawRiderPhone(withdraw) }}</text>
+							<view class="copy-btn phone-copy-btn" @click.stop="copyText(getWithdrawRiderPhone(withdraw))">
+								<view class="copy-icon"></view>
+							</view>
+						</view>
+						<text class="rider-extra-text" v-if="withdraw.real_name && withdraw.real_name !== getWithdrawDisplayName(withdraw)">提现姓名：{{ withdraw.real_name }}</text>
 						<view class="withdraw-stats" v-if="withdraw.status === 'pending'">
 							<text class="stat-item">累计完单: ¥{{ parseFloat(withdraw.total_commission_amount || 0).toFixed(2) }}</text>
 							<text class="stat-divider">|</text>
@@ -96,6 +127,7 @@
 						<view class="info-row">
 							<text class="info-label">提现金额：</text>
 							<text class="info-value amount">¥{{ parseFloat(withdraw.amount || 0).toFixed(2) }}</text>
+							<text class="info-side-balance">账户余额：¥{{ formatAmount(getWithdrawCardBalance(withdraw)) }}</text>
 						</view>
 					<view class="info-row">
 						<text class="info-label">提现方式：</text>
@@ -115,7 +147,7 @@
 					</view>
 
 						<!-- 银行卡信息展示 -->
-						<template v-if="withdraw.payment_method === 'bank' && withdraw.withdraw_info && (withdraw.status !== 'completed' || isExpanded(withdraw.id))">
+						<template v-if="withdraw.payment_method === 'bank' && withdraw.withdraw_info && isExpanded(withdraw.id)">
 							<view class="bank-info-section">
 								<!-- <view class="bank-info-title">银行卡信息</view> -->
 								<view class="info-row" v-if="withdraw.withdraw_info.account_holder">
@@ -158,10 +190,9 @@
 						</template>
 
 						<!-- 支付宝信息展示 -->
-						<!-- <template v-if="withdraw.payment_method === 'alipay' && withdraw.withdraw_info && withdraw.withdraw_info.alipay_id && (withdraw.status !== 'completed' || isExpanded(withdraw.id))">
+						<template v-if="withdraw.payment_method === 'alipay' && withdraw.withdraw_info && isExpanded(withdraw.id)">
 							<view class="payment-info-section">
-								<view class="payment-info-title">支付宝信息</view>
-								<view class="info-row">
+								<view class="info-row" v-if="withdraw.withdraw_info.alipay_id">
 									<text class="info-label">支付宝账号：</text>
 									<text class="info-value">{{ withdraw.withdraw_info.alipay_id }}</text>
 									<view class="copy-btn" @click.stop="copyText(withdraw.withdraw_info.alipay_id)">
@@ -173,7 +204,7 @@
 									<text class="info-value">{{ withdraw.withdraw_info.real_name }}</text>
 								</view>
 							</view>
-						</template> -->
+						</template>
 
 						<!-- <view class="info-row" v-if="withdraw.phone">
 							<text class="info-label">联系电话：</text>
@@ -184,18 +215,82 @@
 							<text class="info-value">{{ getOwnerTypeText(withdraw.owner_type) }}</text>
 						</view> -->
 
-						<!-- 已完成状态的展开/收起按钮 -->
-						<view v-if="withdraw.status === 'completed' && hasWithdrawInfo(withdraw)" class="expand-toggle" @click.stop="toggleExpand(withdraw.id)">
+						<!-- 账户信息展开/收起按钮 -->
+						<view v-if="hasWithdrawInfo(withdraw)" class="expand-toggle" @click.stop="toggleExpand(withdraw.id)">
 							<text class="expand-text">{{ isExpanded(withdraw.id) ? '收起详细信息' : '展开详细信息' }}</text>
 							<view class="expand-icon" :class="{ 'expanded': isExpanded(withdraw.id) }">
 								<view class="arrow-down"></view>
+							</view>
+						</view>
+
+						<view class="timeline-section" @click.stop>
+							<view class="timeline-toggle" @click.stop="toggleTimeline(withdraw)">
+								<view class="timeline-toggle-left">
+									<text class="timeline-toggle-title">提现记录和订单记录时间轴</text>
+									<text class="timeline-toggle-sub">查看每笔入账、提现后余额和订单概括</text>
+								</view>
+								<view class="timeline-toggle-right">
+									<text class="timeline-toggle-text">{{ isTimelineExpanded(withdraw.id) ? '收起' : '展开' }}</text>
+									<view class="expand-icon" :class="{ 'expanded': isTimelineExpanded(withdraw.id) }">
+										<view class="arrow-down"></view>
+									</view>
+								</view>
+							</view>
+
+							<view v-if="isTimelineExpanded(withdraw.id)" class="timeline-panel">
+								<view v-if="isTimelineLoading(withdraw.id)" class="timeline-state loading">
+									<view class="loading-spinner small"></view>
+									<text class="timeline-state-text">正在加载账户流水...</text>
+								</view>
+
+								<view v-else-if="getTimelineList(withdraw.id).length === 0" class="timeline-state empty">
+									<text class="timeline-state-text">暂无订单或提现记录</text>
+								</view>
+
+								<view v-else class="timeline-list">
+									<view
+										v-for="(item, timelineIndex) in getTimelineList(withdraw.id)"
+										:key="`${withdraw.id}-${timelineIndex}`"
+										class="timeline-item-row"
+									>
+										<view class="timeline-left">
+											<view class="timeline-dot" :class="item.type === 'withdraw' ? 'dot-red' : 'dot-green'"></view>
+											<view v-if="timelineIndex < getTimelineList(withdraw.id).length - 1" class="timeline-line"></view>
+										</view>
+										<view class="timeline-right">
+											<view class="timeline-header-row">
+												<text class="timeline-date">{{ formatTimelineDate(item.created_at) }}</text>
+												<text class="timeline-type" :class="item.type === 'withdraw' ? 'type-out' : 'type-in'">
+													{{ item.type === 'withdraw' ? '提现' : '入账' }}
+												</text>
+											</view>
+
+											<view v-if="item.type === 'order'" class="timeline-main-text">
+												<text>{{ item.city || '未知城市' }}</text>
+												<text class="timeline-order-no">{{ item.order_no || '-' }}</text>
+												<text class="timeline-amount in">¥{{ formatAmount(item.amount) }} 入账</text>
+											</view>
+
+											<view v-else class="timeline-main-text">
+												<text>提现</text>
+												<text class="timeline-amount out">¥{{ formatAmount(item.amount) }}</text>
+												<text class="timeline-status">{{ getTimelineWithdrawStatus(item.status) }}</text>
+											</view>
+
+											<view class="timeline-balance-row">
+												<text class="timeline-balance-label">账户余额：</text>
+												<text class="timeline-balance-value">¥{{ formatNonNegativeAmount(item.balance_after) }}</text>
+											</view>
+										</view>
+									</view>
+								</view>
 							</view>
 						</view>
 					</view>
 
 					<!-- 操作按钮 -->
 					<view class="action-buttons"
-						v-if="withdraw.status === 'pending' || withdraw.status === 'processing'">
+						v-if="withdraw.status === 'pending' || withdraw.status === 'processing' || withdraw.status === 'completed'">
 						<!-- 待审核状态的按钮 -->
 						<template v-if="withdraw.status === 'pending'">
 							<view class="action-btn reject" @click.stop="showRejectModal(withdraw)">拒绝</view>
@@ -205,6 +300,11 @@
 						<!-- 待打款状态的按钮 -->
 						<template v-if="withdraw.status === 'processing'">
 							<view class="action-btn complete" @click.stop="showCompleteModal(withdraw)">已打款</view>
+						</template>
+
+						<!-- 已完成状态的按钮 -->
+						<template v-if="withdraw.status === 'completed'">
+							<view class="action-btn revoke" @click.stop="revokeWithdraw(withdraw)">撤回</view>
 						</template>
 					</view>
 				</view>
@@ -310,7 +410,16 @@
 			transactionNo: '',
 			processing: false,
 			// 展开状态管理
-			expandedItems: new Set(), // 使用Set来存储展开的项目ID
+			// 合作协议上传
+				showEntrustUpload: false,
+				entrustUploading: false,
+				entrustResult: '',
+				entrustError: '',
+				expandedItems: new Set(), // 使用Set来存储展开的项目ID
+			timelineExpandedItems: new Set(),
+			timelineLoadingMap: {},
+			timelineDataMap: {},
+			timelineCurrentBalanceMap: {},
 			// 调试模式
 			debugMode: false, // 设置为true启用虚拟数据调试
 			// 批量操作
@@ -337,6 +446,47 @@
 			}
 		},
 		methods: {
+			// 上传合作协议文件
+			chooseEntrustFile() {
+				if (this.entrustUploading) return;
+				this.entrustError = '';
+				uni.chooseMessageFile({
+					count: 1,
+					type: 'file',
+					extension: ['pdf', 'jpg', 'png'],
+					success: (res) => {
+						const file = res.tempFiles[0];
+						this.entrustUploading = true;
+						uni.uploadFile({
+							url: 'https://ccpt.cc111.cn/api/withdraw/openapi/entrust/upload',
+							filePath: file.path,
+							name: 'file',
+							formData: { att_type: 'SPLIT_COOPERATION_FILE' },
+							success: (uploadRes) => {
+								try {
+									const data = JSON.parse(uploadRes.data);
+									if (data.status === 'success' && data.attFileId) {
+										this.entrustResult = data.attFileId;
+									} else {
+										this.entrustError = data.message || '上传失败';
+									}
+								} catch (e) {
+									this.entrustError = '响应解析失败';
+								}
+							},
+							fail: () => {
+								this.entrustError = '上传请求失败，请检查网络';
+							},
+							complete: () => {
+								this.entrustUploading = false;
+							}
+						});
+					},
+					fail: () => {
+						this.entrustError = '文件选择失败';
+					}
+				});
+			},
 			// 切换单个选择
 			toggleSelect(id) {
 				const index = this.selectedIds.indexOf(id);
@@ -916,6 +1066,367 @@
 				return false;
 			},
 
+			async toggleTimeline(withdraw) {
+				const withdrawId = withdraw && withdraw.id;
+				if (!withdrawId) return;
+
+				if (this.timelineExpandedItems.has(withdrawId)) {
+					this.timelineExpandedItems.delete(withdrawId);
+					this.$forceUpdate();
+					return;
+				}
+
+				this.timelineExpandedItems.add(withdrawId);
+				this.$forceUpdate();
+
+				if (!this.timelineDataMap[withdrawId]) {
+					await this.loadWithdrawTimeline(withdraw);
+				}
+			},
+
+			isTimelineExpanded(withdrawId) {
+				return this.timelineExpandedItems.has(withdrawId);
+			},
+
+			isTimelineLoading(withdrawId) {
+				return !!this.timelineLoadingMap[withdrawId];
+			},
+
+			getTimelineList(withdrawId) {
+				return this.timelineDataMap[withdrawId] || [];
+			},
+
+			getTimelineRiderId(withdraw) {
+				if (!withdraw) return '';
+				return withdraw.applicant_id ||
+					withdraw.owner_id ||
+					(withdraw.owner && withdraw.owner.service_member_id) ||
+					(withdraw.applicant && (withdraw.applicant.service_member_id || withdraw.applicant.id)) ||
+					'';
+			},
+
+			async loadWithdrawTimeline(withdraw) {
+				const withdrawId = withdraw && withdraw.id;
+				const riderId = this.getTimelineRiderId(withdraw);
+
+				if (!withdrawId || !riderId) {
+					this.$set(this.timelineDataMap, withdrawId, []);
+					return;
+				}
+
+				this.$set(this.timelineLoadingMap, withdrawId, true);
+
+				try {
+					const timestamp = Math.floor(Date.now() / 1000);
+					const orderParams = {
+						service_member_id: riderId,
+						sign: 'chongchong',
+						timestamp,
+						page: 1,
+						per_page: 100
+					};
+
+					const withdrawParams = {
+						service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+						owner_id: riderId,
+						owner_type: 'member',
+						sign: 'chongchong',
+						timestamp,
+						page: 1,
+						per_page: 100
+					};
+
+					const ledgerParams = {
+						service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+						owner_id: riderId,
+						owner_type: 'member',
+						sign: 'chongchong',
+						timestamp,
+						page: 1,
+						per_page: 1
+					};
+
+					const memberInfoParams = {
+						service_member_id: riderId,
+						member_id: riderId,
+						sign: 'chongchong',
+						timestamp
+					};
+
+					const [ordersResult, withdrawsResult, ledgerResult, memberInfoResult] = await Promise.all([
+						this.fetchPagedList('task/list', orderParams, { maxPages: 10 }),
+						this.fetchPagedList('withdraw/owner/list', withdrawParams, { maxPages: 10 }),
+						this.$request('service/ledger', ledgerParams, 'POST'),
+						this.$request('service/member/info', memberInfoParams, 'POST')
+					]);
+
+					const events = [];
+					const orders = ordersResult.list || [];
+					const withdraws = withdrawsResult.list || [];
+
+					orders.forEach(order => {
+						if (order.status === 'completed' || order.status === 'finished') {
+							events.push({
+								type: 'order',
+								created_at: order.completed_at || order.created_at || order.task_date,
+								amount: this.getOrderIncomeAmount(order),
+								order_no: order.task_no || order.order_no || order.id,
+								city: this.getOrderCity(order),
+								status: order.status
+							});
+						}
+					});
+
+					withdraws.forEach(item => {
+						events.push({
+							type: 'withdraw',
+							created_at: item.created_at || item.apply_time || item.processed_at || item.completed_at,
+							amount: item.actual_amount || item.amount || 0,
+							status: item.status
+						});
+					});
+
+					events.sort((a, b) => this.parseDate(b.created_at) - this.parseDate(a.created_at));
+					const currentWithdrawableBalance = this.resolveTimelineCurrentBalance(withdraw, events, ledgerResult, memberInfoResult);
+					this.$set(this.timelineCurrentBalanceMap, withdrawId, currentWithdrawableBalance);
+					this.applyTimelineBalances(events, currentWithdrawableBalance);
+					this.$set(this.timelineDataMap, withdrawId, events);
+				} catch (err) {
+					console.error('加载提现时间轴失败:', err);
+					this.$set(this.timelineCurrentBalanceMap, withdrawId, this.getCurrentWithdrawableBalance(withdraw));
+					this.$set(this.timelineDataMap, withdrawId, []);
+					uni.showToast({
+						title: '加载时间轴失败',
+						icon: 'none'
+					});
+				} finally {
+					this.$set(this.timelineLoadingMap, withdrawId, false);
+				}
+			},
+
+			isRequestSuccess(res) {
+				return !!res && (res.code === 200 || res.status === 'success');
+			},
+
+			extractList(res) {
+				if (!res) return [];
+				if (Array.isArray(res.data)) return res.data;
+				if (res.data && Array.isArray(res.data.data)) return res.data.data;
+				if (res.data && Array.isArray(res.data.list)) return res.data.list;
+				return [];
+			},
+
+			async fetchPagedList(url, params = {}, options = {}) {
+				const pageSize = options.pageSize || params.per_page || 100;
+				const maxPages = options.maxPages || 20;
+				let page = params.page || 1;
+				let all = [];
+
+				while (page <= maxPages) {
+					const res = await this.$request(url, { ...params, page, per_page: pageSize }, 'POST');
+					if (!this.isRequestSuccess(res)) {
+						break;
+					}
+
+					const list = this.extractList(res);
+					all = all.concat(list);
+
+					const currentPage = Number((res.data && res.data.current_page) || page);
+					const lastPage = Number((res.data && res.data.last_page) || currentPage);
+					const hasMoreByPagination = res.data && res.data.last_page ? currentPage < lastPage : false;
+					const hasMoreByLength = !hasMoreByPagination && list.length === pageSize;
+
+					if ((!hasMoreByPagination && !hasMoreByLength) || list.length === 0) {
+						break;
+					}
+
+					page += 1;
+				}
+
+				return { list: all };
+			},
+
+			getOrderCity(order) {
+				return order.city_name || order.city || order.area || order.province_name || '';
+			},
+
+			getWithdrawRiderPhone(withdraw) {
+				return withdraw.phone ||
+					(withdraw.applicant && (withdraw.applicant.phone_number || withdraw.applicant.phone)) ||
+					'';
+			},
+
+			getWithdrawDisplayName(withdraw) {
+				return (withdraw.applicant && (withdraw.applicant.contact_person || withdraw.applicant.real_name || withdraw.applicant.nickname)) ||
+					withdraw.real_name ||
+					'未知骑手';
+			},
+
+			getOrderIncomeAmount(order) {
+				const directAmount = [
+					order.commission,
+					order.rider_commission,
+					order.member_amount,
+					order.member_commission,
+					order.income_amount
+				].find(value => value !== undefined && value !== null && value !== '');
+
+				if (directAmount !== undefined) {
+					return parseFloat(directAmount || 0);
+				}
+
+				const orderAmount = parseFloat(
+					order.order_amount ||
+					order.amount ||
+					order.total_amount ||
+					0
+				);
+				const commissionRate = parseFloat(
+					order.commission_rate ||
+					order.member_rate ||
+					order.rider_rate ||
+					0
+				);
+
+				if (orderAmount > 0 && commissionRate > 0) {
+					const normalizedRate = commissionRate > 1 ? commissionRate / 100 : commissionRate;
+					return Number((orderAmount * normalizedRate).toFixed(2));
+				}
+
+				return orderAmount;
+			},
+
+			parseDate(dateStr) {
+				if (!dateStr) return 0;
+				if (typeof dateStr === 'number') {
+					return String(dateStr).length === 10 ? dateStr * 1000 : dateStr;
+				}
+
+				const normalized = String(dateStr).includes('T')
+					? String(dateStr)
+					: `${String(dateStr).replace(' ', 'T')}+08:00`;
+				const time = new Date(normalized).getTime();
+				return Number.isNaN(time) ? 0 : time;
+			},
+
+			getCurrentWithdrawableBalance(withdraw) {
+				const totalIncome = parseFloat(
+					withdraw.total_commission_amount ||
+					withdraw.total_income_amount ||
+					withdraw.total_income ||
+					0
+				);
+				const totalWithdraw = parseFloat(
+					withdraw.total_withdrawal_amount ||
+					withdraw.total_withdraw_amount ||
+					0
+				);
+
+				return totalIncome - totalWithdraw;
+			},
+
+			getWithdrawCardBalance(withdraw) {
+				const withdrawId = withdraw && withdraw.id;
+				if (withdrawId && this.timelineCurrentBalanceMap[withdrawId] !== undefined) {
+					return this.timelineCurrentBalanceMap[withdrawId];
+				}
+				const timelineList = withdrawId ? (this.timelineDataMap[withdrawId] || []) : [];
+				if (timelineList.length > 0 && timelineList[0] && timelineList[0].balance_after !== undefined) {
+					return timelineList[0].balance_after;
+				}
+				return this.getCurrentWithdrawableBalance(withdraw);
+			},
+
+			resolveTimelineCurrentBalance(withdraw, events = [], ledgerResult = null, memberInfoResult = null) {
+				const memberBalance = memberInfoResult && (memberInfoResult.code === 200 || memberInfoResult.status === 'success') && memberInfoResult.data
+					? parseFloat(memberInfoResult.data.balance || 0)
+					: null;
+				const summaryBalance = this.getCurrentWithdrawableBalance(withdraw);
+				const ledgerBalance = ledgerResult && ledgerResult.code === 200
+					? parseFloat(ledgerResult.total_income || 0) - parseFloat(ledgerResult.total_expense || 0)
+					: 0;
+				const eventsBalance = events.reduce((sum, item) => {
+					const amount = parseFloat(item.amount || 0);
+					if (item.type === 'order') {
+						return sum + amount;
+					}
+					if (item.type === 'withdraw' && item.status !== 'rejected') {
+						return sum - amount;
+					}
+					return sum;
+				}, 0);
+
+				if (memberBalance !== null) {
+					return memberBalance;
+				}
+
+				if (ledgerBalance > 0) {
+					return ledgerBalance;
+				}
+
+				if (summaryBalance > 0) {
+					return summaryBalance;
+				}
+
+				if (eventsBalance > 0) {
+					return eventsBalance;
+				}
+
+				return Math.max(ledgerBalance, summaryBalance, eventsBalance, 0);
+			},
+
+			applyTimelineBalances(events, currentBalance = 0) {
+				let runningBalance = parseFloat(currentBalance || 0);
+
+				for (let index = 0; index < events.length; index += 1) {
+					const item = events[index];
+					const amount = parseFloat(item.amount || 0);
+					item.balance_after = runningBalance;
+
+					if (item.type === 'order') {
+						runningBalance -= amount;
+					} else if (item.type === 'withdraw' && item.status !== 'rejected') {
+						runningBalance += amount;
+					}
+				}
+			},
+
+			formatAmount(val) {
+				return parseFloat(val || 0).toFixed(2);
+			},
+
+			formatNonNegativeAmount(val) {
+				return Math.max(parseFloat(val || 0), 0).toFixed(2);
+			},
+
+			formatTimelineDate(dateStr) {
+				if (!dateStr) return '';
+				try {
+					const parsed = this.parseDate(dateStr);
+					if (!parsed) return dateStr;
+					const date = new Date(parsed);
+					const year = String(date.getFullYear()).slice(2);
+					const month = String(date.getMonth() + 1).padStart(2, '0');
+					const day = String(date.getDate()).padStart(2, '0');
+					const hour = String(date.getHours()).padStart(2, '0');
+					const minute = String(date.getMinutes()).padStart(2, '0');
+					return `${year}.${month}.${day} ${hour}:${minute}`;
+				} catch (err) {
+					return dateStr;
+				}
+			},
+
+			getTimelineWithdrawStatus(status) {
+				const statusMap = {
+					pending: '待审核',
+					processing: '打款中',
+					completed: '已打款',
+					rejected: '已拒绝',
+					approved: '已通过'
+				};
+				return statusMap[status] || '处理中';
+			},
+
 
 
 			// 同意提现
@@ -982,6 +1493,19 @@
 			async confirmComplete() {
 				await this.completeWithdraw(this.currentWithdraw.id, this.transactionNo);
 				this.closeCompleteModal();
+			},
+
+			// 撤回提现到待审核
+			revokeWithdraw(withdraw) {
+				uni.showModal({
+					title: '确认撤回',
+					content: `确定要撤回 ${withdraw.real_name || '该用户'} 的提现吗？撤回后会回到待审核状态。`,
+					success: async (res) => {
+						if (res.confirm) {
+							await this.submitRevokeWithdraw(withdraw.id);
+						}
+					}
+				});
 			},
 
 			// 处理提现申请（审核）
@@ -1069,6 +1593,44 @@
 				} finally {
 					this.processing = false;
 				}
+			},
+
+			// 撤回已完成提现
+			async submitRevokeWithdraw(id) {
+				this.processing = true;
+
+				try {
+					const params = {
+						id: id,
+						service_member_id: this.riderUserInfo.id,
+						sign: "chongchong",
+						timestamp: Math.floor(Date.now() / 1000)
+					};
+
+					const res = await this.$request('withdraw/revoke', params, 'POST');
+
+					if (res.status === 'success') {
+						uni.showToast({
+							title: '已撤回到待审核',
+							icon: 'success'
+						});
+
+						this.getWithdrawList();
+					} else {
+						uni.showToast({
+							title: res.msg || '操作失败',
+							icon: 'none'
+						});
+					}
+				} catch (err) {
+					console.error('撤回提现失败:', err);
+					uni.showToast({
+						title: '网络请求失败',
+						icon: 'none'
+					});
+				} finally {
+					this.processing = false;
+				}
 			}
 		}
 	}
@@ -1082,6 +1644,53 @@
 
 	.nav-placeholder {
 		background-color: #fff;
+	}
+
+	// 合作协议上传卡片
+	.entrust-upload-card {
+		background: #fff;
+		margin: 16rpx 20rpx;
+		border-radius: 12rpx;
+		overflow: hidden;
+		box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+
+		.entrust-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 24rpx 28rpx;
+			.entrust-title { font-size: 28rpx; font-weight: 600; color: #333; }
+			.entrust-toggle { font-size: 24rpx; color: #2492F2; }
+		}
+		.entrust-body {
+			padding: 0 28rpx 28rpx;
+			border-top: 1rpx solid #f0f0f0;
+			.entrust-desc { font-size: 24rpx; color: #999; line-height: 1.6; display: block; padding: 16rpx 0; }
+			.entrust-row { margin-top: 12rpx; }
+			.entrust-btn {
+				display: inline-block;
+				background: #2492F2;
+				color: #fff;
+				font-size: 26rpx;
+				padding: 16rpx 32rpx;
+				border-radius: 8rpx;
+			}
+			.entrust-result {
+				margin-top: 20rpx;
+				background: #f6ffed;
+				border: 1rpx solid #b7eb8f;
+				border-radius: 8rpx;
+				padding: 16rpx;
+				.result-label { font-size: 22rpx; color: #666; display: block; margin-bottom: 8rpx; }
+				.result-value { font-size: 24rpx; color: #389e0d; word-break: break-all; display: block; }
+				.result-hint { font-size: 20rpx; color: #999; display: block; margin-top: 6rpx; }
+			}
+			.entrust-error {
+				margin-top: 16rpx;
+				color: #ff4d4f;
+				font-size: 24rpx;
+			}
+		}
 	}
 
 	// 批量操作栏
@@ -1249,6 +1858,13 @@
 			border-radius: 50%;
 			animation: spin 1s linear infinite;
 			margin-bottom: 20rpx;
+
+			&.small {
+				width: 36rpx;
+				height: 36rpx;
+				border-width: 3rpx;
+				margin-bottom: 0;
+			}
 		}
 
 		.loading-text {
@@ -1323,9 +1939,9 @@
 		margin-bottom: 20rpx;
 		width: 100%;
 
-		.withdraw-info {
-			flex: 1;
-			min-width: 0;
+			.withdraw-info {
+				flex: 1;
+				min-width: 0;
 
 			.rider-name-wrapper {
 				display: flex;
@@ -1341,9 +1957,34 @@
 				.checkbox-wrapper {
 					margin-left: 16rpx;
 				}
-			}
+				}
 
-			.withdraw-stats {
+				.rider-phone-row {
+					display: flex;
+					align-items: center;
+					margin-bottom: 8rpx;
+					gap: 10rpx;
+				}
+
+				.rider-phone-text {
+					font-size: 24rpx;
+					color: #909399;
+				}
+
+				.rider-extra-text {
+					display: block;
+					margin-bottom: 8rpx;
+					font-size: 22rpx;
+					color: #b0b7c3;
+				}
+
+				.phone-copy-btn {
+					width: 34rpx;
+					height: 34rpx;
+					flex-shrink: 0;
+				}
+
+				.withdraw-stats {
 				display: flex;
 				align-items: center;
 				margin-bottom: 8rpx;
@@ -1518,6 +2159,17 @@
 				}
 			}
 
+			.info-side-balance {
+				margin-left: auto;
+				padding-left: 16rpx;
+				font-size: 24rpx;
+				color: #2492F2;
+				font-weight: 500;
+				text-align: right;
+				white-space: nowrap;
+				flex-shrink: 0;
+			}
+
 			.copy-btn {
 				width: 40rpx;
 				height: 40rpx;
@@ -1688,6 +2340,195 @@
 				}
 			}
 		}
+
+		.timeline-section {
+			margin-top: 20rpx;
+			border-radius: 12rpx;
+			background: linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+			border: 1rpx solid #e4eefb;
+			overflow: hidden;
+
+			.timeline-toggle {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 20rpx 24rpx;
+
+				.timeline-toggle-left {
+					flex: 1;
+					min-width: 0;
+				}
+
+				.timeline-toggle-title {
+					display: block;
+					font-size: 26rpx;
+					font-weight: 600;
+					color: #2f3a4a;
+				}
+
+				.timeline-toggle-sub {
+					display: block;
+					margin-top: 6rpx;
+					font-size: 22rpx;
+					color: #7a8699;
+				}
+
+				.timeline-toggle-right {
+					display: flex;
+					align-items: center;
+					margin-left: 16rpx;
+					flex-shrink: 0;
+				}
+
+				.timeline-toggle-text {
+					font-size: 24rpx;
+					color: #2492F2;
+					margin-right: 8rpx;
+				}
+			}
+
+			.timeline-panel {
+				padding: 0 24rpx 24rpx;
+			}
+
+			.timeline-state {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 12rpx;
+				padding: 28rpx 0 12rpx;
+
+				&.empty {
+					padding-top: 20rpx;
+				}
+
+				.timeline-state-text {
+					font-size: 24rpx;
+					color: #8c98a8;
+				}
+			}
+
+			.timeline-list {
+				padding-top: 8rpx;
+			}
+
+			.timeline-item-row {
+				display: flex;
+				align-items: stretch;
+
+				.timeline-left {
+					width: 28rpx;
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					flex-shrink: 0;
+				}
+
+				.timeline-dot {
+					width: 18rpx;
+					height: 18rpx;
+					border-radius: 50%;
+					margin-top: 8rpx;
+
+					&.dot-green {
+						background-color: #27ae60;
+						box-shadow: 0 0 0 8rpx rgba(39, 174, 96, 0.12);
+					}
+
+					&.dot-red {
+						background-color: #ff6b6b;
+						box-shadow: 0 0 0 8rpx rgba(255, 107, 107, 0.12);
+					}
+				}
+
+				.timeline-line {
+					width: 2rpx;
+					flex: 1;
+					background-color: #d9e3f0;
+					margin: 8rpx 0;
+				}
+
+				.timeline-right {
+					flex: 1;
+					padding: 0 0 24rpx 20rpx;
+					min-width: 0;
+				}
+
+				.timeline-header-row {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					margin-bottom: 10rpx;
+					gap: 16rpx;
+				}
+
+				.timeline-date {
+					font-size: 24rpx;
+					color: #7a8699;
+				}
+
+				.timeline-type {
+					padding: 6rpx 14rpx;
+					border-radius: 999rpx;
+					font-size: 22rpx;
+					font-weight: 500;
+					flex-shrink: 0;
+
+					&.type-in {
+						color: #27ae60;
+						background-color: rgba(39, 174, 96, 0.12);
+					}
+
+					&.type-out {
+						color: #ff6b6b;
+						background-color: rgba(255, 107, 107, 0.12);
+					}
+				}
+
+				.timeline-main-text {
+					display: flex;
+					flex-wrap: wrap;
+					align-items: center;
+					gap: 10rpx;
+					font-size: 26rpx;
+					color: #2f3a4a;
+					line-height: 1.6;
+				}
+
+				.timeline-order-no {
+					color: #5b6b81;
+					word-break: break-all;
+				}
+
+				.timeline-amount {
+					font-weight: 600;
+
+					&.in {
+						color: #27ae60;
+					}
+
+					&.out {
+						color: #ff6b6b;
+					}
+				}
+
+				.timeline-status {
+					font-size: 24rpx;
+					color: #8c98a8;
+				}
+
+				.timeline-balance-row {
+					margin-top: 8rpx;
+					font-size: 24rpx;
+					color: #7a8699;
+				}
+
+				.timeline-balance-value {
+					color: #2492F2;
+					font-weight: 600;
+				}
+			}
+		}
 	}
 
 	// 操作按钮
@@ -1735,6 +2576,16 @@
 
 			&:active {
 				background-color: #218838;
+			}
+		}
+
+		&.revoke {
+			background-color: #fff7e8;
+			color: #d48806;
+			border: 1rpx solid #ffd591;
+
+			&:active {
+				background-color: #ffe7ba;
 			}
 		}
 	}

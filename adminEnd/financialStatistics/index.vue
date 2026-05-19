@@ -1,1078 +1,1319 @@
 <template>
-  <view class="financial-statistics-container">
-    <!-- 顶部导航栏 -->
-    <nav-bar title="财务统计" title-align="center" :showBackButton="true"></nav-bar>
+	<view class="financial-statistics-container">
+		<!-- 顶部导航栏 -->
+		<nav-bar title="财务统计" title-align="center" :showBackButton="true"></nav-bar>
 
-    <!-- 导航栏占位元素 -->
-    <view class="nav-placeholder" :style="{ height: navBarHeight + 'px' }"></view>
+		<!-- 导航栏占位元素 -->
+		<view class="nav-placeholder" :style="{ height: navBarHeight + 'px' }"></view>
 
-    <!-- 加载状态 -->
-    <view v-if="loading" class="loading-container">
-      <view class="loading-spinner"></view>
-      <text class="loading-text">加载中...</text>
-    </view>
+		<!-- 加载状态 -->
+		<view v-if="loading" class="loading-container">
+			<view class="loading-spinner"></view>
+			<text class="loading-text">加载中...</text>
+		</view>
 
-    <!-- 财务统计内容 -->
-    <view v-else class="statistics-content">
-      <!-- 时间筛选区域 -->
-      <view class="date-filter-section">
-        <view class="date-filter-tabs">
-          <view
-            v-for="dateFilter in dateFilterOptions"
-            :key="dateFilter.value"
-            class="date-filter-tab"
-            :class="{ active: currentDateFilter === dateFilter.value }"
-            @click="switchDateFilter(dateFilter.value)"
-          >
-            {{ dateFilter.label }}
-          </view>
-        </view>
-      </view>
+		<scroll-view v-else scroll-y class="statistics-content">
+			<!-- 月份筛选区域 -->
+			<view class="month-filter-section">
+				<view class="month-nav">
+					<view class="month-arrow" @click="prevMonth">‹</view>
+					<picker mode="date" fields="month" :value="monthPickerValue" :end="currentMonthValue" @change="handleMonthChange">
+						<view class="month-display">
+							<text v-if="viewAll" class="month-text all-time">全部时间</text>
+							<text v-else class="month-text">{{ selectedYear }}年{{ selectedMonth }}月</text>
+						</view>
+					</picker>
+					<view class="month-arrow" @click="nextMonth">›</view>
+				</view>
+				<view class="all-time-btn" :class="{ active: viewAll }" @click="toggleViewAll">全部</view>
+			</view>
 
-      <!-- 核心财务指标卡片 -->
-      <view class="stats-section">
-        <!-- 总收入 -->
-        <view class="stats-card primary">
-          <view class="stats-icon income-icon"></view>
-          <view class="stats-info">
-            <view class="stats-title">总收入</view>
-            <view class="stats-value">¥{{ financialData.total_income || '0.00' }}</view>
-            <view class="stats-desc">订单总金额</view>
-          </view>
-        </view>
+			<view class="range-summary">
+				<text class="range-label">{{ viewAll ? '默认显示总数据' : '当前筛选：自然整月' }}</text>
+				<text class="range-value">{{ currentRangeText }}</text>
+			</view>
 
-        <!-- 总支出 -->
-        <view class="stats-card danger">
-          <view class="stats-icon expense-icon"></view>
-          <view class="stats-info">
-            <view class="stats-title">总支出</view>
-            <view class="stats-value">¥{{ financialData.total_expense || '0.00' }}</view>
-            <view class="stats-desc">佣金及费用</view>
-          </view>
-        </view>
+			<!-- KPI卡片 -->
+			<view class="kpi-grid">
+				<!-- GMV -->
+				<view class="kpi-card blue">
+					<view class="kpi-label">GMV</view>
+					<view class="kpi-value">¥{{ stats.gmv }}</view>
+					<view class="kpi-desc">总成交额</view>
+				</view>
 
-        <!-- 平台利润 -->
-        <view class="stats-card success">
-          <view class="stats-icon profit-icon"></view>
-          <view class="stats-info">
-            <view class="stats-title">平台利润</view>
-            <view class="stats-value">¥{{ financialData.profit || '0.00' }}</view>
-            <view class="stats-desc">收入减支出</view>
-          </view>
-        </view>
+				<!-- 退单额 -->
+				<view class="kpi-card red">
+					<view class="kpi-label">退单额</view>
+					<view class="kpi-value">¥{{ stats.refund }}</view>
+					<view class="kpi-desc">已退款金额</view>
+				</view>
 
-        <!-- 利润率 -->
-        <view class="stats-card info">
-          <view class="stats-icon rate-icon"></view>
-          <view class="stats-info">
-            <view class="stats-title">利润率</view>
-            <view class="stats-value">{{ financialData.profit_rate || '0.00' }}%</view>
-            <view class="stats-desc">利润/收入</view>
-          </view>
-        </view>
-      </view>
+				<!-- 利润额 -->
+				<view class="kpi-card green">
+					<view class="kpi-label">利润额</view>
+					<view class="kpi-value">¥{{ stats.profit }}</view>
+					<view class="kpi-desc">GMV−退款−骑手已提</view>
+				</view>
 
-      <!-- 提现数据统计 -->
-      <view class="withdrawal-section">
-        <view class="section-header">
-          <view class="section-title">提现数据统计</view>
-          <view class="section-icon"></view>
-        </view>
+				<!-- 骑手分账 -->
+				<view class="kpi-card cyan">
+					<view class="kpi-label">骑手分账</view>
+					<view class="kpi-value">¥{{ stats.riderShare }}</view>
+					<view class="kpi-desc">骑手账本净分账金额</view>
+				</view>
 
-        <view class="withdrawal-cards">
-          <!-- 已提现金额 -->
-          <view class="withdrawal-card completed">
-            <view class="card-header">
-              <view class="card-title">已提现</view>
-              <view class="card-badge completed-badge">已完成</view>
-            </view>
-            <view class="card-amount">¥{{ withdrawalData.completed_amount || '0.00' }}</view>
-            <view class="card-footer">
-              <text class="card-count">{{ withdrawalData.completed_count || 0 }} 笔</text>
-            </view>
-          </view>
+				<!-- 骑手已提 -->
+				<view class="kpi-card teal">
+					<view class="kpi-label">骑手已提</view>
+					<view class="kpi-value">¥{{ stats.riderWithdrawn }}</view>
+					<view class="kpi-desc">已完成提现</view>
+				</view>
 
-          <!-- 处理中金额 -->
-          <view class="withdrawal-card processing">
-            <view class="card-header">
-              <view class="card-title">处理中</view>
-              <view class="card-badge processing-badge">处理中</view>
-            </view>
-            <view class="card-amount">¥{{ withdrawalData.processing_amount || '0.00' }}</view>
-            <view class="card-footer">
-              <text class="card-count">{{ withdrawalData.processing_count || 0 }} 笔</text>
-            </view>
-          </view>
+				<!-- 骑手待提 -->
+				<view class="kpi-card orange">
+					<view class="kpi-label">骑手待提</view>
+					<view class="kpi-value">¥{{ stats.riderPending }}</view>
+					<view class="kpi-desc">待审核+打款中</view>
+				</view>
 
-          <!-- 待审核金额 -->
-          <view class="withdrawal-card pending">
-            <view class="card-header">
-              <view class="card-title">待审核</view>
-              <view class="card-badge pending-badge">待审核</view>
-            </view>
-            <view class="card-amount">¥{{ withdrawalData.pending_amount || '0.00' }}</view>
-            <view class="card-footer">
-              <text class="card-count">{{ withdrawalData.pending_count || 0 }} 笔</text>
-            </view>
-          </view>
+				<!-- 骑手押金 -->
+				<view class="kpi-card purple">
+					<view class="kpi-label">骑手押金</view>
+					<view class="kpi-value">¥{{ stats.riderDeposit }}</view>
+					<view class="kpi-desc">当前押金总额</view>
+				</view>
+			</view>
 
-          <!-- 待提现余额 -->
-          <view class="withdrawal-card balance">
-            <view class="card-header">
-              <view class="card-title">骑手可提余额</view>
-              <view class="card-badge balance-badge">可提现</view>
-            </view>
-            <view class="card-amount">¥{{ withdrawalData.available_balance || '0.00' }}</view>
-            <view class="card-footer">
-              <text class="card-count">{{ withdrawalData.rider_count || 0 }} 位骑手</text>
-            </view>
-          </view>
-        </view>
-      </view>
+			<!-- 刷新按钮 -->
+			<view class="refresh-btn" @click="refreshData">
+				<text class="refresh-icon">↻</text>
+				<text>刷新数据</text>
+			</view>
 
-      <!-- 骑手统计 -->
-      <view class="rider-section">
-        <view class="section-header">
-          <view class="section-title">骑手数据</view>
-        </view>
+			<!-- 打款审核 -->
+			<view class="audit-section">
+				<view class="section-header">
+					<text class="section-title">打款审核</text>
+					<text class="section-sub">骑手账户时间轴</text>
+				</view>
 
-        <view class="rider-stats">
-          <view class="rider-stat-item">
-            <view class="stat-label">总骑手数</view>
-            <view class="stat-value">{{ riderData.total_count || 0 }}</view>
-          </view>
-          <view class="rider-stat-item">
-            <view class="stat-label">活跃骑手</view>
-            <view class="stat-value active">{{ riderData.active_count || 0 }}</view>
-          </view>
-          <view class="rider-stat-item">
-            <view class="stat-label">骑手总收入</view>
-            <view class="stat-value">¥{{ riderData.total_commission || '0.00' }}</view>
-          </view>
-          <view class="rider-stat-item">
-            <view class="stat-label">人均收入</view>
-            <view class="stat-value">¥{{ riderData.avg_commission || '0.00' }}</view>
-          </view>
-        </view>
-      </view>
+				<!-- 骑手搜索 -->
+				<view class="rider-search-box">
+					<input
+						class="rider-search-input"
+						v-model="searchPhone"
+						placeholder="输入骑手手机号查询"
+						type="number"
+						@confirm="searchRider"
+					/>
+					<view class="rider-search-btn" @click="searchRider">
+						<text>查询</text>
+					</view>
+				</view>
 
-      <!-- 刷新按钮 -->
-      <view class="refresh-button" @click="refreshData">
-        <view class="refresh-icon"></view>
-        <text>刷新数据</text>
-      </view>
-    </view>
-  </view>
+				<!-- 骑手信息展示 -->
+				<view v-if="riderInfo" class="rider-info-card">
+					<view class="rider-info-row">
+						<text class="rider-name">{{ getRiderName(riderInfo) }}</text>
+						<text class="rider-phone">{{ getRiderPhone(riderInfo) }}</text>
+					</view>
+					<view class="rider-balance-row">
+						<view class="balance-item">
+							<text class="balance-label">当前余额</text>
+							<text class="balance-value">¥{{ formatAmount(riderInfo.balance) }}</text>
+						</view>
+						<view class="balance-item">
+							<text class="balance-label">累计收入</text>
+							<text class="balance-value">¥{{ formatAmount(riderInfo.total_commission || riderInfo.total_commission_amount) }}</text>
+						</view>
+						<view class="balance-item">
+							<text class="balance-label">押金</text>
+							<text class="balance-value">¥{{ formatAmount(riderInfo.actual_deposit || riderInfo.deposit) }}</text>
+						</view>
+					</view>
+				</view>
+
+				<!-- 时间轴加载 -->
+				<view v-if="timelineLoading" class="timeline-loading">
+					<view class="loading-spinner small"></view>
+					<text>加载记录中...</text>
+				</view>
+
+				<!-- 时间轴无数据 -->
+				<view v-else-if="riderInfo && timelineList.length === 0" class="timeline-empty">
+					<text>暂无交易记录</text>
+				</view>
+
+				<!-- 时间轴列表 -->
+				<view v-else-if="timelineList.length > 0" class="timeline">
+					<view
+						v-for="(item, index) in timelineList"
+						:key="index"
+						class="timeline-item"
+					>
+						<!-- 时间轴左侧线条和节点 -->
+						<view class="timeline-left">
+							<view class="timeline-dot" :class="item.type === 'withdraw' ? 'dot-red' : 'dot-green'"></view>
+							<view v-if="index < timelineList.length - 1" class="timeline-line"></view>
+						</view>
+
+						<!-- 时间轴右侧内容 -->
+						<view class="timeline-right">
+							<view class="timeline-header">
+								<text class="timeline-date">{{ formatTimelineDate(item.created_at) }}</text>
+								<view class="timeline-badge" :class="item.type === 'withdraw' ? 'badge-out' : 'badge-in'">
+									{{ item.type === 'withdraw' ? '提现' : '入账' }}
+								</view>
+							</view>
+
+						<!-- 订单记录 -->
+						<view v-if="item.type === 'order'" class="timeline-body order-body">
+							<view class="order-info-row">
+								<text class="order-city">{{ item.city || '未知城市' }}</text>
+								<text class="order-no">订单 {{ item.order_no || '-' }}</text>
+							</view>
+							<view class="amount-row">
+								<text class="amount-in">+¥{{ formatAmount(item.amount) }}</text>
+							</view>
+						</view>
+
+							<!-- 提现记录 -->
+							<view v-else class="timeline-body withdraw-body">
+								<view class="order-info-row">
+									<text class="withdraw-label">提现申请</text>
+									<text v-if="item.status === 'completed'" class="status-tag completed">已到账</text>
+									<text v-else-if="item.status === 'processing'" class="status-tag processing">打款中</text>
+									<text v-else class="status-tag pending">待审核</text>
+								</view>
+								<view class="amount-row">
+									<text class="amount-out">-¥{{ formatAmount(item.amount) }}</text>
+								</view>
+							</view>
+
+							<!-- 账户余额 -->
+							<view class="balance-after">
+								<text class="balance-after-label">账户余额：</text>
+								<text class="balance-after-value">¥{{ formatAmount(item.balance_after) }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+
+				<!-- 未搜索提示 -->
+				<view v-else class="timeline-placeholder">
+					<text class="placeholder-icon">🔍</text>
+					<text class="placeholder-text">输入骑手手机号查看账户明细</text>
+				</view>
+			</view>
+		</scroll-view>
+	</view>
 </template>
 
 <script>
 export default {
-  data() {
-    return {
-      navBarHeight: 0,
-      loading: true,
-      riderUserInfo: null,
-
-      // 日期筛选选项
-      dateFilterOptions: [
-        { label: '今日', value: 'today' },
-        { label: '昨日', value: 'yesterday' },
-        { label: '本月', value: 'thismonth' },
-        { label: '上月', value: 'lastmonth' },
-        { label: '最近30天', value: 'last30days' },
-        { label: '全部', value: 'all' }
-      ],
-      currentDateFilter: 'all',
-
-      // 财务数据
-      financialData: {
-        total_income: '0.00',
-        total_expense: '0.00',
-        profit: '0.00',
-        profit_rate: '0.00'
-      },
-
-      // 提现数据
-      withdrawalData: {
-        completed_amount: '0.00',
-        completed_count: 0,
-        processing_amount: '0.00',
-        processing_count: 0,
-        pending_amount: '0.00',
-        pending_count: 0,
-        available_balance: '0.00',
-        rider_count: 0
-      },
-
-      // 骑手数据
-      riderData: {
-        total_count: 0,
-        active_count: 0,
-        total_commission: '0.00',
-        avg_commission: '0.00'
-      },
-
-      // 骑手数据加载状态
-      riderDataLoaded: false,
-      riderDataLoading: false
-    };
-  },
-
-  onLoad() {
-    this.initNavBarHeight();
-    this.loadUserInfo();
-    this.loadAllData();
-  },
-
-  methods: {
-    // 初始化导航栏高度
-    initNavBarHeight() {
-      const systemInfo = uni.getSystemInfoSync();
-      const statusBarHeight = systemInfo.statusBarHeight || 0;
-      const navBarHeight = 44;
-      this.navBarHeight = statusBarHeight + navBarHeight;
-    },
-
-    // 加载用户信息
-    loadUserInfo() {
-      this.riderUserInfo = uni.getStorageSync('riderUserInfo');
-      if (!this.riderUserInfo || !this.riderUserInfo.id) {
-        uni.showToast({
-          title: '请先登录',
-          icon: 'none'
-        });
-        setTimeout(() => {
-          uni.navigateBack();
-        }, 1500);
-      }
-    },
-
-    // 加载所有数据（使用新的统计API）
-    async loadAllData() {
-      this.loading = true;
-      try {
-        // 调用新的财务统计API
-        await this.loadFinancialStatistics();
-      } catch (error) {
-        console.error('加载数据失败:', error);
-        uni.showToast({
-          title: '加载失败',
-          icon: 'none'
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    // 加载财务统计数据（临时使用数据库真实数据）
-    async loadFinancialStatistics() {
-      try {
-        // 尝试调用新API
-        const timestamp = Math.floor(Date.now() / 1000);
-        const params = {
-          service_member_id: this.riderUserInfo.id,
-          sign: 'chongchong',
-          timestamp: timestamp
-        };
-
-        const response = await this.$request('financial/statistics', params, 'POST');
-
-        console.log('财务统计API响应:', response);
-
-        if (response.code === 200 && response.status === 'success' && response.data) {
-          const data = response.data;
-
-          // 更新财务数据
-          this.financialData = {
-            total_income: data.financial.total_income,
-            total_expense: data.financial.total_expense,
-            profit: data.financial.profit,
-            profit_rate: data.financial.profit_rate
-          };
-
-          // 更新提现数据
-          this.withdrawalData = {
-            completed_amount: data.withdrawal.completed_amount,
-            completed_count: data.withdrawal.completed_count,
-            processing_amount: data.withdrawal.processing_amount,
-            processing_count: data.withdrawal.processing_count,
-            pending_amount: data.withdrawal.pending_amount,
-            pending_count: data.withdrawal.pending_count,
-            available_balance: data.withdrawal.available_balance,
-            rider_count: data.withdrawal.rider_count
-          };
-
-          // 更新骑手数据
-          this.riderData = {
-            total_count: data.rider.total_count,
-            active_count: data.rider.active_count,
-            total_commission: data.rider.total_commission,
-            avg_commission: data.rider.avg_commission
-          };
-
-          this.riderDataLoaded = true;
-
-          console.log('财务统计数据加载成功:', {
-            financial: this.financialData,
-            withdrawal: this.withdrawalData,
-            rider: this.riderData
-          });
-        } else {
-          throw new Error('使用降级数据');
-        }
-      } catch (error) {
-        console.log('API调用失败，使用数据库真实数据:', error);
-
-        // 降级：使用从数据库查询到的真实数据
-        // 数据来源：2026-02-10 从数据库直接查询
-        this.financialData = {
-          total_income: '244467.40',      // 所有已支付订单实际金额总和
-          total_expense: '211513.60',     // 所有骑手累计佣金
-          profit: '32953.80',             // 平台利润 = 收入 - 支出
-          profit_rate: '13.48'            // 利润率 = 利润 / 收入 × 100%
-        };
-
-        this.withdrawalData = {
-          completed_amount: '171381.11',  // 已完成提现总额
-          completed_count: 1922,          // 已完成提现笔数
-          processing_amount: '12116.30',  // 处理中提现总额
-          processing_count: 120,          // 处理中提现笔数
-          pending_amount: '0.00',         // 待审核提现总额
-          pending_count: 0,               // 待审核提现笔数
-          available_balance: '31990.26',  // 所有骑手可提余额总和
-          rider_count: 4274               // 骑手总数
-        };
-
-        this.riderData = {
-          total_count: 4274,              // 骑手总数
-          active_count: 4180,             // 活跃骑手数（task_quota > 0）
-          total_commission: '211513.60',  // 骑手累计佣金总和
-          avg_commission: '49.49'         // 人均佣金 = 总佣金 / 骑手数
-        };
-
-        this.riderDataLoaded = true;
-
-        console.log('已加载数据库真实数据:', {
-          financial: this.financialData,
-          withdrawal: this.withdrawalData,
-          rider: this.riderData
-        });
-      }
-    },
-
-    // 加载财务数据（总收入、总支出）
-    async loadFinancialData() {
-      try {
-        const timestamp = Date.now();
-        const params = {
-          service_member_id: this.riderUserInfo.id,
-          owner_type: 'provider',
-          owner_id: 1,
-          timestamp: timestamp,
-          sign: 'chongchong'
-        };
-
-        // 添加日期筛选参数（与管理端首页保持一致）
-        const dateRange = this.getDateRange(this.currentDateFilter);
-        if (dateRange && dateRange.start_date && dateRange.end_date) {
-          params.start_date = dateRange.start_date;
-          params.end_date = dateRange.end_date;
-        }
-
-        console.log('财务数据请求参数:', params);
-
-        // 使用 uni.request 直接请求（与管理端首页保持一致）
-        const response = await uni.request({
-          url: 'https://ccpt.cc111.cn/api/service/ledger',
-          method: 'POST',
-          data: params,
-          header: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log('财务数据接口完整响应:', response);
-
-        if (response.statusCode === 200 && response.data) {
-          console.log('response.data:', response.data);
-          console.log('response.data.total_income:', response.data.total_income);
-          console.log('response.data.total_expense:', response.data.total_expense);
-
-          const totalIncome = parseFloat(response.data.total_income) || 0;
-          const totalExpense = parseFloat(response.data.total_expense) || 0;
-          const profit = totalIncome - totalExpense;
-          const profitRate = totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(2) : '0.00';
-
-          console.log('计算后的财务数据:', {
-            totalIncome,
-            totalExpense,
-            profit,
-            profitRate
-          });
-
-          this.financialData = {
-            total_income: totalIncome.toFixed(2),
-            total_expense: totalExpense.toFixed(2),
-            profit: profit.toFixed(2),
-            profit_rate: profitRate
-          };
-
-          console.log('已更新 financialData:', this.financialData);
-        } else {
-          console.error('财务数据响应状态异常:', response);
-        }
-      } catch (error) {
-        console.error('加载财务数据失败:', error);
-        console.error('错误堆栈:', error.stack);
-      }
-    },
-
-    // 加载提现数据
-    async loadWithdrawalData() {
-      try {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const baseParams = {
-          service_member_id: this.riderUserInfo.id,
-          sign: 'chongchong',
-          timestamp: timestamp,
-          page: 1,
-          per_page: 1 // 只需要获取统计信息，不需要详细数据
-        };
-
-        // 并行请求不同状态的提现数据
-        const [completedRes, processingRes, pendingRes] = await Promise.all([
-          this.$request('withdraw/group/list', { ...baseParams, status: 'completed' }, 'POST'),
-          this.$request('withdraw/group/list', { ...baseParams, status: 'processing' }, 'POST'),
-          this.$request('withdraw/group/list', { ...baseParams, status: 'pending' }, 'POST')
-        ]);
-
-        // 统计已完成提现
-        let completedAmount = 0;
-        let completedCount = 0;
-        if (completedRes.status === 'success') {
-          // 优先使用接口返回的总金额
-          completedAmount = parseFloat(completedRes.total_actual_amount) || 0;
-          // 使用total字段获取总数量，如果没有则用data.length
-          completedCount = completedRes.data?.total || completedRes.data?.data?.length || 0;
-        }
-
-        // 统计处理中提现
-        let processingAmount = 0;
-        let processingCount = 0;
-        if (processingRes.status === 'success') {
-          processingAmount = parseFloat(processingRes.total_actual_amount) || 0;
-          processingCount = processingRes.data?.total || processingRes.data?.data?.length || 0;
-        }
-
-        // 统计待审核提现
-        let pendingAmount = 0;
-        let pendingCount = 0;
-        if (pendingRes.status === 'success') {
-          pendingAmount = parseFloat(pendingRes.total_actual_amount) || 0;
-          pendingCount = pendingRes.data?.total || pendingRes.data?.data?.length || 0;
-        }
-
-        this.withdrawalData = {
-          completed_amount: completedAmount.toFixed(2),
-          completed_count: completedCount,
-          processing_amount: processingAmount.toFixed(2),
-          processing_count: processingCount,
-          pending_amount: pendingAmount.toFixed(2),
-          pending_count: pendingCount,
-          available_balance: this.withdrawalData.available_balance, // 保持原值，等待骑手数据更新
-          rider_count: this.withdrawalData.rider_count
-        };
-      } catch (error) {
-        console.error('加载提现数据失败:', error);
-      }
-    },
-
-    // 手动加载骑手数据
-    async loadRiderDataManually() {
-      if (this.riderDataLoading) return;
-
-      this.riderDataLoading = true;
-
-      try {
-        await this.loadRiderData();
-        this.riderDataLoaded = true;
-      } catch (error) {
-        uni.showToast({
-          title: '加载骑手数据失败',
-          icon: 'none'
-        });
-      } finally {
-        this.riderDataLoading = false;
-      }
-    },
-
-    // 加载骑手数据（内部方法）- 使用分页加载
-    async loadRiderData() {
-      const timestamp = Math.floor(Date.now() / 1000);
-      const perPage = 100; // 后端限制最大100
-      let allRiders = [];
-      let currentPage = 1;
-      let hasMore = true;
-
-      // 分页加载所有骑手数据
-      while (hasMore) {
-        const params = {
-          service_member_id: this.riderUserInfo.id,
-          sign: 'chongchong',
-          timestamp: timestamp,
-          page: currentPage,
-          per_page: perPage
-        };
-
-        const response = await this.$request('service/member/list', params, 'POST');
-
-        if (response.status === 'success' && response.data && response.data.data) {
-          const riders = response.data.data;
-          allRiders = allRiders.concat(riders);
-
-          // 检查是否还有更多数据
-          // 如果返回的数据少于 per_page，说明已经是最后一页
-          if (riders.length < perPage) {
-            hasMore = false;
-          } else {
-            currentPage++;
-          }
-        } else {
-          hasMore = false;
-        }
-      }
-
-      // 统计所有骑手数据
-      const totalCount = allRiders.length;
-      let activeCount = 0;
-      let totalCommission = 0;
-      let availableBalance = 0;
-
-      allRiders.forEach(rider => {
-        if (rider.status === 'active' || rider.task_quota > 0) {
-          activeCount++;
-        }
-        totalCommission += parseFloat(rider.total_commission || 0);
-        availableBalance += parseFloat(rider.balance || 0);
-      });
-
-      const avgCommission = totalCount > 0 ? (totalCommission / totalCount).toFixed(2) : '0.00';
-
-      this.riderData = {
-        total_count: totalCount,
-        active_count: activeCount,
-        total_commission: totalCommission.toFixed(2),
-        avg_commission: avgCommission
-      };
-
-      // 更新提现数据中的可提余额
-      this.withdrawalData.available_balance = availableBalance.toFixed(2);
-      this.withdrawalData.rider_count = totalCount;
-    },
-
-    // 切换日期筛选
-    switchDateFilter(filter) {
-      if (this.currentDateFilter === filter) return;
-      this.currentDateFilter = filter;
-      this.loadAllData();
-    },
-
-    // 获取日期范围
-    getDateRange(dateFilter) {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      switch (dateFilter) {
-        case 'today':
-          return {
-            start_date: this.formatDate(today),
-            end_date: this.formatDate(today)
-          };
-
-        case 'yesterday':
-          const yesterday = new Date(today);
-          yesterday.setDate(yesterday.getDate() - 1);
-          return {
-            start_date: this.formatDate(yesterday),
-            end_date: this.formatDate(yesterday)
-          };
-
-        case 'thismonth':
-          const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          return {
-            start_date: this.formatDate(firstDayOfThisMonth),
-            end_date: this.formatDate(today)
-          };
-
-        case 'lastmonth':
-          const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-          return {
-            start_date: this.formatDate(firstDayOfLastMonth),
-            end_date: this.formatDate(lastDayOfLastMonth)
-          };
-
-        case 'last30days':
-          const thirtyDaysAgo = new Date(today);
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          return {
-            start_date: this.formatDate(thirtyDaysAgo),
-            end_date: this.formatDate(today)
-          };
-
-        case 'all':
-        default:
-          return {};
-      }
-    },
-
-    // 格式化日期
-    formatDate(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    },
-
-    // 重新计算财务数据（基于骑手总佣金）
-    recalculateFinancialData() {
-      // 从骑手数据中获取总佣金作为平台总支出
-      const totalExpense = parseFloat(this.riderData.total_commission) || 0;
-
-      // 从账本数据中获取总收入
-      const totalIncome = parseFloat(this.financialData.total_income) || 0;
-
-      // 计算利润
-      const profit = totalIncome - totalExpense;
-      const profitRate = totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(2) : '0.00';
-
-      console.log('重新计算财务数据:', {
-        totalIncome,
-        totalExpense,
-        profit,
-        profitRate
-      });
-
-      this.financialData = {
-        total_income: totalIncome.toFixed(2),
-        total_expense: totalExpense.toFixed(2),
-        profit: profit.toFixed(2),
-        profit_rate: profitRate
-      };
-    },
-
-    // 刷新数据
-    async refreshData() {
-      uni.showToast({
-        title: '刷新中...',
-        icon: 'loading'
-      });
-
-      // 刷新所有数据
-      await this.loadAllData();
-
-      uni.hideToast();
-      uni.showToast({
-        title: '刷新成功',
-        icon: 'success',
-        duration: 1500
-      });
-    }
-  }
+	data() {
+		return {
+			navBarHeight: 0,
+			loading: true,
+			riderUserInfo: null,
+
+			// 月份筛选
+			viewAll: true,
+			selectedYear: new Date().getFullYear(),
+			selectedMonth: new Date().getMonth() + 1,
+			showMonthPicker: false,
+
+			// 6大KPI
+			stats: {
+				gmv: '0.00',
+				refund: '0.00',
+				profit: '0.00',
+				riderShare: '0.00',
+				riderWithdrawn: '0.00',
+				riderPending: '0.00',
+				riderDeposit: '0.00'
+			},
+
+			// 打款审核
+			searchPhone: '',
+			riderInfo: null,
+			timelineList: [],
+			timelineLoading: false
+		};
+	},
+
+	computed: {
+		monthPickerValue() {
+			return `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
+		},
+
+		currentMonthValue() {
+			const now = new Date();
+			return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+		},
+
+		currentRangeText() {
+			if (this.viewAll) {
+				return '全部时间';
+			}
+			const range = this.getMonthRange();
+			return range ? `${range.start_date} 至 ${range.end_date}` : '全部时间';
+		}
+	},
+
+	onLoad() {
+		this.initNavBarHeight();
+		this.loadUserInfo();
+		this.loadStats();
+	},
+
+	methods: {
+		initNavBarHeight() {
+			const systemInfo = uni.getSystemInfoSync();
+			this.navBarHeight = (systemInfo.statusBarHeight || 0) + 44;
+		},
+
+		loadUserInfo() {
+			this.riderUserInfo = uni.getStorageSync('riderUserInfo');
+		},
+
+		// ============ 月份筛选 ============
+
+		prevMonth() {
+			if (this.viewAll) {
+				this.viewAll = false;
+				return;
+			}
+			if (this.selectedMonth === 1) {
+				this.selectedYear--;
+				this.selectedMonth = 12;
+			} else {
+				this.selectedMonth--;
+			}
+			this.loadStats();
+		},
+
+		nextMonth() {
+			if (this.viewAll) return;
+			const now = new Date();
+			const curYear = now.getFullYear();
+			const curMonth = now.getMonth() + 1;
+			if (this.selectedYear === curYear && this.selectedMonth === curMonth) return;
+
+			if (this.selectedMonth === 12) {
+				this.selectedYear++;
+				this.selectedMonth = 1;
+			} else {
+				this.selectedMonth++;
+			}
+			this.loadStats();
+		},
+
+		toggleViewAll() {
+			this.viewAll = !this.viewAll;
+			if (!this.viewAll) {
+				const now = new Date();
+				this.selectedYear = now.getFullYear();
+				this.selectedMonth = now.getMonth() + 1;
+			}
+			this.loadStats();
+		},
+
+		handleMonthChange(event) {
+			const value = event && event.detail ? event.detail.value : '';
+			if (!value) return;
+
+			const [year, month] = value.split('-');
+			this.selectedYear = Number(year);
+			this.selectedMonth = Number(month);
+			this.viewAll = false;
+			this.loadStats();
+		},
+
+		getMonthRange() {
+			if (this.viewAll) return null;
+			const y = this.selectedYear;
+			const m = String(this.selectedMonth).padStart(2, '0');
+			const lastDay = new Date(y, this.selectedMonth, 0).getDate();
+			return {
+				start_date: `${y}-${m}-01`,
+				end_date: `${y}-${m}-${lastDay}`
+			};
+		},
+
+		// ============ 加载KPI统计 ============
+
+		async loadStats() {
+			this.loading = true;
+			this.stats = {
+				gmv: '0.00',
+				refund: '0.00',
+				profit: '0.00',
+				riderShare: '0.00',
+				riderWithdrawn: '0.00',
+				riderPending: '0.00',
+				riderDeposit: '0.00'
+			};
+			try {
+				await this.loadSummaryData();
+			} catch (e) {
+				console.error('loadStats error:', e);
+			} finally {
+				this.loading = false;
+			}
+		},
+
+		async loadSummaryData() {
+			try {
+				const params = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					service_provider_id: this.getCurrentProviderId(),
+					sign: 'chongchong'
+				};
+				const range = this.getMonthRange();
+				if (range) {
+					params.start_date = range.start_date;
+					params.end_date = range.end_date;
+				}
+
+				const res = await this.$request('service/financial/summary', params, 'POST');
+				if (!this.isRequestSuccess(res) || !res.data) {
+					return;
+				}
+
+				this.stats.gmv = this.toFixedAmount(res.data.gmv);
+				this.stats.refund = this.toFixedAmount(res.data.refund);
+				this.stats.riderShare = this.toFixedAmount(res.data.rider_share);
+				this.stats.riderWithdrawn = this.toFixedAmount(res.data.rider_withdrawn);
+				this.stats.riderPending = this.toFixedAmount(res.data.rider_pending);
+				this.stats.riderDeposit = this.toFixedAmount(res.data.rider_deposit);
+				this.stats.profit = this.toFixedAmount(res.data.profit);
+			} catch (e) {
+				console.error('loadSummaryData error:', e);
+			}
+		},
+
+		async refreshData() {
+			uni.showLoading({ title: '刷新中...' });
+			await this.loadStats();
+			uni.hideLoading();
+			uni.showToast({ title: '已刷新', icon: 'success' });
+		},
+
+		// 加载 GMV / 退款额（service/ledger 为主源）
+		async loadFinancialData() {
+			try {
+				const timestamp = Math.floor(Date.now() / 1000);
+				const providerId = this.getCurrentProviderId();
+				const params = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					owner_type: 'provider',
+					owner_id: providerId,
+					sign: 'chongchong',
+					timestamp
+				};
+				const range = this.getMonthRange();
+				if (range) {
+					params.start_date = range.start_date;
+					params.end_date = range.end_date;
+				}
+
+				const response = await uni.request({
+					url: 'https://ccpt.cc111.cn/api/service/ledger',
+					method: 'POST',
+					data: params,
+					header: { 'Content-Type': 'application/json' }
+				});
+
+				if (response.statusCode === 200 && response.data) {
+					this.stats.gmv = this.toFixedAmount(response.data.total_income);
+					this.updateProfit();
+				}
+			} catch (e) {
+				console.error('loadFinancialData error:', e);
+			}
+
+			// 单独加载退单额
+			await this.loadRefundData();
+		},
+
+		// 加载退单额（service/task/list/refunded 汇总）
+		async loadRefundData() {
+			try {
+				const timestamp = Math.floor(Date.now() / 1000);
+				const providerId = this.getCurrentProviderId();
+				const params = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					service_provider_id: providerId,
+					sign: 'chongchong',
+					timestamp,
+					page: 1,
+					per_page: 100
+				};
+				const range = this.getMonthRange();
+				if (range) {
+					params.start_date = range.start_date;
+					params.end_date = range.end_date;
+				}
+
+				const { list, raw } = await this.fetchPagedList('service/task/list/refunded', params, {
+					maxPages: 20
+				});
+
+				if (this.isRequestSuccess(raw)) {
+					if (raw.total_refund_amount !== undefined) {
+						this.stats.refund = this.toFixedAmount(raw.total_refund_amount);
+					} else if (raw.total_amount !== undefined) {
+						this.stats.refund = this.toFixedAmount(raw.total_amount);
+					} else {
+						const total = list.reduce((sum, order) => {
+							return sum + parseFloat(order.refund_amount || order.actual_fee || order.payment_amount || order.amount || 0);
+						}, 0);
+						this.stats.refund = this.toFixedAmount(total);
+					}
+					this.updateProfit();
+				}
+			} catch (e) {
+				console.error('loadRefundData error:', e);
+			}
+		},
+
+		// 加载提现数据（已提 / 待提）
+		async loadWithdrawalData() {
+			try {
+				const timestamp = Math.floor(Date.now() / 1000);
+				const base = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					sign: 'chongchong',
+					timestamp,
+					page: 1,
+					per_page: 1
+				};
+				const range = this.getMonthRange();
+				if (range) {
+					base.start_date = range.start_date;
+					base.end_date = range.end_date;
+				}
+
+				const [completedRes, pendingRes, processingRes] = await Promise.all([
+					this.$request('withdraw/group/list', { ...base, status: 'completed' }, 'POST'),
+					this.$request('withdraw/group/list', { ...base, status: 'pending' }, 'POST'),
+					this.$request('withdraw/group/list', { ...base, status: 'processing' }, 'POST')
+				]);
+
+				const withdrawn = parseFloat(completedRes.total_actual_amount || 0);
+				const pendingAmt = parseFloat(pendingRes.total_actual_amount || 0)
+					+ parseFloat(processingRes.total_actual_amount || 0);
+
+				this.stats.riderWithdrawn = this.toFixedAmount(withdrawn);
+				this.stats.riderPending = this.toFixedAmount(pendingAmt);
+				this.stats.riderShare = this.toFixedAmount(withdrawn + pendingAmt);
+				this.updateProfit();
+			} catch (e) {
+				console.error('loadWithdrawalData error:', e);
+			}
+		},
+
+		// 加载押金数据（遍历骑手列表汇总 deposit 字段）
+		async loadDepositData() {
+			try {
+				const timestamp = Math.floor(Date.now() / 1000);
+				let totalDeposit = 0;
+				let page = 1;
+				const perPage = 100;
+
+				while (true) {
+					const res = await this.$request('service/member/list', {
+						service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+						sign: 'chongchong',
+						timestamp,
+						page,
+						per_page: perPage
+					}, 'POST');
+
+					if (res.status !== 'success' || !res.data || !res.data.data) break;
+					const riders = res.data.data;
+					riders.forEach(r => {
+						totalDeposit += parseFloat(r.actual_deposit || r.deposit || r.margin || 0);
+					});
+					if (riders.length < perPage) break;
+					page++;
+				}
+
+				this.stats.riderDeposit = this.toFixedAmount(totalDeposit);
+			} catch (e) {
+				console.error('loadDepositData error:', e);
+			}
+		},
+
+		// ============ 打款审核 - 骑手时间轴 ============
+
+		async searchRider() {
+			const phone = this.searchPhone.trim();
+			if (!phone) {
+				uni.showToast({ title: '请输入手机号', icon: 'none' });
+				return;
+			}
+
+			this.riderInfo = null;
+			this.timelineList = [];
+			this.timelineLoading = true;
+
+			try {
+				// 查询骑手信息
+				const timestamp = Math.floor(Date.now() / 1000);
+				const baseParams = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					sign: 'chongchong',
+					timestamp
+				};
+
+				const riderRes = await this.$request('service/member/info', {
+					...baseParams,
+					phone
+				}, 'POST');
+
+				if (riderRes.status === 'success' && riderRes.data) {
+					this.riderInfo = riderRes.data;
+				} else {
+					// 尝试从列表中搜索
+					const listRes = await this.$request('service/member/list', {
+						...baseParams,
+						keyword: phone,
+						page: 1,
+						per_page: 10
+					}, 'POST');
+					if (listRes.status === 'success' && listRes.data && listRes.data.data && listRes.data.data.length > 0) {
+						this.riderInfo = listRes.data.data[0];
+					} else {
+						uni.showToast({ title: '未找到该骑手', icon: 'none' });
+						this.timelineLoading = false;
+						return;
+					}
+				}
+
+				// 加载时间轴
+				await this.loadRiderTimeline(this.getRiderId(this.riderInfo));
+			} catch (e) {
+				console.error('searchRider error:', e);
+				uni.showToast({ title: '查询失败', icon: 'none' });
+			} finally {
+				this.timelineLoading = false;
+			}
+		},
+
+		async loadRiderTimeline(riderId) {
+			try {
+				const timestamp = Math.floor(Date.now() / 1000);
+				const baseParams = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					sign: 'chongchong',
+					timestamp,
+					member_id: riderId,
+					page: 1,
+					per_page: 100
+				};
+
+				const [ordersResult, withdrawsResult] = await Promise.all([
+					this.fetchPagedList('task/member/list', baseParams, { maxPages: 10 }),
+					this.fetchPagedList('withdraw/list', { ...baseParams, status: 'all' }, { maxPages: 10 })
+				]);
+
+				const events = [];
+				const orders = ordersResult.list || [];
+				const withdraws = withdrawsResult.list || [];
+
+				orders.forEach(order => {
+					if (order.status === 'completed' || order.status === 'finished') {
+						events.push({
+							type: 'order',
+							created_at: order.completed_at || order.created_at || order.task_date,
+							amount: order.commission || order.rider_commission || order.member_amount || order.amount || 0,
+							order_no: order.task_no || order.order_no || order.id,
+							city: this.getOrderCity(order),
+							status: order.status,
+							balance_after: 0
+						});
+					}
+				});
+
+				withdraws.forEach(w => {
+					events.push({
+						type: 'withdraw',
+						created_at: w.completed_at || w.processed_at || w.created_at || w.apply_time,
+						amount: w.actual_amount || w.amount || 0,
+						status: w.status,
+						balance_after: 0
+					});
+				});
+
+				events.sort((a, b) => this.parseDate(a.created_at) - this.parseDate(b.created_at));
+
+				this.applyTimelineBalances(events, parseFloat(this.riderInfo && this.riderInfo.balance || 0));
+
+				this.timelineList = events;
+			} catch (e) {
+				console.error('loadRiderTimeline error:', e);
+				// 尝试备用接口
+				await this.loadTimelineFallback(riderId);
+			}
+		},
+
+		async loadTimelineFallback(riderId) {
+			try {
+				const timestamp = Math.floor(Date.now() / 1000);
+				const params = {
+					service_member_id: this.riderUserInfo && this.riderUserInfo.id,
+					sign: 'chongchong',
+					timestamp,
+					rider_id: riderId,
+					page: 1,
+					per_page: 100
+				};
+
+				const withdrawsRes = await this.$request('withdraw/list', {
+					...params,
+					member_id: riderId
+				}, 'POST');
+
+				let events = [];
+
+				if (withdrawsRes.status === 'success' && withdrawsRes.data) {
+					const withdraws = Array.isArray(withdrawsRes.data) ? withdrawsRes.data : (withdrawsRes.data.data || []);
+					withdraws.forEach(w => {
+						events.push({
+							type: 'withdraw',
+							created_at: w.completed_at || w.processed_at || w.created_at || w.apply_time,
+							amount: w.actual_amount || w.amount || 0,
+							status: w.status,
+							balance_after: 0
+						});
+					});
+				}
+
+				events.sort((a, b) => this.parseDate(a.created_at) - this.parseDate(b.created_at));
+				this.applyTimelineBalances(events, parseFloat(this.riderInfo && this.riderInfo.balance || 0));
+
+				this.timelineList = events;
+			} catch (e) {
+				console.error('loadTimelineFallback error:', e);
+			}
+		},
+
+		// ============ 工具方法 ============
+
+		isRequestSuccess(res) {
+			return !!res && (res.code === 200 || res.status === 'success');
+		},
+
+		extractList(res) {
+			if (!res) return [];
+			if (Array.isArray(res.data)) return res.data;
+			if (res.data && Array.isArray(res.data.data)) return res.data.data;
+			if (res.data && Array.isArray(res.data.list)) return res.data.list;
+			return [];
+		},
+
+		async fetchPagedList(url, params = {}, options = {}) {
+			const pageSize = options.pageSize || params.per_page || 100;
+			const maxPages = options.maxPages || 20;
+			let page = params.page || 1;
+			let all = [];
+			let raw = null;
+
+			while (page <= maxPages) {
+				const res = await this.$request(url, { ...params, page, per_page: pageSize }, 'POST');
+				raw = res;
+				if (!this.isRequestSuccess(res)) {
+					break;
+				}
+
+				const list = this.extractList(res);
+				all = all.concat(list);
+
+				const currentPage = Number((res.data && res.data.current_page) || page);
+				const lastPage = Number((res.data && res.data.last_page) || currentPage);
+				const hasMoreByPagination = res.data && res.data.last_page ? currentPage < lastPage : false;
+				const hasMoreByLength = !hasMoreByPagination && list.length === pageSize;
+
+				if ((!hasMoreByPagination && !hasMoreByLength) || list.length === 0) {
+					break;
+				}
+
+				page += 1;
+			}
+
+			return { list: all, raw };
+		},
+
+		toFixedAmount(val) {
+			return parseFloat(val || 0).toFixed(2);
+		},
+
+		getCurrentProviderId() {
+			if (!this.riderUserInfo) return 1;
+			return this.riderUserInfo.service_provider_id || this.riderUserInfo.provider_id || 1;
+		},
+
+		updateProfit() {
+			const gmv = parseFloat(this.stats.gmv || 0);
+			const refund = parseFloat(this.stats.refund || 0);
+			const riderShare = parseFloat(this.stats.riderShare || 0);
+			this.stats.profit = this.toFixedAmount(gmv - refund - riderShare);
+		},
+
+		getRiderId(rider) {
+			if (!rider) return '';
+			return rider.service_member_id || rider.member_id || rider.id || '';
+		},
+
+		getRiderName(rider) {
+			if (!rider) return '骑手';
+			return rider.real_name || rider.contact_person || rider.nickname || rider.name || '骑手';
+		},
+
+		getRiderPhone(rider) {
+			if (!rider) return '';
+			return rider.phone || rider.phone_number || '';
+		},
+
+		getOrderCity(order) {
+			return order.city_name || order.city || order.area || order.province_name || '';
+		},
+
+		parseDate(dateStr) {
+			if (!dateStr) return 0;
+			if (typeof dateStr === 'number') {
+				return String(dateStr).length === 10 ? dateStr * 1000 : dateStr;
+			}
+
+			const normalized = String(dateStr).includes('T')
+				? String(dateStr)
+				: `${String(dateStr).replace(' ', 'T')}+08:00`;
+			const time = new Date(normalized).getTime();
+			return Number.isNaN(time) ? 0 : time;
+		},
+
+		applyTimelineBalances(events, currentBalance) {
+			let runningBalance = parseFloat(currentBalance || 0);
+			for (let i = events.length - 1; i >= 0; i--) {
+				const item = events[i];
+				item.balance_after = runningBalance;
+
+				if (item.type === 'order') {
+					runningBalance -= parseFloat(item.amount || 0);
+				} else if (item.type === 'withdraw' && item.status === 'completed') {
+					runningBalance += parseFloat(item.amount || 0);
+				}
+			}
+		},
+
+		formatAmount(val) {
+			return this.toFixedAmount(val);
+		},
+
+		formatTimelineDate(dateStr) {
+			if (!dateStr) return '';
+			try {
+				const parsed = this.parseDate(dateStr);
+				if (!parsed) return dateStr;
+				const d = new Date(parsed);
+				const y = String(d.getFullYear()).slice(2);
+				const mo = String(d.getMonth() + 1).padStart(2, '0');
+				const day = String(d.getDate()).padStart(2, '0');
+				const h = String(d.getHours()).padStart(2, '0');
+				const mi = String(d.getMinutes()).padStart(2, '0');
+				return `${y}.${mo}.${day} ${h}:${mi}`;
+			} catch (e) {
+				return dateStr;
+			}
+		}
+	}
 };
 </script>
 
 <style lang="scss" scoped>
 .financial-statistics-container {
-  min-height: 100vh;
-  background-color: #f5f5f5;
+	min-height: 100vh;
+	background: #f5f6f8;
 }
 
 .nav-placeholder {
-  width: 100%;
-  background-color: #ffffff;
+	flex-shrink: 0;
 }
 
+/* 加载 */
 .loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 100rpx 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
 
-  .loading-spinner {
-    width: 60rpx;
-    height: 60rpx;
-    border: 4rpx solid #e4e7ed;
-    border-top-color: #2492F2;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
+	.loading-spinner {
+		width: 64rpx;
+		height: 64rpx;
+		border: 4rpx solid #e4e7ed;
+		border-top-color: #2492F2;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
 
-  .loading-text {
-    margin-top: 20rpx;
-    font-size: 28rpx;
-    color: #909399;
-  }
+		&.small {
+			width: 40rpx;
+			height: 40rpx;
+		}
+	}
+
+	.loading-text {
+		margin-top: 20rpx;
+		font-size: 28rpx;
+		color: #909399;
+	}
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+	to { transform: rotate(360deg); }
 }
 
+/* 主滚动区域 */
 .statistics-content {
-  padding: 20rpx;
+	height: calc(100vh - var(--nav-height, 88px));
+	padding: 24rpx;
+	box-sizing: border-box;
 }
 
-/* 日期筛选区域 */
-.date-filter-section {
-  background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+.range-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: -4rpx 8rpx 20rpx;
+	font-size: 24rpx;
 
-  .date-filter-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
+	.range-label {
+		color: #909399;
+	}
 
-    .date-filter-tab {
-      flex: 0 0 auto;
-      padding: 12rpx 28rpx;
-      background-color: #f5f7fa;
-      border-radius: 24rpx;
-      font-size: 26rpx;
-      color: #606266;
-      transition: all 0.3s;
-
-      &.active {
-        background: linear-gradient(135deg, #2492F2 0%, #1a7dd9 100%);
-        color: #ffffff;
-        font-weight: 500;
-      }
-    }
-  }
+	.range-value {
+		color: #2492F2;
+		font-weight: 500;
+	}
 }
 
-/* 核心财务指标卡片 */
-.stats-section {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
-  margin-bottom: 20rpx;
+/* ===== 月份筛选 ===== */
+.month-filter-section {
+	background: #fff;
+	border-radius: 16rpx;
+	padding: 24rpx 28rpx;
+	margin-bottom: 24rpx;
+	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 
-  .stats-card {
-    background-color: #ffffff;
-    border-radius: 16rpx;
-    padding: 30rpx;
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
-    position: relative;
-    overflow: hidden;
+	.month-nav {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+		flex: 1;
 
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 6rpx;
-      background: linear-gradient(90deg, #2492F2, #1a7dd9);
-    }
+		.month-arrow {
+			width: 56rpx;
+			height: 56rpx;
+			border-radius: 50%;
+			background: #f0f4ff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 36rpx;
+			color: #2492F2;
+			font-weight: bold;
+			line-height: 1;
+		}
 
-    &.primary::before {
-      background: linear-gradient(90deg, #2492F2, #1a7dd9);
-    }
+		.month-display {
+			flex: 1;
+			text-align: center;
 
-    &.danger::before {
-      background: linear-gradient(90deg, #ff6b6b, #ee5a52);
-    }
+			.month-text {
+				font-size: 32rpx;
+				font-weight: 600;
+				color: #303133;
 
-    &.success::before {
-      background: linear-gradient(90deg, #51cf66, #37b24d);
-    }
+				&.all-time {
+					color: #2492F2;
+				}
+			}
+		}
+	}
 
-    &.info::before {
-      background: linear-gradient(90deg, #ffa726, #fb8c00);
-    }
+	.all-time-btn {
+		padding: 10rpx 24rpx;
+		border-radius: 24rpx;
+		font-size: 26rpx;
+		color: #606266;
+		background: #f5f7fa;
+		margin-left: 16rpx;
+		flex-shrink: 0;
 
-    .stats-icon {
-      width: 48rpx;
-      height: 48rpx;
-      margin-bottom: 16rpx;
-      opacity: 0.1;
-    }
-
-    .stats-info {
-      .stats-title {
-        font-size: 26rpx;
-        color: #909399;
-        margin-bottom: 12rpx;
-      }
-
-      .stats-value {
-        font-size: 40rpx;
-        font-weight: 600;
-        color: #303133;
-        margin-bottom: 8rpx;
-      }
-
-      .stats-desc {
-        font-size: 22rpx;
-        color: #c0c4cc;
-      }
-    }
-  }
+		&.active {
+			background: linear-gradient(135deg, #2492F2, #1a7dd9);
+			color: #fff;
+		}
+	}
 }
 
-/* 提现数据统计 */
-.withdrawal-section {
-  background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+/* ===== 6大KPI卡片 ===== */
+.kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 20rpx;
+	margin-bottom: 24rpx;
 
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24rpx;
+	.kpi-card {
+		background: #fff;
+		border-radius: 16rpx;
+		padding: 28rpx;
+		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+		position: relative;
+		overflow: hidden;
 
-    .section-title {
-      font-size: 32rpx;
-      font-weight: 600;
-      color: #303133;
-    }
-  }
+		&::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 6rpx;
+		}
 
-  .withdrawal-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 16rpx;
+		&.blue::after { background: linear-gradient(90deg, #2492F2, #1a7dd9); }
+		&.red::after { background: linear-gradient(90deg, #ff6b6b, #ee5a52); }
+		&.green::after { background: linear-gradient(90deg, #51cf66, #37b24d); }
+		&.cyan::after { background: linear-gradient(90deg, #16c2c2, #0b9b9b); }
+		&.teal::after { background: linear-gradient(90deg, #20c997, #0ca678); }
+		&.orange::after { background: linear-gradient(90deg, #ffa726, #fb8c00); }
+		&.purple::after { background: linear-gradient(90deg, #9c27b0, #7b1fa2); }
 
-    .withdrawal-card {
-      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      border-radius: 12rpx;
-      padding: 24rpx;
-      border-left: 4rpx solid #e4e7ed;
+		.kpi-label {
+			font-size: 26rpx;
+			color: #909399;
+			margin-bottom: 12rpx;
+		}
 
-      &.completed {
-        border-left-color: #51cf66;
-      }
+		.kpi-value {
+			font-size: 38rpx;
+			font-weight: 700;
+			color: #303133;
+			margin-bottom: 8rpx;
+			word-break: break-all;
+		}
 
-      &.processing {
-        border-left-color: #ffa726;
-      }
-
-      &.pending {
-        border-left-color: #2492F2;
-      }
-
-      &.balance {
-        border-left-color: #9c27b0;
-      }
-
-      .card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12rpx;
-
-        .card-title {
-          font-size: 28rpx;
-          color: #606266;
-        }
-
-        .card-badge {
-          padding: 4rpx 12rpx;
-          border-radius: 12rpx;
-          font-size: 22rpx;
-          color: #ffffff;
-
-          &.completed-badge {
-            background-color: #51cf66;
-          }
-
-          &.processing-badge {
-            background-color: #ffa726;
-          }
-
-          &.pending-badge {
-            background-color: #2492F2;
-          }
-
-          &.balance-badge {
-            background-color: #9c27b0;
-          }
-        }
-      }
-
-      .card-amount {
-        font-size: 42rpx;
-        font-weight: 600;
-        color: #303133;
-        margin-bottom: 8rpx;
-      }
-
-      .card-footer {
-        .card-count {
-          font-size: 24rpx;
-          color: #909399;
-        }
-      }
-    }
-  }
-}
-
-/* 骑手统计 */
-.rider-section {
-  background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24rpx;
-
-    .section-title {
-      font-size: 32rpx;
-      font-weight: 600;
-      color: #303133;
-    }
-
-    .section-badge {
-      padding: 4rpx 16rpx;
-      background-color: #ffa726;
-      color: #ffffff;
-      font-size: 22rpx;
-      border-radius: 12rpx;
-      font-weight: 500;
-    }
-  }
-
-  // 骑手数据占位区域
-  .rider-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60rpx 0;
-
-    .placeholder-icon {
-      width: 80rpx;
-      height: 80rpx;
-      background-color: #e4e7ed;
-      border-radius: 50%;
-      margin-bottom: 20rpx;
-      position: relative;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 40rpx;
-        height: 40rpx;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23909399'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
-        background-size: contain;
-        background-repeat: no-repeat;
-      }
-    }
-
-    .placeholder-text {
-      font-size: 26rpx;
-      color: #909399;
-      margin-bottom: 24rpx;
-    }
-
-    .load-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16rpx 40rpx;
-      background: linear-gradient(135deg, #2492F2 0%, #1a7dd9 100%);
-      color: #ffffff;
-      font-size: 28rpx;
-      font-weight: 500;
-      border-radius: 48rpx;
-      box-shadow: 0 4rpx 12rpx rgba(36, 146, 242, 0.3);
-      transition: all 0.3s;
-
-      &:active {
-        transform: scale(0.95);
-        box-shadow: 0 2rpx 8rpx rgba(36, 146, 242, 0.3);
-      }
-
-      .load-icon {
-        width: 28rpx;
-        height: 28rpx;
-        border: 3rpx solid #ffffff;
-        border-top-color: transparent;
-        border-radius: 50%;
-        margin-right: 12rpx;
-        animation: spin 0.8s linear infinite;
-      }
-    }
-  }
-
-  .rider-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20rpx;
-
-    .rider-stat-item {
-      text-align: center;
-      padding: 24rpx;
-      background-color: #f8f9fa;
-      border-radius: 12rpx;
-
-      .stat-label {
-        font-size: 26rpx;
-        color: #909399;
-        margin-bottom: 12rpx;
-      }
-
-      .stat-value {
-        font-size: 36rpx;
-        font-weight: 600;
-        color: #303133;
-
-        &.active {
-          color: #51cf66;
-        }
-      }
-    }
-  }
+		.kpi-desc {
+			font-size: 22rpx;
+			color: #c0c4cc;
+		}
+	}
 }
 
 /* 刷新按钮 */
-.refresh-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 40rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
-  color: #2492F2;
-  font-size: 28rpx;
-  font-weight: 500;
+.refresh-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10rpx;
+	background: #fff;
+	border-radius: 12rpx;
+	padding: 20rpx;
+	margin-bottom: 24rpx;
+	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+	color: #2492F2;
+	font-size: 28rpx;
 
-  .refresh-icon {
-    width: 32rpx;
-    height: 32rpx;
-    margin-right: 12rpx;
-    border: 3rpx solid #2492F2;
-    border-radius: 50%;
-    border-top-color: transparent;
-  }
+	.refresh-icon {
+		font-size: 32rpx;
+	}
+}
+
+/* ===== 打款审核区域 ===== */
+.audit-section {
+	background: #fff;
+	border-radius: 16rpx;
+	padding: 28rpx;
+	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+	margin-bottom: 40rpx;
+
+	.section-header {
+		display: flex;
+		align-items: baseline;
+		gap: 14rpx;
+		margin-bottom: 24rpx;
+
+		.section-title {
+			font-size: 32rpx;
+			font-weight: 600;
+			color: #303133;
+		}
+
+		.section-sub {
+			font-size: 24rpx;
+			color: #909399;
+		}
+	}
+
+	.rider-search-box {
+		display: flex;
+		gap: 16rpx;
+		margin-bottom: 24rpx;
+
+		.rider-search-input {
+			flex: 1;
+			height: 72rpx;
+			border: 2rpx solid #dcdfe6;
+			border-radius: 10rpx;
+			padding: 0 20rpx;
+			font-size: 28rpx;
+			color: #303133;
+			background: #fafafa;
+		}
+
+		.rider-search-btn {
+			width: 120rpx;
+			height: 72rpx;
+			background: linear-gradient(135deg, #2492F2, #1a7dd9);
+			border-radius: 10rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+			font-size: 28rpx;
+			font-weight: 500;
+			flex-shrink: 0;
+		}
+	}
+
+	/* 骑手信息卡片 */
+	.rider-info-card {
+		background: #f0f6ff;
+		border-radius: 12rpx;
+		padding: 20rpx 24rpx;
+		margin-bottom: 24rpx;
+		border-left: 6rpx solid #2492F2;
+
+		.rider-info-row {
+			display: flex;
+			align-items: center;
+			gap: 16rpx;
+			margin-bottom: 14rpx;
+
+			.rider-name {
+				font-size: 30rpx;
+				font-weight: 600;
+				color: #303133;
+			}
+
+			.rider-phone {
+				font-size: 26rpx;
+				color: #606266;
+			}
+		}
+
+		.rider-balance-row {
+			display: flex;
+			gap: 0;
+
+			.balance-item {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+
+				.balance-label {
+					font-size: 22rpx;
+					color: #909399;
+					margin-bottom: 4rpx;
+				}
+
+				.balance-value {
+					font-size: 28rpx;
+					font-weight: 600;
+					color: #2492F2;
+				}
+			}
+		}
+	}
+
+	/* 时间轴加载 */
+	.timeline-loading {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		padding: 40rpx 0;
+		justify-content: center;
+		color: #909399;
+		font-size: 26rpx;
+	}
+
+	.timeline-empty {
+		text-align: center;
+		padding: 60rpx 0;
+		color: #c0c4cc;
+		font-size: 28rpx;
+	}
+
+	.timeline-placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 16rpx;
+		padding: 60rpx 0;
+
+		.placeholder-icon {
+			font-size: 64rpx;
+		}
+
+		.placeholder-text {
+			font-size: 28rpx;
+			color: #c0c4cc;
+		}
+	}
+}
+
+/* ===== 时间轴 ===== */
+.timeline {
+	padding-top: 8rpx;
+
+	.timeline-item {
+		display: flex;
+		gap: 20rpx;
+		margin-bottom: 4rpx;
+
+		/* 左侧 - 线条和节点 */
+		.timeline-left {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			flex-shrink: 0;
+			width: 28rpx;
+			padding-top: 6rpx;
+
+			.timeline-dot {
+				width: 20rpx;
+				height: 20rpx;
+				border-radius: 50%;
+				flex-shrink: 0;
+				z-index: 1;
+
+				&.dot-green { background: #51cf66; }
+				&.dot-red { background: #ff6b6b; }
+			}
+
+			.timeline-line {
+				flex: 1;
+				width: 2rpx;
+				background: #e4e7ed;
+				margin: 4rpx 0;
+				min-height: 40rpx;
+			}
+		}
+
+		/* 右侧内容 */
+		.timeline-right {
+			flex: 1;
+			padding-bottom: 32rpx;
+
+			.timeline-header {
+				display: flex;
+				align-items: center;
+				gap: 14rpx;
+				margin-bottom: 10rpx;
+
+				.timeline-date {
+					font-size: 24rpx;
+					color: #909399;
+				}
+
+				.timeline-badge {
+					padding: 4rpx 12rpx;
+					border-radius: 10rpx;
+					font-size: 22rpx;
+					color: #fff;
+
+					&.badge-in { background: #51cf66; }
+					&.badge-out { background: #ff6b6b; }
+				}
+			}
+
+			.timeline-body {
+				background: #f9fafc;
+				border-radius: 10rpx;
+				padding: 16rpx 20rpx;
+				margin-bottom: 10rpx;
+
+				.order-info-row {
+					display: flex;
+					align-items: center;
+					gap: 12rpx;
+					margin-bottom: 8rpx;
+
+					.order-city {
+						font-size: 26rpx;
+						color: #606266;
+					}
+
+					.order-no {
+						font-size: 22rpx;
+						color: #c0c4cc;
+						flex: 1;
+					}
+
+					.withdraw-label {
+						font-size: 26rpx;
+						color: #606266;
+					}
+
+					.status-tag {
+						font-size: 22rpx;
+						padding: 2rpx 10rpx;
+						border-radius: 8rpx;
+
+						&.completed { color: #51cf66; background: #f0fff4; }
+						&.processing { color: #ffa726; background: #fff8f0; }
+						&.pending { color: #2492F2; background: #f0f6ff; }
+					}
+				}
+
+				.amount-row {
+					.amount-in {
+						font-size: 32rpx;
+						font-weight: 600;
+						color: #51cf66;
+					}
+
+					.amount-out {
+						font-size: 32rpx;
+						font-weight: 600;
+						color: #ff6b6b;
+					}
+				}
+			}
+
+			.balance-after {
+				display: flex;
+				align-items: center;
+
+				.balance-after-label {
+					font-size: 24rpx;
+					color: #909399;
+				}
+
+				.balance-after-value {
+					font-size: 24rpx;
+					color: #303133;
+					font-weight: 500;
+				}
+			}
+		}
+	}
 }
 </style>

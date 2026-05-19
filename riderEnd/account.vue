@@ -284,7 +284,7 @@ export default {
 
         const params = {
           service_member_id: this.riderUserInfo.id,
-          owner_type: ownerType,
+          owner_type: 'member',
           owner_id: ownerId,
           sign: 'chongchong',
           timestamp: timestamp
@@ -344,7 +344,6 @@ export default {
 
     // 显示提现弹窗或跳转编辑页面
     showWithdrawModal() {
-      // 获取用户信息
       const riderUserInfo = uni.getStorageSync('riderUserInfo') || {};
 
       if (riderUserInfo.withdraw_info && riderUserInfo.withdraw_info.id) {

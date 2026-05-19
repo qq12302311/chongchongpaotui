@@ -387,6 +387,7 @@ export default {
         bankData = {
           account_holder: this.bankForm.name,
           bank_name: this.bankForm.bankName,
+          bank_code: this.bankForm.cardNumber,
           bank_province: this.bankForm.province,
           bank_city: this.bankForm.province,
           bank_branch: this.bankForm.branch,
@@ -398,6 +399,7 @@ export default {
         bankData = {
           account_holder: this.withdrawInfo.account_holder,
           bank_name: this.withdrawInfo.bank_name,
+          bank_code: this.withdrawInfo.bank_card_number,
           bank_province: this.withdrawInfo.bank_province,
           bank_city: this.withdrawInfo.bank_city,
           bank_branch: this.withdrawInfo.bank_branch,
